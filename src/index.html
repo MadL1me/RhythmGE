@@ -6,17 +6,23 @@
     <link rel="stylesheet" href="index.css">
   </head>
   <body>
-    <h1>💖 Fuck off!</h1>
-    <p>Welcome to your Electron application.</p>
+    <h1>Rhythm Game Editor v0.1</h1>
+    <p>Tool for rhythm game developers</p>
     
-    <div>
-       <button class="btn" id="import_audio_btn"> Import Audio </button> 
-       <button class="btn" id="save_beatmap_btn"> Save beatmap file </button>
-       <button class="btn" id="import_beatmap_btn"> Import beatmap file </button>
+    <div class="canvas_holder">
+      <canvas></canvas>
     </div>
-    
-    <script defer src="renderer.js"></script>
-    <script defer src="fileImporter.js"></script>
 
+    <div class="files">
+      <div id="drop_zone">
+        <p>Drag audio files here</p>
+      </div>
+       <button id="import_audio_btn"> Import Audio </button> 
+       <button id="save_beatmap_btn"> Save beatmap file </button>
+       <button id="import_beatmap_btn"> Import beatmap file </button>
+    </div>
+  
+    <script defer src="renderer.js"></script>
+  
   </body>
 </html>

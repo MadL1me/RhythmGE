@@ -13,6 +13,7 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    webSecurity: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -24,6 +25,13 @@ const createWindow = () => {
 
   // Open the DevTools.
   //mainWindow.webContents.openDevTools();
+ 
+  ipcMain.on("openDialog", (event, arg) => {
+    dialog.showOpenDialog(mainWindow, 
+    {}).then(result => {
+        event.reply("openDialog-reply", result.filePaths[0]);
+    })
+  })
 };
 
 // This method will be called when Electron has finished
@@ -47,12 +55,3 @@ app.on('activate', () => {
     createWindow();
   }
 });
-
-
-ipcMain.on("openDialog", (event, arg) => {
-  dialog.showOpenDialog(mainWindow, {
-    properties: ['openFile', 'openDirectory']
-  }).then(result => {
-      console.log(result.filePaths);
-  })
-})
