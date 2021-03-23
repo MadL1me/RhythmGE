@@ -3,25 +3,29 @@
   <head>
     <meta charset="UTF-8">
     <title>Hello World!</title>
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="dist/index.css">
   </head>
   <body>
-    <h1>Rhythm Game Editor v0.1</h1>
-    <p>Tool for rhythm game developers</p>
-    
+    <div class="flex-container">
+      <div class="flex-child">
+        <h1>Rhythm Game Editor v0.1</h1>
+        <p>Tool for rhythm game developers</p>
+      </div>
+      
+      <div class="flex-child">
+        <div id="drop_zone">
+          <p>Drag audio files here</p>
+        </div>
+         <button id="import_audio_btn"> Import Audio </button> 
+         <button id="save_beatmap_btn"> Save beatmap file </button>
+         <button id="import_beatmap_btn"> Import beatmap file </button>
+      </div>
+    </div>
+
     <div class="canvas_holder">
       <canvas></canvas>
     </div>
 
-    <div class="files">
-      <div id="drop_zone">
-        <p>Drag audio files here</p>
-      </div>
-       <button id="import_audio_btn"> Import Audio </button> 
-       <button id="save_beatmap_btn"> Save beatmap file </button>
-       <button id="import_beatmap_btn"> Import beatmap file </button>
-    </div>
-  
     <script defer src="renderer.js"></script>
   
   </body>
