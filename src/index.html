@@ -6,13 +6,13 @@
     <link rel="stylesheet" href="dist/index.css">
   </head>
   <body>
-    <div class="flex-container">
-      <div class="flex-child">
+    <div>
+      <div>
         <h1>Rhythm Game Editor v0.1</h1>
         <p>Tool for rhythm game developers</p>
       </div>
       
-      <div class="flex-child">
+      <div>
         <div id="drop_zone">
           <p>Drag audio files here</p>
         </div>
@@ -23,7 +23,7 @@
     </div>
 
     <div class="canvas_holder">
-      <canvas></canvas>
+      <canvas width="400" height="500" id="editor_canvas"></canvas>
     </div>
 
     <script defer src="renderer.js"></script>

@@ -1,4 +1,9 @@
 const { ipcRenderer, ipcMain } = require("electron") 
+const editor = require("./editor"); 
+//import Editor from "./editor";
+
+console.log(typeof(editor))
+editor.addTimestamp(100,100);
 
 function importAudio() {
     ipcRenderer.send("openDialog", {})
