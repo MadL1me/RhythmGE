@@ -3,10 +3,9 @@ body {
   padding: 2rem;
 }
 
-#drop_zone {
-  border: 5px solid;
-  width: 100px;
-  height: 100px;
+input {
+  height: 30%;
+  margin-left: 10px;
 }
 
 .files {
@@ -14,8 +13,41 @@ body {
   padding: 10px 10px 10px 10px;
 }
 
+.editor_container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-top: 2rem;
+}
+.editor_container .input_container {
+  display: flex;
+  flex-direction: row;
+}
+
+.rowflex {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.colflex {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
 .canvas_holder {
   margin-top: 1rem;
   max-height: calc(40vh);
   overflow: scroll;
+}
+
+.input_block {
+  padding-left: 2rem;
+}
+
+#drop_zone {
+  border: 5px solid;
+  width: 100px;
+  height: 100px;
 }

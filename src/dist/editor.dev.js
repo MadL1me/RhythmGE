@@ -155,4 +155,4 @@ function () {
 }();
 
 var editor = new Editor();
-module.exports = editor; //export default Editor;
+module.exports = editor;

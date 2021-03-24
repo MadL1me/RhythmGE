@@ -2,17 +2,22 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>Hello World!</title>
+    <title>RhythmGE</title>
     <link rel="stylesheet" href="dist/index.css">
   </head>
   <body>
-    <div>
-      <div>
+    <div class="rowflex">
+      
+      <div id = "title">
         <h1>Rhythm Game Editor v0.1</h1>
         <p>Tool for rhythm game developers</p>
       </div>
-      
-      <div>
+    
+      <div id = "audio_player">
+        
+      </div>
+
+      <div id="imports">
         <div id="drop_zone">
           <p>Drag audio files here</p>
         </div>
@@ -22,8 +27,25 @@
       </div>
     </div>
 
-    <div class="canvas_holder">
-      <canvas width="400" height="500" id="editor_canvas"></canvas>
+    <div class="editor_container">
+      <div class="input_container"> 
+        
+        <div class="rowflex input_block">
+          <p>Beat Lines:</p>
+          <input type="text">
+        </div>
+  
+        <div class="rowflex input_block">
+          <p>BPM</p>
+          <input type="text">
+        </div>
+
+      </div>
+  
+      <div class="canvas_holder">
+        <canvas width="400" height="500" id="editor_canvas"></canvas>
+        <canvas width="400" width="100" id="sound_canvas"></canvas>
+      </div>
     </div>
 
     <script defer src="renderer.js"></script>

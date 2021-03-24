@@ -1,5 +1,6 @@
 
 class Timestamp {   
+    
     constructor(x, y, width) {
         this.x = x;
         this.y = y;
@@ -55,7 +56,6 @@ class Editor {
     drawEditor() {
 
         Timeline.draw();
-
         this.notes.forEach(note => {
             note.draw(this.canvas);
         });
@@ -108,4 +108,3 @@ class BeatLine {
 
 const editor = new Editor();
 module.exports = editor;
-//export default Editor;

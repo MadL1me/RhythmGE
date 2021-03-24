@@ -1,8 +1,8 @@
 {
-  "name": "my-app",
-  "productName": "my-app",
-  "version": "1.0.0",
-  "description": "My Electron application description",
+  "name": "RhythmGE",
+  "productName": "RhythmGE",
+  "version": "0.0.1",
+  "description": "Tool for rhythm game developers",
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
