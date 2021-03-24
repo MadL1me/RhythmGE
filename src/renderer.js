@@ -2,15 +2,7 @@ const { ipcRenderer, ipcMain } = require("electron")
 const editor = require("./editor"); 
 //import Editor from "./editor";
 
-console.log(typeof(editor))
-editor.addTimestamp(100,100);
-
-function importAudio() {
-    ipcRenderer.send("openDialog", {})
-}
-
-var button = document.getElementById("import_audio_btn");
-button.addEventListener("click", importAudio);
+//editor.addTimestamp(100,100);
 
 ipcRenderer.on("openDialog-reply", (event, arg) => {
     console.log(arg);
@@ -21,11 +13,31 @@ ipcRenderer.on("openDialog-reply", (event, arg) => {
     var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 })
 
+function importAudio() {
+    ipcRenderer.send("openDialog", {})
+}
+
 function dragOverhandler(event) {
 
 }
 
+function saveBeatmap(event) {
+
+}
+
+function importBeatmap(event) {
+
+}
+
 function dropHandler(event) {
+
+}
+
+function beatLinesValueChange(event) {
+    console.log("beat line changed");
+}
+
+function bmpValueChange(event) {
 
 }
 

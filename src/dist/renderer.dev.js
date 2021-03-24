@@ -1,23 +1,13 @@
 "use strict";
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
 var _require = require("electron"),
     ipcRenderer = _require.ipcRenderer,
     ipcMain = _require.ipcMain;
 
 var editor = require("./editor"); //import Editor from "./editor";
+//editor.addTimestamp(100,100);
 
 
-console.log(_typeof(editor));
-editor.addTimestamp(100, 100);
-
-function importAudio() {
-  ipcRenderer.send("openDialog", {});
-}
-
-var button = document.getElementById("import_audio_btn");
-button.addEventListener("click", importAudio);
 ipcRenderer.on("openDialog-reply", function (event, arg) {
   console.log(arg); //const player = new Audio("http://localhost/" + (arg[0] - "C:\\"));
   //player.play();
@@ -25,9 +15,23 @@ ipcRenderer.on("openDialog-reply", function (event, arg) {
   var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 });
 
+function importAudio() {
+  ipcRenderer.send("openDialog", {});
+}
+
 function dragOverhandler(event) {}
 
+function saveBeatmap(event) {}
+
+function importBeatmap(event) {}
+
 function dropHandler(event) {}
+
+function beatLinesValueChange(event) {
+  console.log("beat line changed");
+}
+
+function bmpValueChange(event) {}
 
 var drop_zone = document.getElementById("drop_zone");
 

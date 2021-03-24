@@ -21,9 +21,9 @@
         <div id="drop_zone">
           <p>Drag audio files here</p>
         </div>
-         <button id="import_audio_btn"> Import Audio </button> 
-         <button id="save_beatmap_btn"> Save beatmap file </button>
-         <button id="import_beatmap_btn"> Import beatmap file </button>
+         <button onclick='importAudio()' id="import_audio_btn"> Import Audio </button> 
+         <button onclick='saveBeatmap()' id="save_beatmap_btn"> Save beatmap file </button>
+         <button onclick='importBeatmap()' id="import_beatmap_btn"> Import beatmap file </button>
       </div>
     </div>
 
@@ -32,23 +32,21 @@
         
         <div class="rowflex input_block">
           <p>Beat Lines:</p>
-          <input type="text">
+          <input value="10" defa onchange='beatLinesValueChange()' type="text">
         </div>
   
         <div class="rowflex input_block">
           <p>BPM</p>
-          <input type="text">
+          <input value="10" onchange='bmpValueChange()' type="text">
         </div>
 
       </div>
   
       <div class="canvas_holder">
-        <canvas width="400" height="500" id="editor_canvas"></canvas>
-        <canvas width="400" width="100" id="sound_canvas"></canvas>
+        <canvas width="800" height="500" id="editor_canvas"></canvas>
       </div>
     </div>
 
     <script defer src="renderer.js"></script>
-  
   </body>
 </html>
