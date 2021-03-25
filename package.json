@@ -45,7 +45,8 @@
     }
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.0"
+    "electron-squirrel-startup": "^1.0.0",
+    "howler": "^2.2.1"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.0.0-beta.54",

@@ -1,5 +1,8 @@
 "use strict";
 
+//import { app, ipcMain, dialog, BrowserWindow } from 'electron';
+//import fs from "fs";
+//import path from 'path';
 var _require = require('electron'),
     app = _require.app,
     ipcMain = _require.ipcMain,
@@ -35,7 +38,7 @@ var createWindow = function createWindow() {
   mainWindow.webContents.openDevTools();
   ipcMain.on("openDialog", function (event, arg) {
     dialog.showOpenDialog(mainWindow, {}).then(function (result) {
-      event.reply("openDialog-reply", result.filePaths[0]);
+      event.reply("openDialog-reply", fs.readFileSync(result.filePaths[0]));
     });
   });
 }; // This method will be called when Electron has finished

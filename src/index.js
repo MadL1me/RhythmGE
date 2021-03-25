@@ -1,7 +1,11 @@
+//import { app, ipcMain, dialog, BrowserWindow } from 'electron';
+//import fs from "fs";
+//import path from 'path';
+
+
 const { app, ipcMain, dialog, BrowserWindow } = require('electron');
 const fs = require("fs");
 const path = require('path');
-
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
@@ -31,7 +35,7 @@ const createWindow = () => {
   ipcMain.on("openDialog", (event, arg) => {
     dialog.showOpenDialog(mainWindow, 
     {}).then(result => {
-        event.reply("openDialog-reply", result.filePaths[0]);
+        event.reply("openDialog-reply", fs.readFileSync(result.filePaths[0]));
     })
   })
 };

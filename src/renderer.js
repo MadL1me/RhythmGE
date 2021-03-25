@@ -1,8 +1,15 @@
 const { ipcRenderer, ipcMain } = require("electron") 
 const Editor = require("./editor"); 
+const { howl, Howl } = require("howler");
+
+//import { ipcRenderer, ipcMain } from "electron";
+//import { Editor } from "./editor";
+//import { Howl, Howler} from 'howler';
 
 var editor = new Editor();
 editor.drawEditor();
+
+document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
 function canvasClickHandler(event) {
     editor.canvasClickHandle(event);
@@ -17,7 +24,41 @@ ipcRenderer.on("openDialog-reply", (event, arg) => {
     var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 })
 
-function importAudio() {
+function handleFileSelect(event) {
+    var files = event.target.files;
+    audioLoad(files[0]);
+    console.log(files[0]);
+}
+
+function audioLoad(file) {
+    
+    var sound = new Howl({src: [file.path]});
+    sound.play();
+    
+    // var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // var reader = new FileReader();
+    // var rawAudioBuffer = [];
+    // var audioBuffer = [];
+
+    // reader.onload += (arrayBuffer) => {
+    //     rawAudioBuffer = arrayBuffer;
+    // };
+    
+    // reader.readAsArrayBuffer(file);
+    
+    // audioCtx.decodeAudioData(rawAudioBuffer, (buffer) => {
+    //     audioBuffer = buffer;
+    // });
+
+    // source = audioCtx.createBufferSource();
+    // source.buffer = audioBuffer;
+    // source.connect(audioCtx.destination);
+    // source.start(0);
+}
+
+function loadAudioFile(event) {
+    //var file = event.target.files;
     ipcRenderer.send("openDialog", {})
 }
 
