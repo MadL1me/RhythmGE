@@ -1,5 +1,13 @@
 'use strict';
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -9,10 +17,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 module.exports =
 /*#__PURE__*/
 function () {
+  //notes = [[],[]]
   function Editor() {
     _classCallCheck(this, Editor);
 
-    this.notes = [];
+    this.notes = _toConsumableArray(Array(10)).map(function (e) {
+      return Array(10);
+    });
     this.canvas = document.getElementById("editor_canvas");
     this.canvas.addEventListener("click", this.canvasClickHandler);
     this.ctx = this.canvas.getContext("2d");
@@ -24,23 +35,29 @@ function () {
   }
 
   _createClass(Editor, [{
-    key: "addTimestamp",
-    value: function addTimestamp(canvas, event) {
-      var rect = canvas.getBoundingClientRect();
+    key: "canvasClickHandle",
+    value: function canvasClickHandle(event) {
+      var rect = this.canvas.getBoundingClientRect();
       var clickX = event.clientX - rect.left;
       var clickY = event.clientY - rect.top;
       var columnNum = Math.round((clickX - this.timeline.offsetX) / this.timeline.distanceX);
       var rowNum = Math.round((clickY - this.timeline.offsetY) / this.timeline.distanceY);
-      console.log(columnNum);
-      console.log(clickX);
-      console.log(this.timeline.bpmLines);
       var x = this.timeline.bpmLines[columnNum].X;
       var y = this.timeline.beatLines[rowNum].Y;
-      console.log(Math.abs(y - clickY));
+      console.log(columnNum + ":" + rowNum);
 
       if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
-        var note = new Timestamp(x, y, 10);
-        note.draw(this.canvas);
+        //console.log(this.notes[columnNum][rowNum]);
+        if (this.notes[columnNum][rowNum] != undefined && this.notes[columnNum][rowNum] != null) {
+          console.log("remove timestamp");
+          this.notes[columnNum][rowNum] = null;
+          this.drawEditor();
+        } else {
+          console.log("add timestamp");
+          var note = new Timestamp(x, y, 10);
+          this.notes[columnNum][rowNum] = note;
+          note.draw(this.canvas);
+        }
       }
     }
   }, {
@@ -54,14 +71,22 @@ function () {
       this.topScale.draw(this.canvas);
       this.leftScale.draw(this.canvas);
       this.timeline.draw(this.canvas);
-      this.notes.forEach(function (note) {
-        note.draw(_this.canvas);
+      this.notes.forEach(function (notes) {
+        notes.forEach(function (note) {
+          if (note != null) {
+            note.draw(_this.canvas);
+          }
+        });
       });
     }
   }]);
 
   return Editor;
 }();
+
+var EditorSettings = function EditorSettings() {
+  _classCallCheck(this, EditorSettings);
+};
 
 var Timestamp =
 /*#__PURE__*/

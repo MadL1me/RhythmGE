@@ -2,8 +2,10 @@
 
 module.exports = class Editor {
     
+    //notes = [[],[]]
+
     constructor() {
-        this.notes = [];
+        this.notes = [...Array(10)].map(e => Array(10));
         
         this.canvas = document.getElementById("editor_canvas");
         this.canvas.addEventListener("click", this.canvasClickHandler)
@@ -18,27 +20,35 @@ module.exports = class Editor {
         this.drawEditor();
     }
 
-    addTimestamp(canvas,event) {
+    canvasClickHandle(event) {
         
-        const rect = canvas.getBoundingClientRect();
+        const rect = this.canvas.getBoundingClientRect();
         const clickX = event.clientX - rect.left;
         const clickY = event.clientY - rect.top;
         
         var columnNum = Math.round((clickX-this.timeline.offsetX)/this.timeline.distanceX);
         var rowNum = Math.round((clickY-this.timeline.offsetY)/this.timeline.distanceY); 
 
-        console.log(columnNum);
-        console.log(clickX);
-        console.log(this.timeline.bpmLines);
-
         const x = this.timeline.bpmLines[columnNum].X;
         const y = this.timeline.beatLines[rowNum].Y;
 
-        console.log(Math.abs(y - clickY));
+        console.log(columnNum+":"+rowNum);
 
         if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
-            const note = new Timestamp(x, y, 10);
-            note.draw(this.canvas);
+            
+            //console.log(this.notes[columnNum][rowNum]);
+            
+            if (this.notes[columnNum][rowNum] != undefined && this.notes[columnNum][rowNum] != null) {
+                console.log("remove timestamp");
+                this.notes[columnNum][rowNum] = null;
+                this.drawEditor();
+            }
+            else {
+                console.log("add timestamp")
+                const note = new Timestamp(x, y, 10);
+                this.notes[columnNum][rowNum] = note;
+                note.draw(this.canvas);
+            }
         }
     }
 
@@ -49,9 +59,15 @@ module.exports = class Editor {
         this.topScale.draw(this.canvas);
         this.leftScale.draw(this.canvas);
         this.timeline.draw(this.canvas);
-        this.notes.forEach(note => {
-            note.draw(this.canvas);
-        });
+        this.notes.forEach(notes => { notes.forEach(note => {
+            if (note!=null) { note.draw(this.canvas);
+        }})});
+    }
+}
+
+class EditorSettings {
+    constructor() {
+        
     }
 }
 
