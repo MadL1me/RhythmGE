@@ -1,11 +1,9 @@
 'use strict';
 
 module.exports = class Editor {
-    
-    //notes = [[],[]]
 
     constructor() {
-        this.notes = [...Array(10)].map(e => Array(10));
+        this.notes = [...Array(10)].map(e => Array(5));
         
         this.canvas = document.getElementById("editor_canvas");
         this.canvas.addEventListener("click", this.canvasClickHandler)
@@ -26,17 +24,24 @@ module.exports = class Editor {
         const clickX = event.clientX - rect.left;
         const clickY = event.clientY - rect.top;
         
-        var columnNum = Math.round((clickX-this.timeline.offsetX)/this.timeline.distanceX);
-        var rowNum = Math.round((clickY-this.timeline.offsetY)/this.timeline.distanceY); 
+        var columnNum = Math.round((clickX-this.timeline.offsetX)/(this.timeline.distanceX)-1);
+        var rowNum = Math.round((clickY-this.timeline.offsetY)/(this.timeline.distanceY)-1); 
+
+        if (columnNum < -0.6 || rowNum < -0.6) {
+            return;
+        }
 
         const x = this.timeline.bpmLines[columnNum].X;
         const y = this.timeline.beatLines[rowNum].Y;
 
+        console.log(this.timeline.distanceY);
+        console.log(this.timeline.distanceX);
         console.log(columnNum+":"+rowNum);
+        console.log(Math.abs(x - clickX) + ":" + Math.abs(y - clickY))
 
         if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
             
-            //console.log(this.notes[columnNum][rowNum]);
+            console.log(this.notes[columnNum][rowNum]);
             
             if (this.notes[columnNum][rowNum] != undefined && this.notes[columnNum][rowNum] != null) {
                 console.log("remove timestamp");
@@ -118,7 +123,7 @@ class Timeline {
     constructor(offsetX, offsetY, canvas) {
         this.canvas = canvas;
         this.sizeX = 10;
-        this.sizeY = 10;
+        this.sizeY = 5;
         this.offsetX = offsetX;
         this.offsetY = offsetY;
         this.timestep = 0;
@@ -127,11 +132,11 @@ class Timeline {
     }
 
     get distanceX() {
-        return this.canvas.width/this.sizeX;
+        return (this.canvas.width-this.offsetX)/(this.sizeX+1);
     }
 
     get distanceY() {
-        return this.canvas.height/this.sizeY;
+        return (this.canvas.height-this.offsetY)/(this.sizeY+1);
     }
 
     draw() {
@@ -141,14 +146,14 @@ class Timeline {
         this.bpmLines = [];
         this.beatLines = [];
 
-        var distanceX = canvas.width/this.sizeX;
-        var distanceY = canvas.height/this.sizeY;
+        var distanceX = this.distanceX;//canvas.width/(this.sizeX+1);
+        var distanceY = this.distanceY;//canvas.height/(this.sizeY+1);
 
-        for (var i=0; i<canvas.width/(distanceX); i++){ 
+        for (var i=1; i<canvas.width/(distanceX); i++){ 
             this.bpmLines.push(new BPMLine(this.offsetX, this.offsetY, i*distanceX));
         }
         
-        for (var i=0; i<canvas.height/(distanceY); i++){ 
+        for (var i=1; i<canvas.height/(distanceY); i++){ 
             this.beatLines.push(new BeatLine(this.offsetX, this.offsetY, i*distanceY));
         }
 

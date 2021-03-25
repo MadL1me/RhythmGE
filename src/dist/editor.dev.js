@@ -17,12 +17,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 module.exports =
 /*#__PURE__*/
 function () {
-  //notes = [[],[]]
   function Editor() {
     _classCallCheck(this, Editor);
 
     this.notes = _toConsumableArray(Array(10)).map(function (e) {
-      return Array(10);
+      return Array(5);
     });
     this.canvas = document.getElementById("editor_canvas");
     this.canvas.addEventListener("click", this.canvasClickHandler);
@@ -40,14 +39,23 @@ function () {
       var rect = this.canvas.getBoundingClientRect();
       var clickX = event.clientX - rect.left;
       var clickY = event.clientY - rect.top;
-      var columnNum = Math.round((clickX - this.timeline.offsetX) / this.timeline.distanceX);
-      var rowNum = Math.round((clickY - this.timeline.offsetY) / this.timeline.distanceY);
+      var columnNum = Math.round((clickX - this.timeline.offsetX) / this.timeline.distanceX - 1);
+      var rowNum = Math.round((clickY - this.timeline.offsetY) / this.timeline.distanceY - 1);
+
+      if (columnNum < -0.6 || rowNum < -0.6) {
+        return;
+      }
+
       var x = this.timeline.bpmLines[columnNum].X;
       var y = this.timeline.beatLines[rowNum].Y;
+      console.log(this.timeline.distanceY);
+      console.log(this.timeline.distanceX);
       console.log(columnNum + ":" + rowNum);
+      console.log(Math.abs(x - clickX) + ":" + Math.abs(y - clickY));
 
       if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
-        //console.log(this.notes[columnNum][rowNum]);
+        console.log(this.notes[columnNum][rowNum]);
+
         if (this.notes[columnNum][rowNum] != undefined && this.notes[columnNum][rowNum] != null) {
           console.log("remove timestamp");
           this.notes[columnNum][rowNum] = null;
@@ -166,7 +174,7 @@ function () {
 
     this.canvas = canvas;
     this.sizeX = 10;
-    this.sizeY = 10;
+    this.sizeY = 5;
     this.offsetX = offsetX;
     this.offsetY = offsetY;
     this.timestep = 0;
@@ -181,14 +189,15 @@ function () {
       var ctx = canvas.getContext('2d');
       this.bpmLines = [];
       this.beatLines = [];
-      var distanceX = canvas.width / this.sizeX;
-      var distanceY = canvas.height / this.sizeY;
+      var distanceX = this.distanceX; //canvas.width/(this.sizeX+1);
 
-      for (var i = 0; i < canvas.width / distanceX; i++) {
+      var distanceY = this.distanceY; //canvas.height/(this.sizeY+1);
+
+      for (var i = 1; i < canvas.width / distanceX; i++) {
         this.bpmLines.push(new BPMLine(this.offsetX, this.offsetY, i * distanceX));
       }
 
-      for (var i = 0; i < canvas.height / distanceY; i++) {
+      for (var i = 1; i < canvas.height / distanceY; i++) {
         this.beatLines.push(new BeatLine(this.offsetX, this.offsetY, i * distanceY));
       }
 
@@ -202,12 +211,12 @@ function () {
   }, {
     key: "distanceX",
     get: function get() {
-      return this.canvas.width / this.sizeX;
+      return (this.canvas.width - this.offsetX) / (this.sizeX + 1);
     }
   }, {
     key: "distanceY",
     get: function get() {
-      return this.canvas.height / this.sizeY;
+      return (this.canvas.height - this.offsetY) / (this.sizeY + 1);
     }
   }]);
 
