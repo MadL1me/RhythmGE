@@ -1,8 +1,17 @@
 const { ipcRenderer, ipcMain } = require("electron") 
-const editor = require("./editor"); 
-//import Editor from "./editor";
+const Editor = require("./editor"); 
 
-//editor.addTimestamp(100,100);
+var editor = new Editor();
+editor.drawEditor();
+
+function canvasClickHandler(event) {
+    var canvas = event.target;
+    const rect = canvas.getBoundingClientRect()
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+
+    editor.addTimestamp(canvas, event);
+}
 
 ipcRenderer.on("openDialog-reply", (event, arg) => {
     console.log(arg);

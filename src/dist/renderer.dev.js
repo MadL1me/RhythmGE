@@ -4,9 +4,18 @@ var _require = require("electron"),
     ipcRenderer = _require.ipcRenderer,
     ipcMain = _require.ipcMain;
 
-var editor = require("./editor"); //import Editor from "./editor";
-//editor.addTimestamp(100,100);
+var Editor = require("./editor");
 
+var editor = new Editor();
+editor.drawEditor();
+
+function canvasClickHandler(event) {
+  var canvas = event.target;
+  var rect = canvas.getBoundingClientRect();
+  var x = event.clientX - rect.left;
+  var y = event.clientY - rect.top;
+  editor.addTimestamp(canvas, event);
+}
 
 ipcRenderer.on("openDialog-reply", function (event, arg) {
   console.log(arg); //const player = new Audio("http://localhost/" + (arg[0] - "C:\\"));
