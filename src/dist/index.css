@@ -8,6 +8,18 @@ input {
   margin-left: 10px;
 }
 
+h1 {
+  font-size: 30px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+p {
+  font-size: 20px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
 .files {
   margin-top: 10px;
   padding: 10px 10px 10px 10px;
@@ -22,6 +34,13 @@ input {
 .editor_container .input_container {
   display: flex;
   flex-direction: row;
+}
+
+.topbar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  max-height: 30%;
 }
 
 .rowflex {
@@ -39,7 +58,6 @@ input {
 .canvas_holder {
   margin-top: 1rem;
   max-height: calc(40vh);
-  overflow: scroll;
 }
 
 .input_block {

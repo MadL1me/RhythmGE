@@ -1,5 +1,7 @@
+'use strict';
 
-class Editor {
+module.exports = class Editor {
+    
     constructor() {
         this.notes = [];
         
@@ -9,22 +11,43 @@ class Editor {
         this.ctx = this.canvas.getContext("2d");
         this.ctx.translate(0.5,0.5);
 
-        this.timeline = new Timeline();
+        this.topScale = new TopScale(10);
+        this.leftScale = new LeftScale(10);
+        this.timeline = new Timeline(10, 10, this.canvas);
+        
         this.drawEditor();
     }
 
-    addTimestamp(x,y) {
-        console.log("time stamp added at ${x}, ${y}")
-        const note = new Timestamp(50, 50, 10);
-        note.draw();
+    addTimestamp(canvas,event) {
+        
+        const rect = canvas.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
+        
+        var columnNum = Math.round((clickX-this.timeline.offsetX)/this.timeline.distanceX);
+        var rowNum = Math.round((clickY-this.timeline.offsetY)/this.timeline.distanceY); 
+
+        console.log(columnNum);
+        console.log(clickX);
+        console.log(this.timeline.bpmLines);
+
+        const x = this.timeline.bpmLines[columnNum].X;
+        const y = this.timeline.beatLines[rowNum].Y;
+
+        console.log(Math.abs(y - clickY));
+
+        if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
+            const note = new Timestamp(x, y, 10);
+            note.draw(this.canvas);
+        }
     }
 
-    canvasClickHandler() {
-        this.addTimestamp(100, 100);
-    }
- 
     drawEditor() {
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
+        this.ctx.fillStyle = 'rgb(123,123,123)'
+        this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height)
+        this.topScale.draw(this.canvas);
+        this.leftScale.draw(this.canvas);
         this.timeline.draw(this.canvas);
         this.notes.forEach(note => {
             note.draw(this.canvas);
@@ -51,27 +74,66 @@ class Timestamp {
     }
 }
 
+class TopScale {
+    constructor(height) {
+        this.height = height;
+    }
+
+    draw(canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'rgb(123,32,45)';
+        ctx.fillRect(0,0,canvas.width,this.height);
+    }
+}
+
+class LeftScale {
+    constructor(width) {
+        this.width = width;
+    }
+
+    draw(canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'rgb(123,32,45)';
+        ctx.fillRect(0,0, this.width,canvas.height);
+    }
+}
+
 class Timeline {
-    constructor() {
+    constructor(offsetX, offsetY, canvas) {
+        this.canvas = canvas;
         this.sizeX = 10;
         this.sizeY = 10;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
         this.timestep = 0;
         this.bpmLines = [];
         this.beatLines = [];
     }
 
-    draw(canvas) {
+    get distanceX() {
+        return this.canvas.width/this.sizeX;
+    }
+
+    get distanceY() {
+        return this.canvas.height/this.sizeY;
+    }
+
+    draw() {
+        const canvas = this.canvas;
         const ctx = canvas.getContext('2d');
+
+        this.bpmLines = [];
+        this.beatLines = [];
 
         var distanceX = canvas.width/this.sizeX;
         var distanceY = canvas.height/this.sizeY;
 
-        for (var i=0; i<canvas.width/this.sizeX; i++){ 
-            this.bpmLines.push(new BPMLine(i*distanceX));
+        for (var i=0; i<canvas.width/(distanceX); i++){ 
+            this.bpmLines.push(new BPMLine(this.offsetX, this.offsetY, i*distanceX));
         }
         
-        for (var i=0; i<canvas.height/this.sizeY; i++){ 
-            this.bpmLines.push(new BeatLine(i*distanceY));
+        for (var i=0; i<canvas.height/(distanceY); i++){ 
+            this.beatLines.push(new BeatLine(this.offsetX, this.offsetY, i*distanceY));
         }
 
         this.bpmLines.forEach(bpmLine => {
@@ -85,36 +147,45 @@ class Timeline {
 }
 
 class BPMLine {
-    constructor(x) {
+    constructor(offsetX, offsetY, x) {
         this.x = x;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
     }
 
     draw(canvas) {
         const ctx = canvas.getContext('2d');
-
         ctx.fillStyle = "black";
 
         ctx.beginPath();
-        ctx.moveTo(this.x, 0);
-        ctx.lineTo(this.x, canvas.height);
+        ctx.moveTo(this.x + this.offsetX, this.offsetY);
+        ctx.lineTo(this.x + this.offsetX, canvas.height);
         ctx.stroke();
+    }
+
+    get X() {
+        return this.x + this.offsetX;
     }
 }
 
 class BeatLine {
-    constructor(y) {
+    constructor(offsetX, offsetY, y) {
         this.y = y;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
     }
 
     draw(canvas) {
         const ctx = canvas.getContext('2d');
-
         ctx.fillStyle = "black";
-
         ctx.beginPath();
-        ctx.moveTo(0, this.y);
-        ctx.lineTo(canvas.width, this.y);
+        ctx.moveTo(this.offsetX, this.y + this.offsetY);
+        ctx.lineTo(canvas.width, this.y + this.offsetY);
         ctx.stroke();
+    }
+
+    get Y() {
+        return this.y + this.offsetY;
     }
 }
 
@@ -123,10 +194,11 @@ class TimestepLine {
         this.x = x;
     }
 
+    movePosition(x) {
+        this.x = x;
+    }
+
     draw(canvas) {
         
     }
 }
-
-const editor = new Editor();
-module.exports = editor;

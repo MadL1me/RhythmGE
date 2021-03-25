@@ -19,10 +19,10 @@ if (require('electron-squirrel-startup')) {
 var createWindow = function createWindow() {
   // Create the browser window.
   var mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    minWidth: 800,
-    minHeight: 600,
+    width: 900,
+    height: 700,
+    minWidth: 900,
+    minHeight: 700,
     webSecurity: false,
     webPreferences: {
       nodeIntegration: true,
@@ -31,8 +31,8 @@ var createWindow = function createWindow() {
   }); // and load the index.html of the app.
 
   mainWindow.loadFile(path.join(__dirname, 'index.html')); // Open the DevTools.
-  //mainWindow.webContents.openDevTools();
 
+  mainWindow.webContents.openDevTools();
   ipcMain.on("openDialog", function (event, arg) {
     dialog.showOpenDialog(mainWindow, {}).then(function (result) {
       event.reply("openDialog-reply", result.filePaths[0]);

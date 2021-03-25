@@ -1,5 +1,5 @@
   $font-stack: Helvetica, sans-serif;
-  $text-color: #333;
+  $text-color: white;
   $accent-color: #966;
 
   body {
@@ -11,6 +11,18 @@
   input {
     height: 30%;
     margin-left: 10px;
+  }
+
+  h1 {
+    font-size: 30px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+  }
+
+  p {
+    font-size: 20px;
+    margin-top: 5px;
+    margin-bottom: 5px;
   }
 
   .files {
@@ -30,6 +42,13 @@
     }
   }
 
+  .topbar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    max-height: 30%;
+  }
+
   .rowflex {
     display: flex;
     flex-direction: row;
@@ -45,7 +64,7 @@
   .canvas_holder {
     margin-top: 1rem;
     max-height: calc(40vh);
-    overflow: scroll;
+    //overflow: scroll;
   }
 
   .input_block {
@@ -57,7 +76,7 @@
   }
 
   #title {
-
+   
   }
 
   #imports {
