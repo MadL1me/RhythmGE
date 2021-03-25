@@ -24,7 +24,6 @@ function () {
       return Array(5);
     });
     this.canvas = document.getElementById("editor_canvas");
-    this.canvas.addEventListener("click", this.canvasClickHandler);
     this.ctx = this.canvas.getContext("2d");
     this.ctx.translate(0.5, 0.5);
     this.topScale = new TopScale(10);

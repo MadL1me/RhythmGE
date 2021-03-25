@@ -1,8 +1,5 @@
 "use strict";
 
-//import { app, ipcMain, dialog, BrowserWindow } from 'electron';
-//import fs from "fs";
-//import path from 'path';
 var _require = require('electron'),
     app = _require.app,
     ipcMain = _require.ipcMain,

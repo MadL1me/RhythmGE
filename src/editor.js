@@ -6,11 +6,9 @@ module.exports = class Editor {
         this.notes = [...Array(10)].map(e => Array(5));
         
         this.canvas = document.getElementById("editor_canvas");
-        this.canvas.addEventListener("click", this.canvasClickHandler)
-
         this.ctx = this.canvas.getContext("2d");
+        
         this.ctx.translate(0.5,0.5);
-
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
         this.timeline = new Timeline(10, 10, this.canvas);

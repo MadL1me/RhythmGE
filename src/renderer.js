@@ -1,10 +1,6 @@
 const { ipcRenderer, ipcMain } = require("electron") 
 const Editor = require("./editor"); 
-const { howl, Howl } = require("howler");
-
-//import { ipcRenderer, ipcMain } from "electron";
-//import { Editor } from "./editor";
-//import { Howl, Howler} from 'howler';
+require("howler");
 
 var editor = new Editor();
 editor.drawEditor();
@@ -17,9 +13,6 @@ function canvasClickHandler(event) {
 
 ipcRenderer.on("openDialog-reply", (event, arg) => {
     console.log(arg);
-    
-    //const player = new Audio("http://localhost/" + (arg[0] - "C:\\"));
-    //player.play();
 
     var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 })

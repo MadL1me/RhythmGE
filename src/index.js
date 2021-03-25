@@ -1,8 +1,3 @@
-//import { app, ipcMain, dialog, BrowserWindow } from 'electron';
-//import fs from "fs";
-//import path from 'path';
-
-
 const { app, ipcMain, dialog, BrowserWindow } = require('electron');
 const fs = require("fs");
 const path = require('path');
