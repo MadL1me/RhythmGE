@@ -27,11 +27,65 @@ function handleFileSelect(event) {
   console.log(files[0]);
 }
 
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+var analyser;
+
+function getanalysis() {
+  //analyser = Howler.ctx.createAnalyser();
+  var dataArray = new Float32Array(analyser.frequencyBinCount);
+  analyser.getFloatTimeDomainData(dataArray);
+  console.log(dataArray);
+  var dataArray = new Float32Array(analyser.frequencyBinCount);
+  analyser.getFloatFrequencyData(dataArray);
+  console.log(dataArray);
+}
+
 function audioLoad(file) {
+  console.log("audio load");
+  var buffer = audioCtx.createBuffer(2, 22050, 44100);
+  var source = audioCtx.createBufferSource(); //source.buffer = buffer;
+  //source.connect(audioCtx.destination);
+  //source.start();
+  // var request = new XMLHttpRequest();
+  // request.open('GET', file.path, true);
+  // request.responseType = "arraybuffer";
+  // request.onload += () => {
+  //     console.log("file loaded");
+  //     console.log(audioData);
+  //     var audioData = request.response;
+  //     audioCtx.decodeAudioData(audioData, function(buffer) {
+  //     source.buffer = buffer;
+  //     source.connect(audioCtx.destination);
+  //     source.loop = true;
+  //     source.start(0);
+  //   },
+  //   function(e){"Error with decoding audio data" + e.err});
+  // } 
+  // request.onerror += () => {
+  //     console.log("request if fucked up");
+  // };
+  // request.onloaderror += () => {
+  //     console.log("request if fucked up");
+  // };
+  // request.send();
+  //request.
+
+  var soundId = 0;
   var sound = new Howl({
     src: [file.path]
   });
-  sound.play(); // var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  sound.on("play", function () {
+    analyser = Howler.ctx.createAnalyser();
+    analyser.fftSize = 256;
+    var dataArray = new Float32Array(analyser.frequencyBinCount);
+    analyser.getFloatTimeDomainData(dataArray);
+    console.log(dataArray);
+    console.log(soundId);
+    console.log(sound._soundById(soundId)._node.bufferSource.connect(analyser));
+  });
+  soundId = sound.play(); //var request = new XMLHttpRequest();
+  //request.re
+  // var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   // var reader = new FileReader();
   // var rawAudioBuffer = [];
   // var audioBuffer = [];

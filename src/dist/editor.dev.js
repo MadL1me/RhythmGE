@@ -29,6 +29,7 @@ function () {
     this.topScale = new TopScale(10);
     this.leftScale = new LeftScale(10);
     this.timeline = new Timeline(10, 10, this.canvas);
+    this.audioCanvas = new AudioAmplitudeCanvas();
     this.drawEditor();
   }
 
@@ -85,10 +86,26 @@ function () {
           }
         });
       });
+      this.audioCanvas.draw();
     }
   }]);
 
   return Editor;
+}();
+
+var AudioAmplitudeCanvas =
+/*#__PURE__*/
+function () {
+  function AudioAmplitudeCanvas() {
+    _classCallCheck(this, AudioAmplitudeCanvas);
+  }
+
+  _createClass(AudioAmplitudeCanvas, [{
+    key: "draw",
+    value: function draw(scaleX) {}
+  }]);
+
+  return AudioAmplitudeCanvas;
 }();
 
 var EditorSettings = function EditorSettings() {
@@ -192,11 +209,11 @@ function () {
 
       var distanceY = this.distanceY; //canvas.height/(this.sizeY+1);
 
-      for (var i = 1; i < canvas.width / distanceX; i++) {
+      for (var i = 1; i < canvas.width / distanceX - 1; i++) {
         this.bpmLines.push(new BPMLine(this.offsetX, this.offsetY, i * distanceX));
       }
 
-      for (var i = 1; i < canvas.height / distanceY; i++) {
+      for (var i = 1; i < canvas.height / distanceY - 1; i++) {
         this.beatLines.push(new BeatLine(this.offsetX, this.offsetY, i * distanceY));
       }
 

@@ -23,6 +23,7 @@
         </div>
           <input type="file" id="files" name="files[]"/>
           <output id="list"></output>
+          <button onclick='getanalysis()'>Get analysis</button>
           <button onclick='loadAudioFile()' id="import_audio_btn"> Import Audio </button> 
           <button onclick='saveBeatmap()' id="save_beatmap_btn"> Save beatmap file </button>
           <button onclick='importBeatmap()' id="import_beatmap_btn"> Import beatmap file </button>
@@ -46,6 +47,7 @@
   
       <div class="canvas_holder">
         <canvas onclick='canvasClickHandler(event)' width="800" height="300" id="editor_canvas"></canvas>
+        <canvas width="800" height="100" id = 'audio_amplitude_canvas'></canvas>
       </div>
     </div>
 

@@ -7,11 +7,12 @@ module.exports = class Editor {
         
         this.canvas = document.getElementById("editor_canvas");
         this.ctx = this.canvas.getContext("2d");
-        
         this.ctx.translate(0.5,0.5);
+        
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
         this.timeline = new Timeline(10, 10, this.canvas);
+        this.audioCanvas = new AudioAmplitudeCanvas();
         
         this.drawEditor();
     }
@@ -65,6 +66,17 @@ module.exports = class Editor {
         this.notes.forEach(notes => { notes.forEach(note => {
             if (note!=null) { note.draw(this.canvas);
         }})});
+        this.audioCanvas.draw();
+    }
+}
+
+class AudioAmplitudeCanvas {
+    constructor() {
+
+    }
+
+    draw(scaleX) {
+
     }
 }
 
@@ -147,11 +159,11 @@ class Timeline {
         var distanceX = this.distanceX;//canvas.width/(this.sizeX+1);
         var distanceY = this.distanceY;//canvas.height/(this.sizeY+1);
 
-        for (var i=1; i<canvas.width/(distanceX); i++){ 
+        for (var i=1; i<canvas.width/(distanceX)-1; i++){ 
             this.bpmLines.push(new BPMLine(this.offsetX, this.offsetY, i*distanceX));
         }
         
-        for (var i=1; i<canvas.height/(distanceY); i++){ 
+        for (var i=1; i<canvas.height/(distanceY)-1; i++){ 
             this.beatLines.push(new BeatLine(this.offsetX, this.offsetY, i*distanceY));
         }
 
