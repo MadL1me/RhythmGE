@@ -1,10 +1,9 @@
 // import { ipcRenderer, ipcMain } from "electron";
 // import { editor } from "./dist/editor";
 // import { Howler, Howl } from "howler";
+
 var Howler = require("howler");
 var Howl = require("howler");
-var ipcRenderer = require("electron");
-var ipcMain = require("electron");
 var editor = require("./dist/editor") as Editor;
 
 editor.drawEditor();
@@ -15,10 +14,6 @@ document.getElementById('files').addEventListener('change', handleFileSelect, fa
 function canvasClickHandler(event) {
     editor.canvasClickHandle(event);
 }
-
-ipcRenderer.on("openDialog-reply", (event, arg) => {
-    console.log(arg);
-})
 
 function handleFileSelect(event) {
     var files = event.target.files;
@@ -59,11 +54,6 @@ function audioLoad(file) {
     soundId = sound.play();
 }
 
-function loadAudioFile(event) {
-    //var file = event.target.files;
-    ipcRenderer.send("openDialog", {})
-}
-
 function dragOverhandler(event) {
 
 }
@@ -83,12 +73,12 @@ function dropHandler(event) {
 function beatLinesValueChange(event) {
     console.log("beat line changed");
     console.log(event.target.value);
-    editor.changeBeatlinesCount(event.target.value);
+    editor.changeBeatlinesCount(parseInt(event.target.value));
 }
 
 function bmpValueChange(event) {
     console.log(event.target.value);
-    editor.changeBpmValue(event.target.value);
+    editor.changeBpmValue(parseInt(event.target.value));
 }
 
 var drop_zone = document.getElementById("drop_zone")

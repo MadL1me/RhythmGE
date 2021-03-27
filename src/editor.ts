@@ -218,16 +218,23 @@ class Timeline {
     }
 
     get distanceY() {
-        console.log(this.beatLinesCount);
+        var a : number = 1;
+        var b = this.beatLinesCount + a;
+        console.log(b);
+        console.log(this.beatLinesCount+1);
+        console.log(this.canvas.height-this.offsetY);
+        console.log((this.canvas.height-this.offsetY)/(this.beatLinesCount+1));
         return (this.canvas.height-this.offsetY)/(this.beatLinesCount+1);
     }
 
-    setBpmValue(bpm) {
+    setBpmValue(bpm : number) {
         this.bpmValue = bpm;
+        console.log(bpm);
     }
 
-    setBeatLinesCount(beatLines) {
+    setBeatLinesCount(beatLines : number) {
         this.beatLinesCount = beatLines;
+        console.log(beatLines);
     }
 
     draw(canv) {
@@ -247,7 +254,7 @@ class Timeline {
             this.bpmLines.push(new BPMLine(this.offsetX, this.offsetY, i*distanceX));
         }
         
-        for (var i=1; i<canvas.height/(distanceY)-1; i++){ 
+        for (var i=1; i<=this.beatLinesCount; i++){ 
             this.beatLines.push(new BeatLine(this.offsetX, this.offsetY, i*distanceY));
         }
 
