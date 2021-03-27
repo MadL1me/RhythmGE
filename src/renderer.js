@@ -28,8 +28,6 @@ var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 var analyser;
 
 function getanalysis() {
-    //analyser = Howler.ctx.createAnalyser();
-    
     var dataArray = new Float32Array(analyser.frequencyBinCount);
     analyser.getFloatTimeDomainData(dataArray);
     console.log(dataArray);
@@ -45,42 +43,6 @@ function audioLoad(file) {
     
     var buffer = audioCtx.createBuffer(2, 22050, 44100);
     var source = audioCtx.createBufferSource();
-    //source.buffer = buffer;
-    //source.connect(audioCtx.destination);
-    //source.start();
-    
-    // var request = new XMLHttpRequest();
-    // request.open('GET', file.path, true);
-    // request.responseType = "arraybuffer";
-    // request.onload += () => {
-        
-    //     console.log("file loaded");
-    //     console.log(audioData);
-
-    //     var audioData = request.response;
-
-    //     audioCtx.decodeAudioData(audioData, function(buffer) {
-    //     source.buffer = buffer;
-
-    //     source.connect(audioCtx.destination);
-    //     source.loop = true;
-    //     source.start(0);
-    //   },
-
-    //   function(e){"Error with decoding audio data" + e.err});
-    // } 
-
-    // request.onerror += () => {
-    //     console.log("request if fucked up");
-    // };
-
-    // request.onloaderror += () => {
-    //     console.log("request if fucked up");
-    // };
- 
-
-    // request.send();
-    //request.
 
     var soundId = 0;
 
@@ -97,31 +59,6 @@ function audioLoad(file) {
     });
     
     soundId = sound.play();
-    
-    
-    //var request = new XMLHttpRequest();
-    //request.re
-
-    // var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // var reader = new FileReader();
-    // var rawAudioBuffer = [];
-    // var audioBuffer = [];
-
-    // reader.onload += (arrayBuffer) => {
-    //     rawAudioBuffer = arrayBuffer;
-    // };
-    
-    // reader.readAsArrayBuffer(file);
-    
-    // audioCtx.decodeAudioData(rawAudioBuffer, (buffer) => {
-    //     audioBuffer = buffer;
-    // });
-
-    // source = audioCtx.createBufferSource();
-    // source.buffer = audioBuffer;
-    // source.connect(audioCtx.destination);
-    // source.start(0);
 }
 
 function loadAudioFile(event) {
@@ -147,10 +84,13 @@ function dropHandler(event) {
 
 function beatLinesValueChange(event) {
     console.log("beat line changed");
+    console.log(event.target.value);
+    editor.changeBeatlinesCount(event.target.value);
 }
 
 function bmpValueChange(event) {
-
+    console.log(event.target.value);
+    editor.changeBpmValue(event.target.value);
 }
 
 var drop_zone = document.getElementById("drop_zone")

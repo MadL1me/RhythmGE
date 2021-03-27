@@ -17,6 +17,16 @@ module.exports = class Editor {
         this.drawEditor();
     }
 
+    changeBeatlinesCount(beatLines) {
+        this.timeline.setBeatLinesCount(beatLines);
+        this.drawEditor();
+    }
+
+    changeBpmValue(bpm) {
+        this.timeline.setBpmValue(bpm);
+        this.drawEditor();
+    }
+
     canvasClickHandle(event) {
         
         const rect = this.canvas.getBoundingClientRect();
@@ -57,6 +67,7 @@ module.exports = class Editor {
     }
 
     drawEditor() {
+        console.log("draw editor")
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
         this.ctx.fillStyle = 'rgb(123,123,123)'
         this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height)
@@ -76,7 +87,7 @@ class AudioAmplitudeCanvas {
     }
 
     draw(scaleX) {
-
+        
     }
 }
 
@@ -132,8 +143,10 @@ class LeftScale {
 class Timeline {
     constructor(offsetX, offsetY, canvas) {
         this.canvas = canvas;
-        this.sizeX = 10;
-        this.sizeY = 5;
+        this.scaleX = 1;
+        this.scaleY = 1;
+        this.bpmValue = 10;
+        this.beatLinesCount = 5;
         this.offsetX = offsetX;
         this.offsetY = offsetY;
         this.timestep = 0;
@@ -142,22 +155,35 @@ class Timeline {
     }
 
     get distanceX() {
-        return (this.canvas.width-this.offsetX)/(this.sizeX+1);
+        console.log(this.bpmValue);
+        return (this.canvas.width-this.offsetX)/(this.bpmValue+1);
     }
 
     get distanceY() {
-        return (this.canvas.height-this.offsetY)/(this.sizeY+1);
+        console.log(this.beatLinesCount);
+        return (this.canvas.height-this.offsetY)/(this.beatLinesCount+1);
     }
 
-    draw() {
-        const canvas = this.canvas;
+    setBpmValue(bpm) {
+        this.bpmValue = bpm;
+    }
+
+    setBeatLinesCount(beatLines) {
+        this.beatinesCount = beatLines;
+    }
+
+    draw(canv) {
+        const canvas = canv;
         const ctx = canvas.getContext('2d');
 
         this.bpmLines = [];
         this.beatLines = [];
 
-        var distanceX = this.distanceX;//canvas.width/(this.sizeX+1);
-        var distanceY = this.distanceY;//canvas.height/(this.sizeY+1);
+        var distanceX = this.distanceX;//canvas.width/(this.bpmValue+1);
+        var distanceY = this.distanceY;//canvas.height/(this.beatLinesCount+1);
+
+        console.log(distanceX);
+        console.log(distanceY);
 
         for (var i=1; i<canvas.width/(distanceX)-1; i++){ 
             this.bpmLines.push(new BPMLine(this.offsetX, this.offsetY, i*distanceX));
