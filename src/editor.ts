@@ -2,10 +2,18 @@
 
 module.exports = class Editor {
 
+    notes: Array<Array<Timestamp>>;
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    topScale: TopScale;
+    leftScale: LeftScale;
+    timeline: Timeline;
+    audioCanvas: AudioAmplitudeCanvas;    
+
     constructor() {
         this.notes = [...Array(10)].map(e => Array(5));
         
-        this.canvas = document.getElementById("editor_canvas");
+        this.canvas = document.getElementById("editor_canvas") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d");
         this.ctx.translate(0.5,0.5);
         
@@ -77,7 +85,7 @@ module.exports = class Editor {
         this.notes.forEach(notes => { notes.forEach(note => {
             if (note!=null) { note.draw(this.canvas);
         }})});
-        this.audioCanvas.draw();
+        this.audioCanvas.draw(1);
     }
 }
 
@@ -98,6 +106,11 @@ class EditorSettings {
 }
 
 class Timestamp {    
+    
+    x:number;
+    y:number;
+    width: number;
+   
     constructor(x, y, width) {
         this.x = x;
         this.y = y;
@@ -117,6 +130,9 @@ class Timestamp {
 }
 
 class TopScale {
+   
+    height: number;
+   
     constructor(height) {
         this.height = height;
     }
@@ -129,6 +145,9 @@ class TopScale {
 }
 
 class LeftScale {
+    
+    width: number;
+    
     constructor(width) {
         this.width = width;
     }
@@ -141,6 +160,20 @@ class LeftScale {
 }
 
 class Timeline {
+    
+    canvas: HTMLCanvasElement;
+
+    scaleX: number;
+    scaleY: number;
+    bpmValue: number;
+    beatLinesCount: number;
+    offsetX: number;
+    offsetY: number;
+    timestep: number;
+
+    bpmLines: Array<BPMLine>;
+    beatLines: Array<BeatLine>;
+
     constructor(offsetX, offsetY, canvas) {
         this.canvas = canvas;
         this.scaleX = 1;
@@ -169,7 +202,7 @@ class Timeline {
     }
 
     setBeatLinesCount(beatLines) {
-        this.beatinesCount = beatLines;
+        this.beatLinesCount = beatLines;
     }
 
     draw(canv) {
@@ -204,6 +237,11 @@ class Timeline {
 }
 
 class BPMLine {
+    
+    x: number;
+    offsetX: number;
+    offsetY: number;
+    
     constructor(offsetX, offsetY, x) {
         this.x = x;
         this.offsetX = offsetX;
@@ -226,6 +264,11 @@ class BPMLine {
 }
 
 class BeatLine {
+    
+    y: number;
+    offsetX: number;
+    offsetY: number;
+    
     constructor(offsetX, offsetY, y) {
         this.y = y;
         this.offsetX = offsetX;
@@ -247,6 +290,9 @@ class BeatLine {
 }
 
 class TimestepLine {
+   
+    x: number;
+    
     constructor(x) {
         this.x = x;
     }

@@ -1,6 +1,9 @@
 const { ipcRenderer, ipcMain } = require("electron"); 
-const Editor = require("./editor"); 
-require("howler");
+const Editor = require("./dist/editor"); 
+
+var howl = require("howler");
+var Howler = require("howler");
+var Howl = require("howler");
 
 var editor = new Editor();
 editor.drawEditor();
@@ -13,8 +16,6 @@ function canvasClickHandler(event) {
 
 ipcRenderer.on("openDialog-reply", (event, arg) => {
     console.log(arg);
-
-    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 })
 
 function handleFileSelect(event) {
@@ -22,8 +23,6 @@ function handleFileSelect(event) {
     audioLoad(files[0]);
     console.log(files[0]);
 }
-
-var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 var analyser;
 
@@ -41,9 +40,6 @@ function audioLoad(file) {
 
     console.log("audio load");
     
-    var buffer = audioCtx.createBuffer(2, 22050, 44100);
-    var source = audioCtx.createBufferSource();
-
     var soundId = 0;
 
     var sound = new Howl({src: [file.path]});
