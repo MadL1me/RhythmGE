@@ -1,14 +1,7 @@
 'use strict';
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
-};
-module.exports = /** @class */ (function () {
-    function Editor() {
-        this.notes = __spreadArrays(Array(10)).map(function (e) { return Array(5); });
+class Editor {
+    constructor() {
+        this.notes = [...Array(10)].map(e => Array(5));
         this.canvas = document.getElementById("editor_canvas");
         this.ctx = this.canvas.getContext("2d");
         this.ctx.translate(0.5, 0.5);
@@ -18,25 +11,25 @@ module.exports = /** @class */ (function () {
         this.audioCanvas = new AudioAmplitudeCanvas();
         this.drawEditor();
     }
-    Editor.prototype.changeBeatlinesCount = function (beatLines) {
+    changeBeatlinesCount(beatLines) {
         this.timeline.setBeatLinesCount(beatLines);
         this.drawEditor();
-    };
-    Editor.prototype.changeBpmValue = function (bpm) {
+    }
+    changeBpmValue(bpm) {
         this.timeline.setBpmValue(bpm);
         this.drawEditor();
-    };
-    Editor.prototype.canvasClickHandle = function (event) {
-        var rect = this.canvas.getBoundingClientRect();
-        var clickX = event.clientX - rect.left;
-        var clickY = event.clientY - rect.top;
+    }
+    canvasClickHandle(event) {
+        const rect = this.canvas.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
         var columnNum = Math.round((clickX - this.timeline.offsetX) / (this.timeline.distanceX) - 1);
         var rowNum = Math.round((clickY - this.timeline.offsetY) / (this.timeline.distanceY) - 1);
         if (columnNum < -0.6 || rowNum < -0.6) {
             return;
         }
-        var x = this.timeline.bpmLines[columnNum].X;
-        var y = this.timeline.beatLines[rowNum].Y;
+        const x = this.timeline.bpmLines[columnNum].X;
+        const y = this.timeline.beatLines[rowNum].Y;
         console.log(this.timeline.distanceY);
         console.log(this.timeline.distanceX);
         console.log(columnNum + ":" + rowNum);
@@ -50,52 +43,60 @@ module.exports = /** @class */ (function () {
             }
             else {
                 console.log("add timestamp");
-                var note = new Timestamp(x, y, 10);
+                const note = new Timestamp(x, y, 10);
                 this.notes[columnNum][rowNum] = note;
                 note.draw(this.canvas);
             }
         }
-    };
-    Editor.prototype.drawEditor = function () {
-        var _this = this;
+    }
+    drawEditor() {
         console.log("draw editor");
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = 'rgb(123,123,123)';
+        this.ctx.fillStyle = '#EDEDED';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.topScale.draw(this.canvas);
         this.leftScale.draw(this.canvas);
         this.timeline.draw(this.canvas);
-        this.notes.forEach(function (notes) {
-            notes.forEach(function (note) {
+        this.notes.forEach(notes => {
+            notes.forEach(note => {
                 if (note != null) {
-                    note.draw(_this.canvas);
+                    note.draw(this.canvas);
                 }
             });
         });
         this.audioCanvas.draw(1);
-    };
-    return Editor;
-}());
-var AudioAmplitudeCanvas = /** @class */ (function () {
-    function AudioAmplitudeCanvas() {
     }
-    AudioAmplitudeCanvas.prototype.draw = function (scaleX) {
-    };
-    return AudioAmplitudeCanvas;
-}());
-var EditorSettings = /** @class */ (function () {
-    function EditorSettings() {
+}
+class AudioAmplitudeCanvas {
+    constructor() {
     }
-    return EditorSettings;
-}());
-var Timestamp = /** @class */ (function () {
-    function Timestamp(x, y, width) {
+    draw(scaleX) {
+    }
+}
+class TimestepLine {
+    constructor() {
+        this.x = 0;
+        this.canvas = document.getElementById("audio_amplitude_canvas");
+        this.ctx = this.canvas.getContext("2d");
+    }
+    movePosition(x) {
+        this.x = x;
+    }
+    draw() {
+    }
+}
+class EditorSettings {
+    constructor() {
+    }
+}
+class Timestamp {
+    constructor(x, y, width) {
         this.x = x;
         this.y = y;
         this.width = width;
     }
-    Timestamp.prototype.draw = function (canvas) {
-        var ctx = canvas.getContext('2d');
+    draw(canvas) {
+        const ctx = canvas.getContext('2d');
         ctx.fillStyle = "green";
         ctx.beginPath();
         ctx.moveTo(this.x - this.width, this.y);
@@ -103,33 +104,30 @@ var Timestamp = /** @class */ (function () {
         ctx.lineTo(this.x + this.width, this.y);
         ctx.lineTo(this.x, this.y + this.width);
         ctx.fill();
-    };
-    return Timestamp;
-}());
-var TopScale = /** @class */ (function () {
-    function TopScale(height) {
+    }
+}
+class TopScale {
+    constructor(height) {
         this.height = height;
     }
-    TopScale.prototype.draw = function (canvas) {
-        var ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'rgb(123,32,45)';
+    draw(canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#A6A6A6';
         ctx.fillRect(0, 0, canvas.width, this.height);
-    };
-    return TopScale;
-}());
-var LeftScale = /** @class */ (function () {
-    function LeftScale(width) {
+    }
+}
+class LeftScale {
+    constructor(width) {
         this.width = width;
     }
-    LeftScale.prototype.draw = function (canvas) {
-        var ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'rgb(123,32,45)';
+    draw(canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#A6A6A6';
         ctx.fillRect(0, 0, this.width, canvas.height);
-    };
-    return LeftScale;
-}());
-var Timeline = /** @class */ (function () {
-    function Timeline(offsetX, offsetY, canvas) {
+    }
+}
+class Timeline {
+    constructor(offsetX, offsetY, canvas) {
         this.canvas = canvas;
         this.scaleX = 1;
         this.scaleY = 1;
@@ -141,31 +139,23 @@ var Timeline = /** @class */ (function () {
         this.bpmLines = [];
         this.beatLines = [];
     }
-    Object.defineProperty(Timeline.prototype, "distanceX", {
-        get: function () {
-            console.log(this.bpmValue);
-            return (this.canvas.width - this.offsetX) / (this.bpmValue + 1);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Timeline.prototype, "distanceY", {
-        get: function () {
-            console.log(this.beatLinesCount);
-            return (this.canvas.height - this.offsetY) / (this.beatLinesCount + 1);
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Timeline.prototype.setBpmValue = function (bpm) {
+    get distanceX() {
+        console.log(this.bpmValue);
+        return (this.canvas.width - this.offsetX) / (this.bpmValue + 1);
+    }
+    get distanceY() {
+        console.log(this.beatLinesCount);
+        return (this.canvas.height - this.offsetY) / (this.beatLinesCount + 1);
+    }
+    setBpmValue(bpm) {
         this.bpmValue = bpm;
-    };
-    Timeline.prototype.setBeatLinesCount = function (beatLines) {
+    }
+    setBeatLinesCount(beatLines) {
         this.beatLinesCount = beatLines;
-    };
-    Timeline.prototype.draw = function (canv) {
-        var canvas = canv;
-        var ctx = canvas.getContext('2d');
+    }
+    draw(canv) {
+        const canvas = canv;
+        const ctx = canvas.getContext('2d');
         this.bpmLines = [];
         this.beatLines = [];
         var distanceX = this.distanceX; //canvas.width/(this.bpmValue+1);
@@ -178,69 +168,49 @@ var Timeline = /** @class */ (function () {
         for (var i = 1; i < canvas.height / (distanceY) - 1; i++) {
             this.beatLines.push(new BeatLine(this.offsetX, this.offsetY, i * distanceY));
         }
-        this.bpmLines.forEach(function (bpmLine) {
+        this.bpmLines.forEach(bpmLine => {
             bpmLine.draw(canvas);
         });
-        this.beatLines.forEach(function (beatLine) {
+        this.beatLines.forEach(beatLine => {
             beatLine.draw(canvas);
         });
-    };
-    return Timeline;
-}());
-var BPMLine = /** @class */ (function () {
-    function BPMLine(offsetX, offsetY, x) {
+    }
+}
+class BPMLine {
+    constructor(offsetX, offsetY, x) {
         this.x = x;
         this.offsetX = offsetX;
         this.offsetY = offsetY;
     }
-    BPMLine.prototype.draw = function (canvas) {
-        var ctx = canvas.getContext('2d');
+    draw(canvas) {
+        const ctx = canvas.getContext('2d');
         ctx.fillStyle = "black";
         ctx.beginPath();
         ctx.moveTo(this.x + this.offsetX, this.offsetY);
         ctx.lineTo(this.x + this.offsetX, canvas.height);
         ctx.stroke();
-    };
-    Object.defineProperty(BPMLine.prototype, "X", {
-        get: function () {
-            return this.x + this.offsetX;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return BPMLine;
-}());
-var BeatLine = /** @class */ (function () {
-    function BeatLine(offsetX, offsetY, y) {
+    }
+    get X() {
+        return this.x + this.offsetX;
+    }
+}
+class BeatLine {
+    constructor(offsetX, offsetY, y) {
         this.y = y;
         this.offsetX = offsetX;
         this.offsetY = offsetY;
     }
-    BeatLine.prototype.draw = function (canvas) {
-        var ctx = canvas.getContext('2d');
+    draw(canvas) {
+        const ctx = canvas.getContext('2d');
         ctx.fillStyle = "black";
         ctx.beginPath();
         ctx.moveTo(this.offsetX, this.y + this.offsetY);
         ctx.lineTo(canvas.width, this.y + this.offsetY);
         ctx.stroke();
-    };
-    Object.defineProperty(BeatLine.prototype, "Y", {
-        get: function () {
-            return this.y + this.offsetY;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return BeatLine;
-}());
-var TimestepLine = /** @class */ (function () {
-    function TimestepLine(x) {
-        this.x = x;
     }
-    TimestepLine.prototype.movePosition = function (x) {
-        this.x = x;
-    };
-    TimestepLine.prototype.draw = function (canvas) {
-    };
-    return TimestepLine;
-}());
+    get Y() {
+        return this.y + this.offsetY;
+    }
+}
+var editor = new Editor();
+module.exports = editor;

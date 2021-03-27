@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = class Editor {
+class Editor {
 
     notes: Array<Array<Timestamp>>;
     canvas: HTMLCanvasElement;
@@ -77,7 +77,7 @@ module.exports = class Editor {
     drawEditor() {
         console.log("draw editor")
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
-        this.ctx.fillStyle = 'rgb(123,123,123)'
+        this.ctx.fillStyle = '#EDEDED'
         this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height)
         this.topScale.draw(this.canvas);
         this.leftScale.draw(this.canvas);
@@ -95,6 +95,31 @@ class AudioAmplitudeCanvas {
     }
 
     draw(scaleX) {
+        
+
+
+        
+    }
+}
+
+
+class TimestepLine {
+    
+    x: number;
+    canvas: HTMLCanvasElement;
+    ctx:CanvasRenderingContext2D;
+
+    constructor() {
+        this.x = 0;
+        this.canvas = document.getElementById("audio_amplitude_canvas") as HTMLCanvasElement;
+        this.ctx = this.canvas.getContext("2d");
+    }
+
+    movePosition(x) {
+        this.x = x;
+    }
+
+    draw() {
         
     }
 }
@@ -139,7 +164,7 @@ class TopScale {
 
     draw(canvas) {
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'rgb(123,32,45)';
+        ctx.fillStyle = '#A6A6A6';
         ctx.fillRect(0,0,canvas.width,this.height);
     }
 }
@@ -154,7 +179,7 @@ class LeftScale {
 
     draw(canvas) {
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'rgb(123,32,45)';
+        ctx.fillStyle = '#A6A6A6';
         ctx.fillRect(0,0, this.width,canvas.height);
     }
 }
@@ -289,19 +314,5 @@ class BeatLine {
     }
 }
 
-class TimestepLine {
-   
-    x: number;
-    
-    constructor(x) {
-        this.x = x;
-    }
-
-    movePosition(x) {
-        this.x = x;
-    }
-
-    draw(canvas) {
-        
-    }
-}
+var editor = new Editor();
+module.exports = editor;

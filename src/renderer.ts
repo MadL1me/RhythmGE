@@ -1,11 +1,13 @@
-const { ipcRenderer, ipcMain } = require("electron"); 
-const Editor = require("./dist/editor"); 
-
-var howl = require("howler");
+// import { ipcRenderer, ipcMain } from "electron";
+// import { editor } from "./dist/editor";
+// import { Howler, Howl } from "howler";
 var Howler = require("howler");
 var Howl = require("howler");
+var ipcRenderer = require("electron");
+var ipcMain = require("electron");
+var editor = require("./dist/editor") as Editor;
 
-var editor = new Editor();
+editor.drawEditor();
 editor.drawEditor();
 
 document.getElementById('files').addEventListener('change', handleFileSelect, false);

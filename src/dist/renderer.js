@@ -1,15 +1,18 @@
-var _a = require("electron"), ipcRenderer = _a.ipcRenderer, ipcMain = _a.ipcMain;
-var Editor = require("./dist/editor");
-var howl = require("howler");
+// import { ipcRenderer, ipcMain } from "electron";
+// import { editor } from "./dist/editor";
+// import { Howler, Howl } from "howler";
 var Howler = require("howler");
 var Howl = require("howler");
-var editor = new Editor();
+var ipcRenderer = require("electron");
+var ipcMain = require("electron");
+var editor = require("./dist/editor");
+editor.drawEditor();
 editor.drawEditor();
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
 function canvasClickHandler(event) {
     editor.canvasClickHandle(event);
 }
-ipcRenderer.on("openDialog-reply", function (event, arg) {
+ipcRenderer.on("openDialog-reply", (event, arg) => {
     console.log(arg);
 });
 function handleFileSelect(event) {
@@ -30,7 +33,7 @@ function audioLoad(file) {
     console.log("audio load");
     var soundId = 0;
     var sound = new Howl({ src: [file.path] });
-    sound.on("play", function () {
+    sound.on("play", () => {
         analyser = Howler.ctx.createAnalyser();
         analyser.fftSize = 256;
         var dataArray = new Float32Array(analyser.frequencyBinCount);
@@ -63,9 +66,9 @@ function bmpValueChange(event) {
     editor.changeBpmValue(event.target.value);
 }
 var drop_zone = document.getElementById("drop_zone");
-drop_zone.ondrag = function (event) {
+drop_zone.ondrag = (event) => {
 };
-drop_zone.ondrop = function (ev) {
+drop_zone.ondrop = (ev) => {
     console.log('File(s) dropped');
     ev.preventDefault();
     if (ev.dataTransfer.items) {
@@ -85,7 +88,7 @@ drop_zone.ondrop = function (ev) {
         }
     }
 };
-drop_zone.ondragover = function (event) {
+drop_zone.ondragover = (event) => {
     event.preventDefault();
     console.log("fuck3");
 };
