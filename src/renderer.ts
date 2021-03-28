@@ -74,6 +74,7 @@ var editorCanvas = document.getElementById("editor_canvas");
 let keysPressed = [];
 
 editorCanvas.addEventListener('wheel', onCanvasWheel);
+editorCanvas.addEventListener('click', canvasClickHandler);
 window.addEventListener('keydown', onCanvasKeyDown);
 window.addEventListener('keyup', onCanvasKeyUp);
 
