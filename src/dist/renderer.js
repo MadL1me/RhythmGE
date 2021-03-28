@@ -47,6 +47,27 @@ function importBeatmap(event) {
 }
 function dropHandler(event) {
 }
+var editorCanvas = document.getElementById("editor_canvas");
+let keysPressed = [];
+editorCanvas.addEventListener('wheel', onCanvasWheel);
+window.addEventListener('keydown', onCanvasKeyDown);
+window.addEventListener('keyup', onCanvasKeyUp);
+function onCanvasKeyUp(event) {
+    delete keysPressed[event.key];
+    console.log("Key removed" + event.key);
+}
+function onCanvasKeyDown(event) {
+    keysPressed[event.key] = true;
+    console.log("Key pressed!" + event.key);
+}
+function onCanvasWheel(event) {
+    if (keysPressed['Control'])
+        editor.onCanvasResize(parseInt(event.deltaY));
+    else if (keysPressed['Shift'])
+        editor.onCanvasScroll(parseInt(event.deltaY), true);
+    else
+        editor.onCanvasScroll(parseInt(event.deltaY), false);
+}
 function beatLinesValueChange(event) {
     console.log("beat line changed");
     console.log(event.target.value);

@@ -1,43 +1,64 @@
 'use strict';
+Object.defineProperty(exports, "__esModule", { value: true });
+class Vec2 {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+}
 class Editor {
     constructor() {
+        this.scrollingSpeed = 0.2;
+        this.fastScrollingSpeed = 5;
+        this.relativePosition = new Vec2(0, 0);
         this.notes = [...Array(10)].map(e => Array(5));
         this.canvas = document.getElementById("editor_canvas");
         this.ctx = this.canvas.getContext("2d");
         this.ctx.translate(0.5, 0.5);
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
-        this.timeline = new Timeline(10, 10, this.canvas);
+        this.editorGrid = new EditorGrid(10, 10, this.canvas);
         this.audioCanvas = new AudioAmplitudeCanvas();
         this.drawEditor();
     }
     changeBeatlinesCount(beatLines) {
-        this.timeline.setBeatLinesCount(beatLines);
+        this.editorGrid.setBeatLinesCount(beatLines);
         this.drawEditor();
     }
     changeBpmValue(bpm) {
-        this.timeline.setBpmValue(bpm);
+        this.editorGrid.setBpmValue(bpm);
         this.drawEditor();
+    }
+    onCanvasScroll(mouseDelta, isSpeededUp) {
+        var resultedDelta = mouseDelta * this.scrollingSpeed;
+        if (isSpeededUp) {
+            resultedDelta *= this.fastScrollingSpeed;
+        }
+        this.relativePosition.x += resultedDelta;
+        console.log(this.relativePosition.x);
+        this.drawEditor();
+    }
+    onCanvasResize(mouseDelta) {
     }
     canvasClickHandle(event) {
         const rect = this.canvas.getBoundingClientRect();
         const clickX = event.clientX - rect.left;
         const clickY = event.clientY - rect.top;
-        var columnNum = Math.round((clickX - this.timeline.offsetX) / (this.timeline.distanceX) - 1);
-        var rowNum = Math.round((clickY - this.timeline.offsetY) / (this.timeline.distanceY) - 1);
+        var columnNum = Math.round((clickX - this.editorGrid.offset.x) / (this.editorGrid.distanceBetweenBeatLines) - 1);
+        var rowNum = Math.round((clickY - this.editorGrid.offset.y) / (this.editorGrid.distanceBetweenBpmLines) - 1);
         if (columnNum < -0.6 || rowNum < -0.6) {
             return;
         }
-        const x = this.timeline.bpmLines[columnNum].X;
-        const y = this.timeline.beatLines[rowNum].Y;
-        console.log(this.timeline.distanceY);
-        console.log(this.timeline.distanceX);
-        console.log(columnNum + ":" + rowNum);
-        console.log(Math.abs(x - clickX) + ":" + Math.abs(y - clickY));
+        const x = this.editorGrid.bpmLines[columnNum].X;
+        const y = this.editorGrid.beatLines[rowNum].Y;
+        //console.log(this.editorGrid.distanceBetweenBpmLines);
+        //console.log(this.editorGrid.distanceBetweenBeatLines);
+        //console.log(columnNum+":"+rowNum);
+        //console.log(Math.abs(x - clickX) + ":" + Math.abs(y - clickY))
         if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
             console.log(this.notes[columnNum][rowNum]);
             if (this.notes[columnNum][rowNum] != undefined && this.notes[columnNum][rowNum] != null) {
-                console.log("remove timestamp");
+                //console.log("remove timestamp");
                 this.notes[columnNum][rowNum] = null;
                 this.drawEditor();
             }
@@ -45,7 +66,7 @@ class Editor {
                 console.log("add timestamp");
                 const note = new Timestamp(x, y, 10);
                 this.notes[columnNum][rowNum] = note;
-                note.draw(this.canvas);
+                note.draw(this.canvas, this.relativePosition);
             }
         }
     }
@@ -56,11 +77,11 @@ class Editor {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.topScale.draw(this.canvas);
         this.leftScale.draw(this.canvas);
-        this.timeline.draw(this.canvas);
+        this.editorGrid.draw(this.relativePosition);
         this.notes.forEach(notes => {
             notes.forEach(note => {
                 if (note != null) {
-                    note.draw(this.canvas);
+                    note.draw(this.canvas, this.relativePosition);
                 }
             });
         });
@@ -91,18 +112,21 @@ class EditorSettings {
 }
 class Timestamp {
     constructor(x, y, width) {
-        this.x = x;
-        this.y = y;
+        this.pos = new Vec2(x, y);
         this.width = width;
     }
-    draw(canvas) {
+    changePosition(newPos) {
+        this.pos = newPos;
+    }
+    draw(canvas, offset) {
         const ctx = canvas.getContext('2d');
+        const pos = new Vec2(this.pos.x + offset.x, this.pos.y + offset.y);
         ctx.fillStyle = "green";
         ctx.beginPath();
-        ctx.moveTo(this.x - this.width, this.y);
-        ctx.lineTo(this.x, this.y - this.width);
-        ctx.lineTo(this.x + this.width, this.y);
-        ctx.lineTo(this.x, this.y + this.width);
+        ctx.moveTo(pos.x - this.width, pos.y);
+        ctx.lineTo(pos.x, pos.y - this.width);
+        ctx.lineTo(pos.x + this.width, pos.y);
+        ctx.lineTo(pos.x, pos.y + this.width);
         ctx.fill();
     }
 }
@@ -126,31 +150,31 @@ class LeftScale {
         ctx.fillRect(0, 0, this.width, canvas.height);
     }
 }
-class Timeline {
+class EditorGrid {
     constructor(offsetX, offsetY, canvas) {
         this.canvas = canvas;
-        this.scaleX = 1;
-        this.scaleY = 1;
         this.bpmValue = 10;
         this.beatLinesCount = 5;
-        this.offsetX = offsetX;
-        this.offsetY = offsetY;
+        this.offset = new Vec2(offsetX, offsetY);
         this.timestep = 0;
         this.bpmLines = [];
         this.beatLines = [];
     }
-    get distanceX() {
+    get distanceBetweenBeatLines() {
         console.log(this.bpmValue);
-        return (this.canvas.width - this.offsetX) / (this.bpmValue + 1);
+        return (this.canvas.width - this.offset.x) / (this.bpmValue + 1);
     }
-    get distanceY() {
+    get distanceBetweenBpmLines() {
         var a = 1;
         var b = this.beatLinesCount + a;
         console.log(b);
         console.log(this.beatLinesCount + 1);
-        console.log(this.canvas.height - this.offsetY);
-        console.log((this.canvas.height - this.offsetY) / (this.beatLinesCount + 1));
-        return (this.canvas.height - this.offsetY) / (this.beatLinesCount + 1);
+        console.log(this.canvas.height - this.offset.y);
+        console.log((this.canvas.height - this.offset.y) / (this.beatLinesCount + 1));
+        return (this.canvas.height - this.offset.y) / (this.beatLinesCount + 1);
+    }
+    setOffset(offset) {
+        this.offset = offset;
     }
     setBpmValue(bpm) {
         this.bpmValue = bpm;
@@ -160,20 +184,20 @@ class Timeline {
         this.beatLinesCount = beatLines;
         console.log(beatLines);
     }
-    draw(canv) {
-        const canvas = canv;
+    draw(relativePosition) {
+        const canvas = this.canvas;
         const ctx = canvas.getContext('2d');
         this.bpmLines = [];
         this.beatLines = [];
-        var distanceX = this.distanceX; //canvas.width/(this.bpmValue+1);
-        var distanceY = this.distanceY; //canvas.height/(this.beatLinesCount+1);
-        console.log(distanceX);
-        console.log(distanceY);
-        for (var i = 1; i < canvas.width / (distanceX) - 1; i++) {
-            this.bpmLines.push(new BPMLine(this.offsetX, this.offsetY, i * distanceX));
+        var distanceBetweenBeatLines = this.distanceBetweenBeatLines;
+        var distanceBetweenBpmLines = this.distanceBetweenBpmLines;
+        console.log(distanceBetweenBeatLines);
+        console.log(distanceBetweenBpmLines);
+        for (var i = 1; i < canvas.width / (distanceBetweenBeatLines) - 1; i++) {
+            this.bpmLines.push(new BPMLine(this.offset.x + relativePosition.x, this.offset.y + relativePosition.y, i * distanceBetweenBeatLines));
         }
         for (var i = 1; i <= this.beatLinesCount; i++) {
-            this.beatLines.push(new BeatLine(this.offsetX, this.offsetY, i * distanceY));
+            this.beatLines.push(new BeatLine(this.offset.x + relativePosition.x, this.offset.y + relativePosition.y, i * distanceBetweenBpmLines));
         }
         this.bpmLines.forEach(bpmLine => {
             bpmLine.draw(canvas);
@@ -186,37 +210,35 @@ class Timeline {
 class BPMLine {
     constructor(offsetX, offsetY, x) {
         this.x = x;
-        this.offsetX = offsetX;
-        this.offsetY = offsetY;
+        this.offset = new Vec2(offsetX, offsetY);
     }
     draw(canvas) {
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = "black";
         ctx.beginPath();
-        ctx.moveTo(this.x + this.offsetX, this.offsetY);
-        ctx.lineTo(this.x + this.offsetX, canvas.height);
+        ctx.moveTo(this.x + this.offset.x, this.offset.y);
+        ctx.lineTo(this.x + this.offset.x, canvas.height);
         ctx.stroke();
     }
     get X() {
-        return this.x + this.offsetX;
+        return this.x + this.offset.x;
     }
 }
 class BeatLine {
     constructor(offsetX, offsetY, y) {
         this.y = y;
-        this.offsetX = offsetX;
-        this.offsetY = offsetY;
+        this.offset = new Vec2(offsetX, offsetY);
     }
     draw(canvas) {
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = "black";
         ctx.beginPath();
-        ctx.moveTo(this.offsetX, this.y + this.offsetY);
-        ctx.lineTo(canvas.width, this.y + this.offsetY);
+        ctx.moveTo(this.offset.x, this.y + this.offset.y);
+        ctx.lineTo(canvas.width, this.y + this.offset.y);
         ctx.stroke();
     }
     get Y() {
-        return this.y + this.offsetY;
+        return this.y + this.offset.y;
     }
 }
 var editor = new Editor();
