@@ -1,6 +1,8 @@
 // import { ipcRenderer, ipcMain } from "electron";
 // import { editor } from "./dist/editor";
 // import { Howler, Howl } from "howler";
+//import Howl = require("howler");
+//import Howler = require("howler");
 var Howler = require("howler");
 var Howl = require("howler");
 var editor = require("./dist/editor");
@@ -15,29 +17,29 @@ function handleFileSelect(event) {
     audioLoad(files[0]);
     console.log(files[0]);
 }
-var analyser;
-function getanalysis() {
-    var dataArray = new Float32Array(analyser.frequencyBinCount);
-    analyser.getFloatTimeDomainData(dataArray);
-    console.log(dataArray);
-    var dataArray = new Float32Array(analyser.frequencyBinCount);
-    analyser.getFloatFrequencyData(dataArray);
-    console.log(dataArray);
+function playButtonClick() {
+    editor.onPlay();
 }
+function updateLoop() {
+    editor.updateLoop();
+}
+setInterval(updateLoop, 50);
+var analyser;
 function audioLoad(file) {
     console.log("audio load");
-    var soundId = 0;
-    var sound = new Howl({ src: [file.path] });
-    sound.on("play", () => {
-        analyser = Howler.ctx.createAnalyser();
-        analyser.fftSize = 256;
-        var dataArray = new Float32Array(analyser.frequencyBinCount);
-        analyser.getFloatTimeDomainData(dataArray);
-        console.log(dataArray);
-        console.log(soundId);
-        console.log(sound._soundById(soundId)._node.bufferSource.connect(analyser));
-    });
-    soundId = sound.play();
+    editor.onAudioLoad(file.path);
+    // var soundId = 0;
+    // var sound = new Howler.Howl({src: [file.path]});
+    // sound.on("play", () => {
+    //     analyser = Howler.ctx.createAnalyser();
+    //     analyser.fftSize = 256;
+    //     var dataArray = new Float32Array(analyser.frequencyBinCount);
+    //     analyser.getFloatTimeDomainData(dataArray);
+    //     console.log(dataArray);
+    //     console.log(soundId);
+    //     console.log(sound._soundById(soundId)._node.bufferSource.connect(analyser));
+    // });
+    // soundId = sound.play();
 }
 function dragOverhandler(event) {
 }

@@ -47,6 +47,7 @@
   "dependencies": {
     "common-js": "^0.3.8",
     "electron-squirrel-startup": "^1.0.0",
+    "esm": "^3.2.25",
     "howler": "^2.2.1"
   },
   "devDependencies": {

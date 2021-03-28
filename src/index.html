@@ -23,7 +23,7 @@
         </div>
           <input type="file" id="files" name="files[]"/>
           <output id="list"></output>
-          <button onclick='getanalysis()'>Get analysis</button>
+          <button onclick='playButtonClick()'>Play</button>
           <button onclick='loadAudioFile()' id="import_audio_btn"> Import Audio </button> 
           <button onclick='saveBeatmap()' id="save_beatmap_btn"> Save beatmap file </button>
           <button onclick='importBeatmap()' id="import_beatmap_btn"> Import beatmap file </button>
@@ -52,6 +52,7 @@
     </div>
 
     <!-- <script> var exports = {};</script>  -->
+    <!-- <script defer> var exports = {"__esModule": true};</script> -->
     <script defer src="dist/renderer.js"></script>
   </body>
 </html>
