@@ -22,10 +22,14 @@ class Editor {
 
     isPlaying : boolean;
 
-    relativePosition: Vec2 = new Vec2(0,0);
+    relativePosition: Vec2 = new Vec2(100,0);
     maxDeviation: Vec2 = new Vec2(100,100);
+    maxScale: Vec2 = new Vec2(1);
+    minScale: Vec2 = new Vec2();
+
     scale: Vec2 = new Vec2(10,1);
     scrollingSpeed : number = 0.2;
+    resizingSpeed: number = 0.01;
     fastScrollingSpeed :number = 5;
 
     notes: Array<Array<Timestamp>>;
@@ -40,15 +44,16 @@ class Editor {
 
     constructor() {
         this.isPlaying = false;
-        this.notes = [...Array(10)].map(e => Array(5));
         
+        this.notes = Array(5).fill(null).map(() => Array(5));
+
         this.canvas = document.getElementById("editor_canvas") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d");
         this.ctx.translate(0.5,0.5);
         
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
-        this.editorGrid = new EditorGrid(10, 10, this.canvas);
+        this.editorGrid = new EditorGrid(0, 10, this.canvas);
         this.audioCanvas = new AudioAmplitudeCanvas();
         this.timestepLine = new TimestepLine();
 
@@ -75,7 +80,12 @@ class Editor {
 
     onAudioLoad(audioPath : string) {
         this.audioController = new AudioController(audioPath);
-        this.audioController.sound.on("load", () => { this.drawEditor(); })
+        this.audioController.sound.on("load", () => 
+        { 
+            var gridSize = this.editorGrid.getGridSize();
+            this.notes = Array(gridSize.y).fill(null).map(() => Array(gridSize.x));
+            this.drawEditor(); 
+        })
     }
 
     onPlay() {
@@ -103,7 +113,10 @@ class Editor {
     }
 
     onCanvasResize(mouseDelta : number) {
-
+        var resultedDelta = mouseDelta*this.resizingSpeed;
+        console.log("resized!!");
+        this.scale.x += resultedDelta;
+        this.drawEditor();
     }
 
     canvasClickHandle(event) {
@@ -153,7 +166,7 @@ class Editor {
         this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height)
         
         this.editorGrid.draw(this.relativePosition, 
-            this.audioController != null && this.audioController.sound.state()=="loaded");
+            this.audioController != null && this.audioController.sound.state()=="loaded", this.scale, this);
 
         this.notes.forEach(notes => { notes.forEach(note => {
             if (note!=null) { note.draw(this.canvas, this.relativePosition);
@@ -195,6 +208,7 @@ class AudioController {
     play() {
         this.soundId = this.sound.play();
         console.log(this.soundId);
+        console.log(this.analyser); 
     }
 
     getDomainData() : Float32Array {
@@ -329,7 +343,7 @@ class EditorGrid {
 
     constructor(offsetX : number, offsetY: number, canvas: HTMLCanvasElement) {
         this.canvas = canvas;
-        this.bpmValue = 80;
+        this.bpmValue = 60;
         this.beatLinesCount = 5;
         this.offset = new Vec2(offsetX, offsetY);
         this.timestep = 0;
@@ -359,7 +373,11 @@ class EditorGrid {
         console.log(beatLines);
     }
 
-    draw(relativePosition: Vec2, drawBpmLines: boolean) {
+    getGridSize() : Vec2 {
+        return new Vec2(this.bpmValue, this.beatLinesCount);    
+    }
+
+    draw(relativePosition: Vec2, drawBpmLines: boolean, scale: Vec2, editor: Editor) {
         const canvas = this.canvas;
         const ctx = canvas.getContext('2d');
 
@@ -381,8 +399,12 @@ class EditorGrid {
         });
 
         if (drawBpmLines) {
-            for (var i=1; i<canvas.width/(distanceBetweenBeatLines)-1; i++){ 
-                this.bpmLines.push(new BPMLine(this.offset.x+relativePosition.x, this.offset.y, i*distanceBetweenBeatLines));
+            var soundLength = editor.audioController.sound.duration();
+            var bpmCount = (soundLength/60) * this.bpmValue;
+            var pixelsPerBeat = soundLength / bpmCount;
+
+            for (var i=1; i<bpmCount; i++){ 
+                this.bpmLines.push(new BPMLine(this.offset.x+relativePosition.x, this.offset.y, i*scale.x));
             }
             
             this.bpmLines.forEach(bpmLine => {
