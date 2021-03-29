@@ -52,6 +52,7 @@ function onCanvasKeyDown(event) {
     console.log("Key pressed!" + event.key);
 }
 function onCanvasWheel(event) {
+    console.log(event);
     if (keysPressed['Control'])
         editor.onCanvasResize(parseInt(event.deltaY));
     else if (keysPressed['Shift'])
