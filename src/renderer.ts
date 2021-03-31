@@ -6,10 +6,8 @@
 
 var Howler = require("howler");
 var Howl = require("howler");
-var editor = require("./dist/editor");
-
-editor.drawEditor();
-editor.drawEditor();
+var { editor, editorData } = require("./dist/editor");
+//var editorData = require("./dist/editor");
 
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
@@ -75,7 +73,7 @@ function onCanvasKeyDown(event) {
 }
 
 function onCanvasWheel(event) {
-    console.log(event);
+    // console.log(event);
     if (keysPressed['Control'])
         editor.onCanvasResize(parseInt(event.deltaY));
     else if (keysPressed['Shift'])

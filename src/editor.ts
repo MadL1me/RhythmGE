@@ -25,7 +25,7 @@ class AppSettings {
     }
 }
 
-class EditorData {
+class EditorData { 
     isPlaying: boolean = false;
     audioLoaded: boolean = false;
     relativePosition: Vec2 = new Vec2(100,0);
@@ -56,7 +56,7 @@ class Editor {
 
         this.canvas = document.getElementById("editor_canvas") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d");
-        this.ctx.translate(0.5,0.5);
+        //this.ctx.translate(0.5,0.5);
         
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
@@ -93,6 +93,7 @@ class Editor {
             var gridSize = this.editorGrid.getGridSize();
             this.notes = Array(gridSize.y).fill(null).map(() => Array(gridSize.x));
             this.drawEditor(); 
+            this.editorGrid.initBpmLines();
         })
     }
 
@@ -153,8 +154,8 @@ class Editor {
         console.log(columnNum);
         console.log(rowNum);
 
-        const x = this.editorGrid.bpmLines[columnNum].X - editorData.relativePosition.x;
-        const y = this.editorGrid.beatLines[rowNum].Y - editorData.relativePosition.y;
+        const x = this.editorGrid.bpmLines[columnNum].x+editorData.relativePosition.x - editorData.relativePosition.x;
+        const y = this.editorGrid.beatLines[rowNum].y+editorData.relativePosition.y - editorData.relativePosition.y;
 
         //console.log(this.editorGrid.distanceBetweenBpmLines);
         //console.log(this.editorGrid.distanceBetweenBeatLines);
@@ -273,16 +274,22 @@ class TimestepLine {
     }
 
     draw(offsetX : number) {
+        var x = this.x+offsetX;
+        if (x>=this.canvas.width)
+            x = this.canvas.width-5;
+        if (x<=0)
+            x = 0;
+
         this.ctx.beginPath();
         this.ctx.fillStyle = "#f7075b";
-        this.ctx.moveTo(this.x+offsetX, 10);
-        this.ctx.lineTo(this.x+offsetX-5, 0);
-        this.ctx.lineTo(this.x+offsetX+5, 0);
+        this.ctx.moveTo(x, 10);
+        this.ctx.lineTo(x-5, 0);
+        this.ctx.lineTo(x+5, 0);
         this.ctx.fill();
 
         this.ctx.strokeStyle = "#f7075b";
-        this.ctx.moveTo(this.x+offsetX,0);
-        this.ctx.lineTo(this.x+offsetX, this.canvas.height);
+        this.ctx.moveTo(x,0);
+        this.ctx.lineTo(x, this.canvas.height);
         this.ctx.stroke();
     }
 }
@@ -325,7 +332,7 @@ class TopScale {
     draw(canvas : HTMLCanvasElement) {
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#A6A6A6';
-        ctx.fillRect(0,0,canvas.width,this.height);
+        ctx.fillRect(0,-5,canvas.width,this.height+5);
     }
 }
 
@@ -362,6 +369,8 @@ class EditorGrid {
         this.timestep = 0;
         this.bpmLines = [];
         this.beatLines = [];
+
+        this.initGrid();
     }
 
     distanceBetweenBpmLines(editor: Editor) {
@@ -390,24 +399,35 @@ class EditorGrid {
         return new Vec2(this.bpmValue, this.beatLinesCount);    
     }
 
+    initGrid() {
+        for (var i=0; i<this.beatLinesCount; i++){ 
+            this.beatLines.push(new BeatLine(i*this.distanceBetweenBeatLines()));
+        }
+    }
+
+    initBpmLines() {
+        var soundLength = editor.audioController.sound.duration();
+        var bpmCount = (soundLength/60) * this.bpmValue;
+        
+        for (var i=0; i<bpmCount; i++) {
+            this.bpmLines.push(new BPMLine(i*this.distanceBetweenBpmLines(editor)));
+        }
+    }
+
     draw(relativePosition: Vec2, drawBpmLines: boolean, scale: Vec2, editor: Editor) {
         const canvas = this.canvas;
         const ctx = canvas.getContext('2d');
 
-        this.bpmLines = [];
-        this.beatLines = [];
-
-        var distanceBetweenBeatLines = this.distanceBetweenBeatLines();
-
         //console.log(distanceBetweenBeatLines);
         //console.log(distanceBetweenBpmLines);
         
-        for (var i=1; i<=this.beatLinesCount; i++){ 
-            this.beatLines.push(new BeatLine(0, relativePosition.y, i*distanceBetweenBeatLines));
+        for (var i=0; i<this.beatLines.length; i++){ 
+            this.beatLines[i].moveY((i+1)*this.distanceBetweenBeatLines());
         }
 
         this.beatLines.forEach(beatLine => {
-            beatLine.draw(canvas);
+            if (beatLine.isActive)
+                beatLine.draw(editorData.relativePosition, canvas);
         });
 
         if (drawBpmLines) {
@@ -415,65 +435,96 @@ class EditorGrid {
             var bpmCount = (soundLength/60) * this.bpmValue;
             var pixelsPerBeat = soundLength / bpmCount;
 
-            for (var i=0; i<bpmCount; i++){ 
-                this.bpmLines.push(new BPMLine(relativePosition.x, 0, i*scale.x*pixelsPerBeat));
+            console.log(this.bpmLines.length);
+            
+            for (var i=0; i<this.bpmLines.length || (i+1)*scale.x*pixelsPerBeat > canvas.width; i++){ 
+                console.log("bpm line is pushed");
+                this.bpmLines[i].moveX((i+1)*scale.x*pixelsPerBeat);
             }
             
             this.bpmLines.forEach(bpmLine => {
-                bpmLine.draw(canvas)
+                if (bpmLine.isActive)
+                    bpmLine.draw(editorData.relativePosition, canvas)
             });
         }
     }
 }
 
 class BPMLine {
-    
     x: number;
-    offset: Vec2;
+    isActive: boolean = true;
     
-    constructor(offsetX : number, offsetY: number, x : number) {
+    constructor(x : number) {
         this.x = x;
-        this.offset = new Vec2(offsetX, offsetY);
     }
 
-    draw(canvas : HTMLCanvasElement) {
+    draw(offset: Vec2, canvas : HTMLCanvasElement) {
+        if (!this.isActive)
+            return;
+        
         const ctx = canvas.getContext('2d');
         ctx.strokeStyle = "black";
 
         ctx.beginPath();
-        ctx.moveTo(this.x + this.offset.x, this.offset.y);
-        ctx.lineTo(this.x + this.offset.x, canvas.height);
+        ctx.moveTo(this.x + offset.x, offset.y);
+        ctx.lineTo(this.x + offset.x, canvas.height);
         ctx.stroke();
     }
 
-    get X() {
-        return this.x + this.offset.x;
+    moveX(x: number) {
+        this.x = x;
+    }
+
+    activate() {
+        this.isActive = true;
+    }
+
+    deactivate() {
+        this.isActive = false;
     }
 }
+
+class CreatableTimestampLine {
+    
+    x:number;
+    offset: Vec2;
+
+    constructor(x: number) {
+        
+    }
+}
+
 
 class BeatLine {
     
     y: number;
-    offset: Vec2;
-    
-    constructor(offsetX: number, offsetY:number, y:number) {
+    isActive: boolean = true;
+
+    constructor(y:number) {
         this.y = y;
-        this.offset = new Vec2(offsetX, offsetY)
     }
 
-    draw(canvas :HTMLCanvasElement) {
+    draw(offset : Vec2, canvas : HTMLCanvasElement) {
         const ctx = canvas.getContext('2d');
         ctx.strokeStyle = "black";
         ctx.beginPath();
-        ctx.moveTo(this.offset.x, this.y + this.offset.y);
-        ctx.lineTo(canvas.width, this.y + this.offset.y);
+        ctx.moveTo(0, this.y + offset.y);
+        ctx.lineTo(canvas.width, this.y + offset.y);
         ctx.stroke();
     }
+    
+    moveY(y: number) {
+        this.y = y;
+    }
 
-    get Y() {
-        return this.y + this.offset.y;
+    activate() {
+        this.isActive = true;
+    }
+
+    deactivate() {
+        this.isActive = false;
     }
 }
 
 const editor = new Editor();
-module.exports = editor;
+module.exports = { editor, editorData };
