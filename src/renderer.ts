@@ -6,7 +6,7 @@
 
 var Howler = require("howler");
 var Howl = require("howler");
-var { editor, editorData } = require("./dist/editor");
+var editor = require("./dist/editor");
 //var editorData = require("./dist/editor");
 
 document.getElementById('files').addEventListener('change', handleFileSelect, false);

@@ -8,29 +8,76 @@ class Vec2 {
         this.x = x;
         this.y = y;
     }
+    static Sum(v1, v2) {
+        return new Vec2(v1.x + v2.x, v1.y + v2.y);
+    }
+    static Multiply(v1, v2) {
+        return new Vec2(v1.x * v2.x, v1.y * v2.y);
+    }
 }
 class AppSettings {
     constructor() {
     }
 }
-class EditorData {
+class Transform {
     constructor() {
-        this.isPlaying = false;
-        this.audioLoaded = false;
-        this.relativePosition = new Vec2(100, 0);
+        this._parent = null;
+        this._children = null;
+        this._position = new Vec2(100, 0);
+        this.scale = new Vec2(10, 1);
+        this.rotation = new Vec2(0, 0);
         this.maxDeviation = new Vec2(100, 100);
         this.maxScale = new Vec2(100, 100);
         this.minScale = new Vec2(1, 1);
-        this.scale = new Vec2(10, 1);
+    }
+    get position() {
+        if (parent == null)
+            return this._position;
+        return Vec2.Sum(this._position, this._parent.position);
+    }
+    set position(value) {
+        var oldVal = this._position;
+        this._position = value;
+        this._children.forEach(child => {
+            child.position = Vec2.Sum(child.position, oldVal);
+        });
+    }
+    canvasPosition() {
+        return this.worldToCanvas(this.position);
+    }
+    worldToCanvas(worldCoords) {
+        return new Vec2(this.position.x - worldCoords.x / this.scale.x, this.position.y - worldCoords.x / this.scale.y);
+    }
+    canvasToWorld(canvasCoords) {
+        return new Vec2(this.position.x - canvasCoords.x * this.scale.x, this.position.y - canvasCoords.y * this.scale.y);
+    }
+    get parent() {
+        return this._parent;
+    }
+    set parent(parent) {
+        if (parent == null) {
+            parent.removeChild(this);
+            this._parent = parent;
+            return;
+        }
+        this._parent = parent;
+        this._parent?.addChild(this);
+    }
+    addChild(child) {
+        this._children.push(child);
+    }
+    removeChild(child) {
+    }
+}
+class Editor {
+    constructor() {
+        this.isPlaying = false;
+        this.audioLoaded = false;
         this.scrollingSpeed = 0.2;
         this.resizingSpeed = 0.01;
         this.fastScrollingSpeed = 5;
-    }
-}
-const editorData = new EditorData();
-class Editor {
-    constructor() {
         this.notes = Array(5).fill(null).map(() => Array(5));
+        this.transform = new Transform();
         this.canvas = document.getElementById("editor_canvas");
         this.ctx = this.canvas.getContext("2d");
         //this.ctx.translate(0.5,0.5);
@@ -50,14 +97,14 @@ class Editor {
         this.drawEditor();
     }
     updateLoop() {
-        if (!editorData.isPlaying)
+        if (!this.isPlaying)
             return;
         this.drawEditor();
     }
     onAudioLoad(audioPath) {
-        this.audioController = new AudioController(audioPath);
+        this.audioController = new AudioController(this, audioPath, this.timestepLine);
         this.audioController.sound.on("load", () => {
-            editorData.audioLoaded = true;
+            this.audioLoaded = true;
             var gridSize = this.editorGrid.getGridSize();
             this.notes = Array(gridSize.y).fill(null).map(() => Array(gridSize.x));
             this.drawEditor();
@@ -65,40 +112,52 @@ class Editor {
         });
     }
     onPlay() {
-        editorData.isPlaying = true;
+        if (this.isPlaying == true)
+            return;
+        this.isPlaying = true;
         this.audioController.play();
     }
     onPause() {
-        editorData.isPlaying = false;
+        if (this.isPlaying == false)
+            return;
+        this.isPlaying = false;
         this.audioController.sound.pause();
     }
     onCanvasScroll(mouseDelta, isSpeededUp) {
-        var resultedDelta = mouseDelta * editorData.scrollingSpeed;
+        var resultedDelta = mouseDelta * this.scrollingSpeed;
         if (isSpeededUp)
-            resultedDelta *= editorData.fastScrollingSpeed;
-        editorData.relativePosition.x += resultedDelta;
-        if (editorData.relativePosition.x > editorData.maxDeviation.x)
-            editorData.relativePosition.x = editorData.maxDeviation.x;
-        console.log(editorData.relativePosition.x);
+            resultedDelta *= this.fastScrollingSpeed;
+        this.transform.position.x += resultedDelta;
+        if (this.transform.position.x > this.transform.maxDeviation.x)
+            this.transform.position.x = this.transform.maxDeviation.x;
+        console.log(this.transform.position.x);
         this.drawEditor();
     }
     onCanvasResize(mouseDelta) {
-        var resultedDelta = mouseDelta * editorData.resizingSpeed;
+        var resultedDelta = mouseDelta * this.resizingSpeed;
         console.log("resized!!");
-        editorData.scale.x += resultedDelta;
-        console.log(editorData.scale);
-        if (editorData.scale.x <= editorData.minScale.x)
-            editorData.scale.x = editorData.minScale.x;
-        if (editorData.scale.x >= editorData.maxScale.x)
-            editorData.scale.x = editorData.maxScale.x;
+        var oldScale = this.transform.scale.x;
+        this.transform.scale.x -= resultedDelta;
+        console.log(this.transform.scale);
+        this.transform.position.x = this.transform.position.x * this.transform.scale.x / oldScale;
+        if (this.transform.scale.x <= this.transform.minScale.x)
+            this.transform.scale.x = this.transform.minScale.x;
+        if (this.transform.scale.x >= this.transform.maxScale.x)
+            this.transform.scale.x = this.transform.maxScale.x;
         this.drawEditor();
     }
     canvasClickHandle(event) {
-        if (!editorData.audioLoaded)
+        if (!this.audioLoaded)
             return;
         const rect = this.canvas.getBoundingClientRect();
-        const clickX = event.clientX - rect.left - editorData.relativePosition.x;
-        const clickY = event.clientY - rect.top - editorData.relativePosition.y;
+        const clickX = event.clientX - rect.left - this.transform.position.x;
+        const clickY = event.clientY - rect.top - this.transform.position.y;
+        const click = new Vec2(clickX, clickY);
+        console.log(clickY);
+        if (clickY <= this.topScale.height) {
+            console.log("Set Music!!!");
+            this.audioController.setMusicFromCanvasPosition(click, this);
+        }
         var columnNum = Math.round((clickX) / (this.editorGrid.distanceBetweenBeatLines()) - 1);
         var rowNum = Math.round((clickY) / (this.editorGrid.distanceBetweenBpmLines(this)) - 1);
         if (columnNum < -0.6 || rowNum < -0.6) {
@@ -106,8 +165,8 @@ class Editor {
         }
         console.log(columnNum);
         console.log(rowNum);
-        const x = this.editorGrid.bpmLines[columnNum].x + editorData.relativePosition.x - editorData.relativePosition.x;
-        const y = this.editorGrid.beatLines[rowNum].y + editorData.relativePosition.y - editorData.relativePosition.y;
+        const x = this.editorGrid.bpmLines[columnNum].x + this.transform.position.x - this.transform.position.x;
+        const y = this.editorGrid.beatLines[rowNum].y + this.transform.position.y - this.transform.position.y;
         //console.log(this.editorGrid.distanceBetweenBpmLines);
         //console.log(this.editorGrid.distanceBetweenBeatLines);
         console.log(columnNum + ":" + rowNum);
@@ -123,34 +182,36 @@ class Editor {
                 console.log("add timestamp");
                 const note = new Timestamp(x, y, 10);
                 this.notes[columnNum][rowNum] = note;
-                note.draw(this.canvas, editorData.relativePosition);
+                note.draw(this.canvas, this.transform.position);
             }
         }
     }
     drawEditor() {
-        console.log("draw editor");
+        //console.log("draw editor")
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = '#EDEDED';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.editorGrid.draw(editorData.relativePosition, this.audioController != null && this.audioController.sound.state() == "loaded", editorData.scale, this);
+        this.editorGrid.draw(this.transform.position, this.audioController != null && this.audioController.sound.state() == "loaded", this.transform.scale, this);
         this.notes.forEach(notes => {
             notes.forEach(note => {
                 if (note != null) {
-                    note.draw(this.canvas, editorData.relativePosition);
+                    note.draw(this.canvas, this.transform.position);
                 }
             });
         });
-        this.audioCanvas.draw(editorData.relativePosition);
+        this.audioCanvas.draw(this.transform.position);
         this.topScale.draw(this.canvas);
         this.leftScale.draw(this.canvas);
-        if (editorData.isPlaying) {
-            this.timestepLine.movePosition(editorData.scale.x * this.audioController.sound.seek());
+        if (this.isPlaying) {
+            this.timestepLine.movePosition(this.transform.scale.x * this.audioController.sound.seek());
         }
-        this.timestepLine.draw(editorData.relativePosition.x);
+        this.timestepLine.draw(this.transform.position.x);
     }
 }
 class AudioController {
-    constructor(soundPath) {
+    constructor(editor, soundPath, timestepLine) {
+        this.editor = editor;
+        this.timestepLine = timestepLine;
         this.sound = new Howl({ src: [soundPath] });
         this.analyser = Howler.ctx.createAnalyser();
         this.analyser.fftSize = 256;
@@ -164,6 +225,12 @@ class AudioController {
         this.soundId = this.sound.play();
         console.log(this.soundId);
         console.log(this.analyser);
+    }
+    setMusicFromCanvasPosition(position, editor) {
+        this.timestepLine.movePosition(this.editor.transform.canvasToWorld(position).x);
+        editor;
+    }
+    setMusicFromTimePosition() {
     }
     getDomainData() {
         var dataArray = new Float32Array(this.analyser.frequencyBinCount);
@@ -261,7 +328,7 @@ class EditorGrid {
         var soundLength = editor.audioController.sound.duration();
         var bpmCount = (soundLength / 60) * this.bpmValue;
         var pixelsPerBeat = soundLength / bpmCount;
-        return pixelsPerBeat * editorData.scale.x;
+        return pixelsPerBeat * editor.transform.scale.x;
         //return (this.canvas.width)/(this.bpmValue+1);
     }
     distanceBetweenBeatLines() {
@@ -290,7 +357,7 @@ class EditorGrid {
             this.bpmLines.push(new BPMLine(i * this.distanceBetweenBpmLines(editor)));
         }
     }
-    draw(relativePosition, drawBpmLines, scale, editor) {
+    draw(position, drawBpmLines, scale, editor) {
         const canvas = this.canvas;
         const ctx = canvas.getContext('2d');
         //console.log(distanceBetweenBeatLines);
@@ -300,20 +367,20 @@ class EditorGrid {
         }
         this.beatLines.forEach(beatLine => {
             if (beatLine.isActive)
-                beatLine.draw(editorData.relativePosition, canvas);
+                beatLine.draw(position, canvas);
         });
         if (drawBpmLines) {
             var soundLength = editor.audioController.sound.duration();
             var bpmCount = (soundLength / 60) * this.bpmValue;
             var pixelsPerBeat = soundLength / bpmCount;
-            console.log(this.bpmLines.length);
-            for (var i = 0; i < this.bpmLines.length || (i + 1) * scale.x * pixelsPerBeat > canvas.width; i++) {
-                console.log("bpm line is pushed");
-                this.bpmLines[i].moveX((i + 1) * scale.x * pixelsPerBeat);
+            //console.log(this.bpmLines.length);
+            for (var i = 0; i < this.bpmLines.length; i++) {
+                //console.log("bpm line is pushed");
+                this.bpmLines[i].moveX(i * scale.x * pixelsPerBeat);
             }
             this.bpmLines.forEach(bpmLine => {
                 if (bpmLine.isActive)
-                    bpmLine.draw(editorData.relativePosition, canvas);
+                    bpmLine.draw(position, canvas);
             });
         }
     }
@@ -371,4 +438,4 @@ class BeatLine {
     }
 }
 const editor = new Editor();
-module.exports = { editor, editorData };
+module.exports = editor;
