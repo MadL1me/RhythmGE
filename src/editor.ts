@@ -54,11 +54,11 @@ class Transform {
     }
 
     set localPosition(value: Vec2) {
-        var oldLocalPos = this._localPosition;
+        //var oldLocalPos = this._localPosition;
         this._localPosition = value;
-        this._children.forEach(child => {
-            child.position = Vec2.Sum(child.position, oldLocalPos);
-        });
+        //this._children.forEach(child => {
+        //    child.localPosition = Vec2.Sum(child.position, value);
+        //});
     }
 
     get position() : Vec2 {
@@ -68,10 +68,15 @@ class Transform {
     }
 
     set position(value: Vec2) {
-        var pos = this.position;
+        if (this.parent == null) {
+            this.localPosition = value;
+            return;
+        }
+        
+        var pos = Vec2.Substract(value, this.position);
         console.log("position change")
-        this.localPosition = Vec2.Substract(pos, value);
-    }
+        this.localPosition = Vec2.Sum(this.localPosition, pos);
+    } 
 
     canvasPosition() : Vec2 {
         return this.worldToCanvas(this.position);
@@ -116,6 +121,36 @@ class Transform {
     }
 }
 
+// var a = new Transform();
+// var b = new Transform();
+// var c = new Transform();
+// b.parent = a;
+// c.parent = a;
+
+// a.position = new Vec2(0,0);
+// b.localPosition = new Vec2(10,0);
+// c.localPosition = new Vec2(15,0);
+
+// console.log(a.position);
+// console.log(b.position);
+// console.log(c.position);
+
+// a.localPosition = new Vec2(10,0);
+// console.log(a.position);
+// console.log(b.position);
+// console.log(c.position);
+        
+// a.position = new Vec2(5,0);
+// console.log(a.position);
+// console.log(b.position);
+// console.log(c.position);
+
+// b.position = new Vec2(0,0);
+// console.log(a.position);
+// console.log(b.position);
+// console.log(b.localPosition);
+// console.log(c.position);
+
 class Editor {
 
     isPlaying: boolean = false;
@@ -135,7 +170,7 @@ class Editor {
     audioController: AudioController; 
     timestepLine: TimestepLine;
 
-    constructor() {
+    constructor() {        
         this.notes = Array(5).fill(null).map(() => Array(5));
         this.transform = new Transform();
         this.transform.position = new Vec2(100,0);
@@ -173,6 +208,7 @@ class Editor {
 
     onAudioLoad(audioPath : string) {
         this.audioController = new AudioController(this, audioPath, this.timestepLine);
+        this.audioController.timestepLine.transform.parent = this.transform;
         this.audioController.sound.on("load", () => 
         { 
             this.audioLoaded = true;
@@ -300,7 +336,7 @@ class Editor {
         this.leftScale.draw(this.canvas);
 
         if (this.isPlaying){
-            this.timestepLine.transform.position = new Vec2(this.transform.scale.x*this.audioController.sound.seek(), this.transform.scale.y);
+            this.timestepLine.transform.localPosition = new Vec2(this.transform.scale.x*this.audioController.sound.seek(), this.transform.scale.y);
         }
 
         this.timestepLine.draw();
@@ -320,6 +356,8 @@ class AudioController {
 
         this.editor = editor;
         this.timestepLine = timestepLine;
+        this.timestepLine.transform.parent = this.editor.transform;
+
         this.sound = new Howl({src:[soundPath]});
         
         this.analyser = Howler.ctx.createAnalyser();
@@ -339,8 +377,8 @@ class AudioController {
     }
 
     setMusicFromCanvasPosition(position : Vec2, editor : Editor) {
-        this.timestepLine.transform.position = this.editor.transform.canvasToWorld(position);
-        editor
+        this.timestepLine.transform.localPosition = this.editor.transform.canvasToWorld(position);
+        //editor
     }
 
     setMusicFromTimePosition() {
@@ -579,13 +617,13 @@ class BeatLine {
     }
 
     draw(canvas : HTMLCanvasElement) {
-        console.log("betline draw")
+        //console.log("betline draw")
         console.log(this.transform.position);
         const ctx = canvas.getContext('2d');
         ctx.strokeStyle = "black";
         ctx.beginPath();
-        ctx.moveTo(0, -this.transform.position.y);
-        ctx.lineTo(canvas.width, -this.transform.position.y);
+        ctx.moveTo(0, this.transform.position.y);
+        ctx.lineTo(canvas.width, this.transform.position.y);
         ctx.stroke();
     }
 
