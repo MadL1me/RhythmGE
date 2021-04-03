@@ -37,7 +37,7 @@ function importBeatmap(event) {
 function dropHandler(event) {
 }
 var editorCanvas = document.getElementById("editor_canvas");
-let keysPressed = [];
+var keysPressed = [];
 editorCanvas.addEventListener('wheel', onCanvasWheel);
 editorCanvas.addEventListener('click', canvasClickHandler);
 window.addEventListener('keydown', onCanvasKeyDown);
@@ -69,9 +69,9 @@ function bmpValueChange(event) {
     editor.changeBpmValue(parseInt(event.target.value));
 }
 var drop_zone = document.getElementById("drop_zone");
-drop_zone.ondrag = (event) => {
+drop_zone.ondrag = function (event) {
 };
-drop_zone.ondrop = (ev) => {
+drop_zone.ondrop = function (ev) {
     console.log('File(s) dropped');
     ev.preventDefault();
     if (ev.dataTransfer.items) {
@@ -91,7 +91,8 @@ drop_zone.ondrop = (ev) => {
         }
     }
 };
-drop_zone.ondragover = (event) => {
+drop_zone.ondragover = function (event) {
     event.preventDefault();
     console.log("fuck3");
 };
+//# sourceMappingURL=renderer.js.map

@@ -1,19 +1,15 @@
 'use strict';
 
 import { off } from "node:process";
-
-//var Howler = require("howler");
-//var Howl = require("howler");
-
 const {Howl, Howler} = require('howler');
 
 class Vec2 {
     
-    x: number;
-    y: number;
+    readonly x: number;
+    readonly y: number;
     
     constructor(x:number, y:number) {
-        this.x = x;
+        this.x = x;  
         this.y = y;
     }
 
@@ -21,8 +17,16 @@ class Vec2 {
         return new Vec2(v1.x+v2.x, v1.y+v2.y);
     }
 
+    static Substract(v1: Vec2, v2: Vec2) : Vec2 {
+        return new Vec2(v1.x-v2.x, v1.y-v2.y);
+    }
+
     static Multiply(v1: Vec2, v2: Vec2) : Vec2 { 
         return new Vec2(v1.x*v2.x, v1.y*v2.y);
+    }
+
+    static Divide(v1: Vec2, v2: Vec2) : Vec2 {
+        return new Vec2(v1.x/v2.x, v1.y/v2.y);
     }
 }
 
@@ -35,8 +39,8 @@ class AppSettings {
 class Transform {
 
     private _parent: Transform = null;
-    private _children: Array<Transform> = null;
-    private _position: Vec2 = new Vec2(100,0);
+    private _children: Array<Transform> = new Array<Transform>();
+    private _localPosition: Vec2 = new Vec2(0,0);
     
     scale: Vec2 = new Vec2(10,1);
     rotation: Vec2 = new Vec2(0,0);
@@ -45,18 +49,28 @@ class Transform {
     maxScale: Vec2 = new Vec2(100, 100);
     minScale: Vec2 = new Vec2(1, 1);
 
+    get localPosition() : Vec2 {
+        return this._localPosition;
+    }
+
+    set localPosition(value: Vec2) {
+        var oldLocalPos = this._localPosition;
+        this._localPosition = value;
+        this._children.forEach(child => {
+            child.position = Vec2.Sum(child.position, oldLocalPos);
+        });
+    }
+
     get position() : Vec2 {
-        if (parent == null)
-            return this._position;
-        return Vec2.Sum(this._position,this._parent.position);
+        if (this._parent == null)
+            return this._localPosition;
+        return Vec2.Sum(this._localPosition, this._parent.position);
     }
 
     set position(value: Vec2) {
-        var oldVal = this._position;
-        this._position = value;
-        this._children.forEach(child => {
-            child.position = Vec2.Sum(child.position, oldVal);
-        });
+        var pos = this.position;
+        console.log("position change")
+        this.localPosition = Vec2.Substract(pos, value);
     }
 
     canvasPosition() : Vec2 {
@@ -64,13 +78,15 @@ class Transform {
     }
 
     worldToCanvas(worldCoords : Vec2) : Vec2 {
-        return new Vec2(this.position.x - worldCoords.x/this.scale.x,
-                        this.position.y- worldCoords.x/this.scale.y);
+        const pos = this.position;
+        return new Vec2(pos.x - worldCoords.x/this.scale.x,
+                        pos.y- worldCoords.x/this.scale.y);
     }
 
     canvasToWorld(canvasCoords : Vec2) : Vec2 {
-        return new Vec2(this.position.x-canvasCoords.x * this.scale.x,
-                        this.position.y-canvasCoords.y * this.scale.y);
+        const pos = this.position;
+        return new Vec2(pos.x-canvasCoords.x * this.scale.x,
+                        pos.y-canvasCoords.y * this.scale.y);
     }
 
     get parent() {
@@ -93,7 +109,10 @@ class Transform {
     }
 
     private removeChild(child : Transform) : void {
-        
+        let index = this._children.indexOf(child);
+        if(index !== -1) {
+            this._children.splice(index, 1);
+        }
     }
 }
 
@@ -119,6 +138,7 @@ class Editor {
     constructor() {
         this.notes = Array(5).fill(null).map(() => Array(5));
         this.transform = new Transform();
+        this.transform.position = new Vec2(100,0);
 
         this.canvas = document.getElementById("editor_canvas") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d");
@@ -126,10 +146,10 @@ class Editor {
         
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
-        this.editorGrid = new EditorGrid(this.canvas);
+        this.editorGrid = new EditorGrid(this, this.canvas);
         this.audioCanvas = new AudioAmplitudeCanvas();
         this.timestepLine = new TimestepLine();
-
+        this.timestepLine.transform.parent = this.transform;
         this.drawEditor();
     }
 
@@ -184,10 +204,10 @@ class Editor {
         if (isSpeededUp) 
             resultedDelta *= this.fastScrollingSpeed; 
 
-        this.transform.position.x += resultedDelta;
+        this.transform.position = new Vec2(this.transform.position.x+resultedDelta, this.transform.position.y);
 
         if (this.transform.position.x > this.transform.maxDeviation.x)
-        this.transform.position.x = this.transform.maxDeviation.x;
+            this.transform.position = new Vec2(this.transform.maxDeviation.x, this.transform.position.y);
 
         console.log(this.transform.position.x);
         this.drawEditor();
@@ -197,14 +217,13 @@ class Editor {
         var resultedDelta = mouseDelta*this.resizingSpeed;
         console.log("resized!!");
         var oldScale = this.transform.scale.x;
-        this.transform.scale.x -= resultedDelta;
-        console.log(this.transform.scale);
-        this.transform.position.x = this.transform.position.x*this.transform.scale.x/oldScale;
+        this.transform.scale = new Vec2(this.transform.scale.x-resultedDelta, this.transform.scale.y);
+        this.transform.position = new Vec2(this.transform.position.x*this.transform.scale.x/oldScale, this.transform.position.y);
 
         if (this.transform.scale.x <= this.transform.minScale.x) 
-            this.transform.scale.x = this.transform.minScale.x;
+            this.transform.scale = new Vec2(this.transform.minScale.x, this.transform.scale.y);
         if (this.transform.scale.x >= this.transform.maxScale.x)
-            this.transform.scale.x = this.transform.maxScale.x;
+            this.transform.scale = new Vec2(this.transform.maxScale.x, this.transform.scale.y);
             
         this.drawEditor();
     }
@@ -227,7 +246,7 @@ class Editor {
         }
 
         var columnNum = Math.round((clickX)/(this.editorGrid.distanceBetweenBeatLines())-1);
-        var rowNum = Math.round((clickY)/(this.editorGrid.distanceBetweenBpmLines(this))-1); 
+        var rowNum = Math.round((clickY)/(this.editorGrid.distanceBetweenBpmLines())-1); 
 
         if (columnNum < -0.6 || rowNum < -0.6) {
             return;
@@ -236,8 +255,8 @@ class Editor {
         console.log(columnNum);
         console.log(rowNum);
 
-        const x = this.editorGrid.bpmLines[columnNum].x+this.transform.position.x - this.transform.position.x;
-        const y = this.editorGrid.beatLines[rowNum].y+this.transform.position.y - this.transform.position.y;
+        const x = this.editorGrid.bpmLines[columnNum].transform.position.x+this.transform.position.x - this.transform.position.x;
+        const y = this.editorGrid.beatLines[rowNum].transform.position.y+this.transform.position.y - this.transform.position.y;
 
         //console.log(this.editorGrid.distanceBetweenBpmLines);
         //console.log(this.editorGrid.distanceBetweenBeatLines);
@@ -256,8 +275,9 @@ class Editor {
             else {
                 console.log("add timestamp")
                 const note = new Timestamp(x, y, 10);
+                note.transform.parent = this.transform;
                 this.notes[columnNum][rowNum] = note;
-                note.draw(this.canvas, this.transform.position);
+                note.draw(this.canvas);
             }
         }
     }
@@ -268,11 +288,10 @@ class Editor {
         this.ctx.fillStyle = '#EDEDED'
         this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height)
         
-        this.editorGrid.draw(this.transform.position, 
-            this.audioController != null && this.audioController.sound.state()=="loaded", this.transform.scale, this);
+        this.editorGrid.draw(this.audioController != null && this.audioController.sound.state()=="loaded", this);
 
         this.notes.forEach(notes => { notes.forEach(note => {
-            if (note!=null) { note.draw(this.canvas, this.transform.position);
+            if (note!=null) { note.draw(this.canvas);
         }})});
         
         this.audioCanvas.draw(this.transform.position);
@@ -281,10 +300,10 @@ class Editor {
         this.leftScale.draw(this.canvas);
 
         if (this.isPlaying){
-            this.timestepLine.movePosition(this.transform.scale.x*this.audioController.sound.seek())
+            this.timestepLine.transform.position = new Vec2(this.transform.scale.x*this.audioController.sound.seek(), this.transform.scale.y);
         }
 
-        this.timestepLine.draw(this.transform.position.x);
+        this.timestepLine.draw();
     }
 }
 
@@ -320,7 +339,7 @@ class AudioController {
     }
 
     setMusicFromCanvasPosition(position : Vec2, editor : Editor) {
-        this.timestepLine.movePosition(this.editor.transform.canvasToWorld(position).x);
+        this.timestepLine.transform.position = this.editor.transform.canvasToWorld(position);
         editor
     }
 
@@ -337,7 +356,6 @@ class AudioController {
 
 class AudioAmplitudeCanvas {
     
-    scaleX: number;
     canvas : HTMLCanvasElement;
     ctx : CanvasRenderingContext2D;
 
@@ -354,22 +372,17 @@ class AudioAmplitudeCanvas {
 
 class TimestepLine {
     
-    x: number;
+    transform: Transform = new Transform();
     canvas: HTMLCanvasElement;
     ctx:CanvasRenderingContext2D;
 
     constructor() {
-        this.x = 0;
         this.canvas = document.getElementById("editor_canvas") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d");
     }
 
-    movePosition(x : number) {
-        this.x = x;
-    }
-
-    draw(offsetX : number) {
-        var x = this.x+offsetX;
+    draw() {
+        var x = this.transform.position.x
         if (x>=this.canvas.width)
             x = this.canvas.width-5;
         if (x<=0)
@@ -391,21 +404,17 @@ class TimestepLine {
 
 class Timestamp {    
     
-    pos: Vec2;
+    transform: Transform = new Transform();
     width: number;
    
     constructor(x : number, y : number, width : number) {
-        this.pos = new Vec2(x,y);
+        this.transform.position = new Vec2(x,y);
         this.width = width;
     }
 
-    changePosition(newPos) {
-        this.pos = newPos;
-    }
-
-    draw(canvas : HTMLCanvasElement, offset : Vec2) {
+    draw(canvas : HTMLCanvasElement) {
         const ctx = canvas.getContext('2d');
-        const pos = new Vec2(this.pos.x+offset.x, this.pos.y + offset.y);
+        const pos = new Vec2(this.transform.position.x, this.transform.position.y);
         ctx.fillStyle = "green";
         ctx.beginPath();
         ctx.moveTo(pos.x -this.width, pos.y);
@@ -415,6 +424,180 @@ class Timestamp {
         ctx.fill();
     }
 }
+
+class EditorGrid {
+    
+    canvas: HTMLCanvasElement;
+
+    bpmValue: number;
+    beatLinesCount: number;
+
+    bpmLines: Array<BPMLine>;
+    beatLines: Array<BeatLine>;
+    editor: Editor;
+
+    constructor(editor: Editor, canvas: HTMLCanvasElement) {
+        this.editor = editor;
+        this.canvas = canvas;
+        this.bpmValue = 60;
+        this.beatLinesCount = 5;
+        this.bpmLines = [];
+        this.beatLines = [];
+
+        this.initGrid();
+    }
+
+    distanceBetweenBpmLines() {
+        var soundLength = this.editor.audioController.sound.duration();
+        var bpmCount = (soundLength/60) * this.bpmValue;
+        var pixelsPerBeat = soundLength / bpmCount;
+        return pixelsPerBeat * this.editor.transform.scale.x;
+        //return (this.canvas.width)/(this.bpmValue+1);
+    }
+
+    distanceBetweenBeatLines() {
+        return (this.canvas.height)/(this.beatLinesCount+1);
+    }
+
+    setBpmValue(bpm : number) {
+        this.bpmValue = bpm;
+        console.log(bpm);
+    }
+
+    setBeatLinesCount(beatLines : number) {
+        this.beatLinesCount = beatLines;
+        console.log(beatLines);
+    }
+
+    getGridSize() : Vec2 {
+        return new Vec2(this.bpmValue, this.beatLinesCount);    
+    }
+
+    initGrid() {
+        for (var i=0; i<this.beatLinesCount; i++){ 
+            var beatLine = new BeatLine(i*this.distanceBetweenBeatLines());
+            beatLine.transform.parent = this.editor.transform;
+            this.beatLines.push(beatLine);
+        }
+    }
+
+    initBpmLines() {
+        var soundLength = editor.audioController.sound.duration();
+        var bpmCount = (soundLength/60) * this.bpmValue;
+        
+        for (var i=0; i<bpmCount; i++) {
+            var bpmLine = new BPMLine(i*this.distanceBetweenBpmLines());
+            bpmLine.transform.parent = this.editor.transform;
+            this.bpmLines.push(bpmLine);
+        }
+    }
+
+    draw(drawBpmLines: boolean, editor: Editor) {
+        const canvas = this.canvas;
+        const ctx = canvas.getContext('2d');
+
+        //console.log(distanceBetweenBeatLines);
+        //console.log(distanceBetweenBpmLines);
+        
+        // for (var i=0; i<this.beatLines.length; i++){ 
+        //     this.beatLines[i].moveY((i+1)*this.distanceBetweenBeatLines());
+        // }
+
+        this.beatLines.forEach(beatLine => {
+            if (beatLine.isActive)
+                beatLine.draw(canvas);
+        });
+
+        if (drawBpmLines) {
+            var soundLength = editor.audioController.sound.duration();
+            var bpmCount = (soundLength/60) * this.bpmValue;
+            var pixelsPerBeat = soundLength / bpmCount;
+
+            //console.log(this.bpmLines.length);
+            
+            // for (var i=0; i<this.bpmLines.length; i++){ 
+            //     //console.log("bpm line is pushed");
+            //     this.bpmLines[i].moveX(i*scale.x*pixelsPerBeat);
+            // }
+            
+            this.bpmLines.forEach(bpmLine => {
+                if (bpmLine.isActive)
+                    bpmLine.draw(canvas)
+            });
+        }
+    }
+}
+
+class BPMLine {
+
+    transform: Transform = new Transform();
+    isActive: boolean = true;
+    
+    constructor(x : number) {
+        this.transform.position = new Vec2(x, 0);
+    }
+
+    draw(canvas : HTMLCanvasElement) {
+        if (!this.isActive)
+            return;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.strokeStyle = "black";
+
+        ctx.beginPath();
+        ctx.moveTo(this.transform.position.x, 0);
+        ctx.lineTo(this.transform.position.x, canvas.height);
+        ctx.stroke();
+    }
+
+    activate() {
+        this.isActive = true;
+    }
+
+    deactivate() {
+        this.isActive = false;
+    }
+}
+
+class CreatableTimestampLine {
+    
+    transform: Transform = new Transform();
+
+    constructor(x: number) {
+        
+    }
+}
+
+
+class BeatLine {
+    
+    transform: Transform = new Transform();
+    isActive: boolean = true;
+
+    constructor(y:number) {
+        this.transform.position = new Vec2(0,y)
+    }
+
+    draw(canvas : HTMLCanvasElement) {
+        console.log("betline draw")
+        console.log(this.transform.position);
+        const ctx = canvas.getContext('2d');
+        ctx.strokeStyle = "black";
+        ctx.beginPath();
+        ctx.moveTo(0, -this.transform.position.y);
+        ctx.lineTo(canvas.width, -this.transform.position.y);
+        ctx.stroke();
+    }
+
+    activate() {
+        this.isActive = true;
+    }
+
+    deactivate() {
+        this.isActive = false;
+    }
+}
+
 
 class TopScale {
    
@@ -443,181 +626,6 @@ class LeftScale {
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#A6A6A6';
         ctx.fillRect(0,0, this.width,canvas.height);
-    }
-}
-
-class EditorGrid {
-    
-    canvas: HTMLCanvasElement;
-
-    bpmValue: number;
-    beatLinesCount: number;
-    timestep: number;
-
-    bpmLines: Array<BPMLine>;
-    beatLines: Array<BeatLine>;
-
-    constructor(canvas: HTMLCanvasElement) {
-        this.canvas = canvas;
-        this.bpmValue = 60;
-        this.beatLinesCount = 5;
-        this.timestep = 0;
-        this.bpmLines = [];
-        this.beatLines = [];
-
-        this.initGrid();
-    }
-
-    distanceBetweenBpmLines(editor: Editor) {
-        var soundLength = editor.audioController.sound.duration();
-        var bpmCount = (soundLength/60) * this.bpmValue;
-        var pixelsPerBeat = soundLength / bpmCount;
-        return pixelsPerBeat * editor.transform.scale.x;
-        //return (this.canvas.width)/(this.bpmValue+1);
-    }
-
-    distanceBetweenBeatLines() {
-        return (this.canvas.height)/(this.beatLinesCount+1);
-    }
-
-    setBpmValue(bpm : number) {
-        this.bpmValue = bpm;
-        console.log(bpm);
-    }
-
-    setBeatLinesCount(beatLines : number) {
-        this.beatLinesCount = beatLines;
-        console.log(beatLines);
-    }
-
-    getGridSize() : Vec2 {
-        return new Vec2(this.bpmValue, this.beatLinesCount);    
-    }
-
-    initGrid() {
-        for (var i=0; i<this.beatLinesCount; i++){ 
-            this.beatLines.push(new BeatLine(i*this.distanceBetweenBeatLines()));
-        }
-    }
-
-    initBpmLines() {
-        var soundLength = editor.audioController.sound.duration();
-        var bpmCount = (soundLength/60) * this.bpmValue;
-        
-        for (var i=0; i<bpmCount; i++) {
-            this.bpmLines.push(new BPMLine(i*this.distanceBetweenBpmLines(editor)));
-        }
-    }
-
-    draw(position: Vec2, drawBpmLines: boolean, scale: Vec2, editor: Editor) {
-        const canvas = this.canvas;
-        const ctx = canvas.getContext('2d');
-
-        //console.log(distanceBetweenBeatLines);
-        //console.log(distanceBetweenBpmLines);
-        
-        for (var i=0; i<this.beatLines.length; i++){ 
-            this.beatLines[i].moveY((i+1)*this.distanceBetweenBeatLines());
-        }
-
-        this.beatLines.forEach(beatLine => {
-            if (beatLine.isActive)
-                beatLine.draw(position, canvas);
-        });
-
-        if (drawBpmLines) {
-            var soundLength = editor.audioController.sound.duration();
-            var bpmCount = (soundLength/60) * this.bpmValue;
-            var pixelsPerBeat = soundLength / bpmCount;
-
-            //console.log(this.bpmLines.length);
-            
-            for (var i=0; i<this.bpmLines.length; i++){ 
-                //console.log("bpm line is pushed");
-                this.bpmLines[i].moveX(i*scale.x*pixelsPerBeat);
-            }
-            
-            this.bpmLines.forEach(bpmLine => {
-                if (bpmLine.isActive)
-                    bpmLine.draw(position, canvas)
-            });
-        }
-    }
-}
-
-class BPMLine {
-    x: number;
-    isActive: boolean = true;
-    
-    constructor(x : number) {
-        this.x = x;
-    }
-
-    draw(offset: Vec2, canvas : HTMLCanvasElement) {
-        if (!this.isActive)
-            return;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.strokeStyle = "black";
-
-        ctx.beginPath();
-        ctx.moveTo(this.x + offset.x, offset.y);
-        ctx.lineTo(this.x + offset.x, canvas.height);
-        ctx.stroke();
-    }
-
-    moveX(x: number) {
-        this.x = x;
-    }
-
-    activate() {
-        this.isActive = true;
-    }
-
-    deactivate() {
-        this.isActive = false;
-    }
-}
-
-class CreatableTimestampLine {
-    
-    x:number;
-    offset: Vec2;
-
-    constructor(x: number) {
-        
-    }
-}
-
-
-class BeatLine {
-    
-    y: number;
-    isActive: boolean = true;
-
-    constructor(y:number) {
-        this.y = y;
-    }
-
-    draw(offset : Vec2, canvas : HTMLCanvasElement) {
-        const ctx = canvas.getContext('2d');
-        ctx.strokeStyle = "black";
-        ctx.beginPath();
-        ctx.moveTo(0, this.y + offset.y);
-        ctx.lineTo(canvas.width, this.y + offset.y);
-        ctx.stroke();
-    }
-    
-    moveY(y: number) {
-        this.y = y;
-    }
-
-    activate() {
-        this.isActive = true;
-    }
-
-    deactivate() {
-        this.isActive = false;
     }
 }
 
