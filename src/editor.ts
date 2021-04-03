@@ -80,14 +80,14 @@ class Transform {
 
     worldToCanvas(worldCoords : Vec2) : Vec2 {
         const pos = this.position;
-        return new Vec2(pos.x - worldCoords.x,
-                        pos.y - worldCoords.x);
+        return new Vec2(worldCoords.x - pos.x,
+                        worldCoords.y - pos.y);
     }
 
     canvasToWorld(canvasCoords : Vec2) : Vec2 {
         const pos = this.position;
-        return new Vec2(pos.x-canvasCoords.x,
-                        pos.y-canvasCoords.y);
+        return new Vec2(canvasCoords.x/this.scale.x - pos.x/this.scale.x,
+                        canvasCoords.y/this.scale.y - pos.y);
     }
 
     get parent() {
@@ -266,8 +266,8 @@ class Editor {
             return;
 
         const rect = this.canvas.getBoundingClientRect();
-        const clickX = event.clientX - rect.left - this.transform.position.x;
-        const clickY = event.clientY - rect.top - this.transform.position.y;
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
         const click = new Vec2(clickX, clickY);
 
         console.log(clickY);
@@ -373,8 +373,12 @@ class AudioController {
     }
 
     setMusicFromCanvasPosition(position : Vec2, editor : Editor) {
-        this.timestepLine.transform.localPosition = this.editor.transform.canvasToWorld(position);
-        //editor
+        console.log(position);
+        var second = editor.transform.canvasToWorld(position).x;
+        console.log(editor.transform.canvasToWorld(position).x)
+        console.log(editor.transform.position.x)
+        console.log(second)
+        this.sound.seek([second]);
     }
 
     setMusicFromTimePosition() {

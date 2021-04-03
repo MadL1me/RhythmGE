@@ -69,11 +69,11 @@ var Transform = /** @class */ (function () {
     };
     Transform.prototype.worldToCanvas = function (worldCoords) {
         var pos = this.position;
-        return new Vec2(pos.x - worldCoords.x, pos.y - worldCoords.x);
+        return new Vec2(worldCoords.x - pos.x, worldCoords.y - pos.y);
     };
     Transform.prototype.canvasToWorld = function (canvasCoords) {
         var pos = this.position;
-        return new Vec2(pos.x - canvasCoords.x, pos.y - canvasCoords.y);
+        return new Vec2(canvasCoords.x / this.scale.x - pos.x / this.scale.x, canvasCoords.y / this.scale.y - pos.y);
     };
     Object.defineProperty(Transform.prototype, "parent", {
         get: function () {
@@ -211,8 +211,8 @@ var Editor = /** @class */ (function () {
         if (!this.audioLoaded)
             return;
         var rect = this.canvas.getBoundingClientRect();
-        var clickX = event.clientX - rect.left - this.transform.position.x;
-        var clickY = event.clientY - rect.top - this.transform.position.y;
+        var clickX = event.clientX - rect.left;
+        var clickY = event.clientY - rect.top;
         var click = new Vec2(clickX, clickY);
         console.log(clickY);
         if (clickY <= this.topScale.height) {
@@ -293,8 +293,12 @@ var AudioController = /** @class */ (function () {
         console.log(this.analyser);
     };
     AudioController.prototype.setMusicFromCanvasPosition = function (position, editor) {
-        this.timestepLine.transform.localPosition = this.editor.transform.canvasToWorld(position);
-        //editor
+        console.log(position);
+        var second = editor.transform.canvasToWorld(position).x;
+        console.log(editor.transform.canvasToWorld(position).x);
+        console.log(editor.transform.position.x);
+        console.log(second);
+        this.sound.seek([second]);
     };
     AudioController.prototype.setMusicFromTimePosition = function () {
     };
