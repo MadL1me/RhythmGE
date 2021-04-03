@@ -47,24 +47,20 @@ class Transform {
 
     maxDeviation: Vec2 = new Vec2(100,100);
     maxScale: Vec2 = new Vec2(100, 100);
-    minScale: Vec2 = new Vec2(1, 1);
+    minScale: Vec2 = new Vec2(5, 5);
 
     get localPosition() : Vec2 {
         return this._localPosition;
     }
 
     set localPosition(value: Vec2) {
-        //var oldLocalPos = this._localPosition;
         this._localPosition = value;
-        //this._children.forEach(child => {
-        //    child.localPosition = Vec2.Sum(child.position, value);
-        //});
     }
 
     get position() : Vec2 {
         if (this._parent == null)
             return this._localPosition;
-        return Vec2.Sum(this._localPosition, this._parent.position);
+        return Vec2.Sum(Vec2.Multiply(this._localPosition, this._parent.scale), this._parent.position);
     }
 
     set position(value: Vec2) {
@@ -75,7 +71,7 @@ class Transform {
         
         var pos = Vec2.Substract(value, this.position);
         console.log("position change")
-        this.localPosition = Vec2.Sum(this.localPosition, pos);
+        this.localPosition = Vec2.Divide(Vec2.Sum(this.localPosition, pos), this._parent.scale);
     } 
 
     canvasPosition() : Vec2 {
@@ -84,14 +80,14 @@ class Transform {
 
     worldToCanvas(worldCoords : Vec2) : Vec2 {
         const pos = this.position;
-        return new Vec2(pos.x - worldCoords.x/this.scale.x,
-                        pos.y- worldCoords.x/this.scale.y);
+        return new Vec2(pos.x - worldCoords.x,
+                        pos.y - worldCoords.x);
     }
 
     canvasToWorld(canvasCoords : Vec2) : Vec2 {
         const pos = this.position;
-        return new Vec2(pos.x-canvasCoords.x * this.scale.x,
-                        pos.y-canvasCoords.y * this.scale.y);
+        return new Vec2(pos.x-canvasCoords.x,
+                        pos.y-canvasCoords.y);
     }
 
     get parent() {
@@ -336,7 +332,7 @@ class Editor {
         this.leftScale.draw(this.canvas);
 
         if (this.isPlaying){
-            this.timestepLine.transform.localPosition = new Vec2(this.transform.scale.x*this.audioController.sound.seek(), this.transform.scale.y);
+            this.timestepLine.transform.localPosition = new Vec2(this.audioController.sound.seek(), 0);
         }
 
         this.timestepLine.draw();
@@ -513,8 +509,7 @@ class EditorGrid {
 
     initGrid() {
         for (var i=0; i<this.beatLinesCount; i++){ 
-            var beatLine = new BeatLine(i*this.distanceBetweenBeatLines());
-            beatLine.transform.parent = this.editor.transform;
+            var beatLine = new BeatLine(i*this.distanceBetweenBeatLines(), this.editor.transform);
             this.beatLines.push(beatLine);
         }
     }
@@ -524,8 +519,7 @@ class EditorGrid {
         var bpmCount = (soundLength/60) * this.bpmValue;
         
         for (var i=0; i<bpmCount; i++) {
-            var bpmLine = new BPMLine(i*this.distanceBetweenBpmLines());
-            bpmLine.transform.parent = this.editor.transform;
+            var bpmLine = new BPMLine(i, this.editor.transform);
             this.bpmLines.push(bpmLine);
         }
     }
@@ -571,8 +565,9 @@ class BPMLine {
     transform: Transform = new Transform();
     isActive: boolean = true;
     
-    constructor(x : number) {
-        this.transform.position = new Vec2(x, 0);
+    constructor(x : number, parent : Transform) {
+        this.transform.parent = parent;
+        this.transform.localPosition = new Vec2(x, 0);
     }
 
     draw(canvas : HTMLCanvasElement) {
@@ -581,7 +576,6 @@ class BPMLine {
         
         const ctx = canvas.getContext('2d');
         ctx.strokeStyle = "black";
-
         ctx.beginPath();
         ctx.moveTo(this.transform.position.x, 0);
         ctx.lineTo(this.transform.position.x, canvas.height);
@@ -612,13 +606,12 @@ class BeatLine {
     transform: Transform = new Transform();
     isActive: boolean = true;
 
-    constructor(y:number) {
+    constructor(y:number, parent: Transform) {
+        this.transform.parent = parent;
         this.transform.position = new Vec2(0,y)
     }
 
     draw(canvas : HTMLCanvasElement) {
-        //console.log("betline draw")
-        console.log(this.transform.position);
         const ctx = canvas.getContext('2d');
         ctx.strokeStyle = "black";
         ctx.beginPath();
@@ -669,3 +662,4 @@ class LeftScale {
 
 const editor = new Editor();
 module.exports = editor;
+

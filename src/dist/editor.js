@@ -34,18 +34,14 @@ var Transform = /** @class */ (function () {
         this.rotation = new Vec2(0, 0);
         this.maxDeviation = new Vec2(100, 100);
         this.maxScale = new Vec2(100, 100);
-        this.minScale = new Vec2(1, 1);
+        this.minScale = new Vec2(5, 5);
     }
     Object.defineProperty(Transform.prototype, "localPosition", {
         get: function () {
             return this._localPosition;
         },
         set: function (value) {
-            //var oldLocalPos = this._localPosition;
             this._localPosition = value;
-            //this._children.forEach(child => {
-            //    child.localPosition = Vec2.Sum(child.position, value);
-            //});
         },
         enumerable: false,
         configurable: true
@@ -54,7 +50,7 @@ var Transform = /** @class */ (function () {
         get: function () {
             if (this._parent == null)
                 return this._localPosition;
-            return Vec2.Sum(this._localPosition, this._parent.position);
+            return Vec2.Sum(Vec2.Multiply(this._localPosition, this._parent.scale), this._parent.position);
         },
         set: function (value) {
             if (this.parent == null) {
@@ -63,7 +59,7 @@ var Transform = /** @class */ (function () {
             }
             var pos = Vec2.Substract(value, this.position);
             console.log("position change");
-            this.localPosition = Vec2.Sum(this.localPosition, pos);
+            this.localPosition = Vec2.Divide(Vec2.Sum(this.localPosition, pos), this._parent.scale);
         },
         enumerable: false,
         configurable: true
@@ -73,11 +69,11 @@ var Transform = /** @class */ (function () {
     };
     Transform.prototype.worldToCanvas = function (worldCoords) {
         var pos = this.position;
-        return new Vec2(pos.x - worldCoords.x / this.scale.x, pos.y - worldCoords.x / this.scale.y);
+        return new Vec2(pos.x - worldCoords.x, pos.y - worldCoords.x);
     };
     Transform.prototype.canvasToWorld = function (canvasCoords) {
         var pos = this.position;
-        return new Vec2(pos.x - canvasCoords.x * this.scale.x, pos.y - canvasCoords.y * this.scale.y);
+        return new Vec2(pos.x - canvasCoords.x, pos.y - canvasCoords.y);
     };
     Object.defineProperty(Transform.prototype, "parent", {
         get: function () {
@@ -270,7 +266,7 @@ var Editor = /** @class */ (function () {
         this.topScale.draw(this.canvas);
         this.leftScale.draw(this.canvas);
         if (this.isPlaying) {
-            this.timestepLine.transform.localPosition = new Vec2(this.transform.scale.x * this.audioController.sound.seek(), this.transform.scale.y);
+            this.timestepLine.transform.localPosition = new Vec2(this.audioController.sound.seek(), 0);
         }
         this.timestepLine.draw();
     };
@@ -396,8 +392,7 @@ var EditorGrid = /** @class */ (function () {
     };
     EditorGrid.prototype.initGrid = function () {
         for (var i = 0; i < this.beatLinesCount; i++) {
-            var beatLine = new BeatLine(i * this.distanceBetweenBeatLines());
-            beatLine.transform.parent = this.editor.transform;
+            var beatLine = new BeatLine(i * this.distanceBetweenBeatLines(), this.editor.transform);
             this.beatLines.push(beatLine);
         }
     };
@@ -405,8 +400,7 @@ var EditorGrid = /** @class */ (function () {
         var soundLength = editor.audioController.sound.duration();
         var bpmCount = (soundLength / 60) * this.bpmValue;
         for (var i = 0; i < bpmCount; i++) {
-            var bpmLine = new BPMLine(i * this.distanceBetweenBpmLines());
-            bpmLine.transform.parent = this.editor.transform;
+            var bpmLine = new BPMLine(i, this.editor.transform);
             this.bpmLines.push(bpmLine);
         }
     };
@@ -440,10 +434,11 @@ var EditorGrid = /** @class */ (function () {
     return EditorGrid;
 }());
 var BPMLine = /** @class */ (function () {
-    function BPMLine(x) {
+    function BPMLine(x, parent) {
         this.transform = new Transform();
         this.isActive = true;
-        this.transform.position = new Vec2(x, 0);
+        this.transform.parent = parent;
+        this.transform.localPosition = new Vec2(x, 0);
     }
     BPMLine.prototype.draw = function (canvas) {
         if (!this.isActive)
@@ -470,14 +465,13 @@ var CreatableTimestampLine = /** @class */ (function () {
     return CreatableTimestampLine;
 }());
 var BeatLine = /** @class */ (function () {
-    function BeatLine(y) {
+    function BeatLine(y, parent) {
         this.transform = new Transform();
         this.isActive = true;
+        this.transform.parent = parent;
         this.transform.position = new Vec2(0, y);
     }
     BeatLine.prototype.draw = function (canvas) {
-        //console.log("betline draw")
-        console.log(this.transform.position);
         var ctx = canvas.getContext('2d');
         ctx.strokeStyle = "black";
         ctx.beginPath();
