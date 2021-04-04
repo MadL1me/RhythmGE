@@ -6,12 +6,6 @@ setInterval(function () { editor.updateLoop(); }, 10);
 window.onresize = function (ev) {
     editor.onWindowResize(ev);
 };
-function canvasClickHandler(event) {
-    editor.canvasClickHandle(event);
-}
-function canvasMouseDownHandler(event) {
-    editor.canvasMouseDownHandle(event);
-}
 function handleFileSelect(event) {
     var files = event.target.files;
     audioLoad(files[0]);
@@ -36,7 +30,10 @@ function dropHandler(event) {
 var editorCanvas = document.getElementById("editor_canvas");
 var keysPressed = [];
 editorCanvas.addEventListener('wheel', onCanvasWheel);
-editorCanvas.addEventListener('click', canvasClickHandler);
+editorCanvas.addEventListener('click', function (event) { editor.canvasClickHandle(event); });
+function canvasMouseDownHandler(event) {
+    editor.canvasMouseDownHandle(event);
+}
 window.addEventListener('keydown', onCanvasKeyDown);
 window.addEventListener('keyup', onCanvasKeyUp);
 function onCanvasKeyUp(event) {
@@ -57,13 +54,10 @@ function onCanvasWheel(event) {
         editor.onCanvasScroll(parseInt(event.deltaY), false);
 }
 function beatLinesValueChange(event) {
-    console.log("beat line changed");
-    console.log(event.target.value);
-    editor.changeBeatlinesCount(parseInt(event.target.value));
+    editor.changeBeatlinesCount(event);
 }
 function bmpValueChange(event) {
-    console.log(event.target.value);
-    editor.changeBpmValue(parseInt(event.target.value));
+    editor.changeBpmValue(event);
 }
 var drop_zone = document.getElementById("drop_zone");
 drop_zone.ondrag = function (event) {

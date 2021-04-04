@@ -64,16 +64,17 @@ var Transform = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
-    Transform.prototype.canvasPosition = function () {
-        return this.worldToCanvas(this.position);
-    };
     Transform.prototype.worldToCanvas = function (worldCoords) {
         var pos = this.position;
         return new Vec2(worldCoords.x - pos.x, worldCoords.y - pos.y);
     };
     Transform.prototype.canvasToWorld = function (canvasCoords) {
         var pos = this.position;
-        return new Vec2(canvasCoords.x / this.scale.x - pos.x / this.scale.x, canvasCoords.y / this.scale.y - pos.y);
+        return new Vec2((-canvasCoords.x / this.scale.x) + pos.x / this.scale.x, (-canvasCoords.y / this.scale.y) + pos.y / this.scale.y);
+    };
+    Transform.prototype.canvasToSongTime = function (canvasCoords) {
+        var pos = this.position;
+        return new Vec2((canvasCoords.x - pos.x), (canvasCoords.y - pos.y));
     };
     Object.defineProperty(Transform.prototype, "parent", {
         get: function () {
@@ -106,6 +107,8 @@ var Transform = /** @class */ (function () {
 var Editor = /** @class */ (function () {
     function Editor() {
         this.isPlaying = false;
+        this.isFollowingLine = false;
+        this.isUsingClaps = false;
         this.audioLoaded = false;
         this.scrollingSpeed = 0.2;
         this.resizingSpeed = 0.01;
@@ -145,9 +148,13 @@ var Editor = /** @class */ (function () {
             _this.audioLoaded = true;
             var gridSize = _this.editorGrid.getGridSize();
             _this.notes = Array(gridSize.y).fill(null).map(function () { return Array(gridSize.x); });
-            _this.drawEditor();
             _this.editorGrid.initBpmLines();
+            _this.drawEditor();
         });
+    };
+    Editor.prototype.onUseClaps = function () {
+    };
+    Editor.prototype.onLineFollowingChange = function () {
     };
     Editor.prototype.onPlay = function () {
         if (this.isPlaying == true)
@@ -185,11 +192,26 @@ var Editor = /** @class */ (function () {
         console.log("resized!!");
         var oldScale = this.transform.scale.x;
         this.transform.scale = new Vec2(this.transform.scale.x - resultedDelta, this.transform.scale.y);
-        this.transform.position = new Vec2(this.transform.position.x * this.transform.scale.x / oldScale, this.transform.position.y);
-        if (this.transform.scale.x <= this.transform.minScale.x)
+        var scaleIsChanged = true;
+        if (this.transform.scale.x <= this.transform.minScale.x) {
             this.transform.scale = new Vec2(this.transform.minScale.x, this.transform.scale.y);
-        if (this.transform.scale.x >= this.transform.maxScale.x)
+            scaleIsChanged = false;
+        }
+        if (this.transform.scale.x >= this.transform.maxScale.x) {
             this.transform.scale = new Vec2(this.transform.maxScale.x, this.transform.scale.y);
+            scaleIsChanged = false;
+        }
+        var newPosX = (this.transform.position.x - this.canvas.width / 2) / oldScale * this.transform.scale.x;
+        console.log(newPosX);
+        this.transform.position = new Vec2(newPosX, 0);
+        // console.log(newPos);
+        // var newP = newPos.x / oldScale * this.transform.scale.x;
+        // if (this.transform.scale.x < oldScale && scaleIsChanged)
+        //     this.transform.position = Vec2.Substract(this.transform.position, new Vec2(newP, 0)); 
+        // else if (scaleIsChanged)
+        //     this.transform.position = Vec2.Sum(new Vec2(newP, 0), this.transform.position);
+        //console.log("new pos is: ") 
+        //console.log(newPos);
         this.drawEditor();
     };
     Editor.prototype.canvasMouseDownHandle = function (event) {
@@ -215,12 +237,9 @@ var Editor = /** @class */ (function () {
         console.log(rowNum);
         var x = this.editorGrid.bpmLines[columnNum].transform.position.x + this.transform.position.x - this.transform.position.x;
         var y = this.editorGrid.beatLines[rowNum].transform.position.y + this.transform.position.y - this.transform.position.y;
-        //console.log(this.editorGrid.distanceBetweenBpmLines);
-        //console.log(this.editorGrid.distanceBetweenBeatLines);
         console.log(columnNum + ":" + rowNum);
         console.log(Math.abs(x - clickX) + ":" + Math.abs(y - clickY));
         if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
-            //console.log(this.notes[columnNum][rowNum]);
             if (this.notes[columnNum][rowNum] != undefined && this.notes[columnNum][rowNum] != null) {
                 console.log("remove timestamp");
                 this.notes[columnNum][rowNum] = null;
@@ -237,7 +256,6 @@ var Editor = /** @class */ (function () {
     };
     Editor.prototype.drawEditor = function () {
         var _this = this;
-        //console.log("draw editor")
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = '#EDEDED';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -279,12 +297,11 @@ var AudioController = /** @class */ (function () {
         console.log(this.soundId);
         console.log(this.analyser);
     };
+    AudioController.prototype.playClapSound = function () {
+    };
     AudioController.prototype.setMusicFromCanvasPosition = function (position, editor) {
         console.log(position);
-        var second = editor.transform.canvasToWorld(position).x;
-        console.log(editor.transform.canvasToWorld(position).x);
-        console.log(editor.transform.position.x);
-        console.log(second);
+        var second = editor.transform.canvasToSongTime(position).x / editor.transform.scale.x;
         this.sound.seek([second]);
     };
     AudioController.prototype.setMusicFromTimePosition = function () {
@@ -352,7 +369,7 @@ var Timestamp = /** @class */ (function () {
 }());
 var EditorGrid = /** @class */ (function () {
     function EditorGrid(editor, canvas) {
-        this.beatLinesRange = new Vec2(1, 10);
+        this.beatLinesRange = new Vec2(1, 20);
         this.bpmRange = new Vec2(1, 10000);
         this.editor = editor;
         this.canvas = canvas;
@@ -372,13 +389,15 @@ var EditorGrid = /** @class */ (function () {
     EditorGrid.prototype.distanceBetweenBeatLines = function () {
         return (this.canvas.height) / (this.beatLinesCount + 1);
     };
-    EditorGrid.prototype.setBpmValue = function (bpm) {
+    EditorGrid.prototype.setBpmValue = function (event) {
+        var bpm = parseInt(event.target.value);
         bpm < this.bpmRange.x ? bpm = this.bpmRange.x : bpm = bpm;
         bpm > this.bpmRange.y ? bpm = this.bpmRange.y : bpm = bpm;
         this.bpmValue = bpm;
         console.log(bpm);
     };
-    EditorGrid.prototype.setBeatLinesCount = function (beatLines) {
+    EditorGrid.prototype.setBeatLinesCount = function (event) {
+        var beatLines = parseInt(event.target.value);
         beatLines < this.beatLinesRange.x ? beatLines = this.beatLinesRange.x : beatLines = beatLines;
         beatLines > this.beatLinesRange.y ? beatLines = this.beatLinesRange.y : beatLines = beatLines;
         this.beatLinesCount = beatLines;

@@ -74,10 +74,6 @@ class Transform {
         this.localPosition = Vec2.Divide(Vec2.Sum(this.localPosition, pos), this._parent.scale);
     } 
 
-    canvasPosition() : Vec2 {
-        return this.worldToCanvas(this.position);
-    }
-
     worldToCanvas(worldCoords : Vec2) : Vec2 {
         const pos = this.position;
         return new Vec2(worldCoords.x - pos.x,
@@ -86,8 +82,14 @@ class Transform {
 
     canvasToWorld(canvasCoords : Vec2) : Vec2 {
         const pos = this.position;
-        return new Vec2(canvasCoords.x/this.scale.x - pos.x/this.scale.x,
-                        canvasCoords.y/this.scale.y - pos.y);
+        return new Vec2((-canvasCoords.x/this.scale.x) + pos.x/this.scale.x,
+                        (-canvasCoords.y/this.scale.y) + pos.y/this.scale.y);
+    }
+
+    canvasToSongTime(canvasCoords : Vec2) : Vec2 {
+        const pos = this.position;
+        return new Vec2((canvasCoords.x - pos.x),
+                        (canvasCoords.y - pos.y));
     }
 
     get parent() {
@@ -120,11 +122,14 @@ class Transform {
 class Editor {
 
     isPlaying: boolean = false;
+    isFollowingLine: boolean = false;
+    isUsingClaps: boolean = false;
     audioLoaded: boolean = false;
     scrollingSpeed : number = 0.2;
     resizingSpeed: number = 0.01;
     fastScrollingSpeed :number = 5;
 
+    viewportPosition: Vec2;
     transform: Transform;
     notes: Array<Array<Timestamp>>;
     canvas: HTMLCanvasElement;
@@ -139,6 +144,7 @@ class Editor {
     constructor() {        
         this.notes = Array(5).fill(null).map(() => Array(5));
         this.transform = new Transform();
+        this.viewportPosition = new Vec2(100,0);
         this.transform.position = new Vec2(100,0);
 
         this.canvas = document.getElementById("editor_canvas") as HTMLCanvasElement;
@@ -180,9 +186,17 @@ class Editor {
             this.audioLoaded = true;
             var gridSize = this.editorGrid.getGridSize();
             this.notes = Array(gridSize.y).fill(null).map(() => Array(gridSize.x));
-            this.drawEditor(); 
             this.editorGrid.initBpmLines();
+            this.drawEditor(); 
         })
+    }
+
+    onUseClaps() {
+
+    }
+
+    onLineFollowingChange() {
+
     }
 
     onPlay() {
@@ -233,13 +247,17 @@ class Editor {
         console.log("resized!!");
         var oldScale = this.transform.scale.x;
         this.transform.scale = new Vec2(this.transform.scale.x-resultedDelta, this.transform.scale.y);
-        this.transform.position = new Vec2(this.transform.position.x*this.transform.scale.x/oldScale, this.transform.position.y);
+        var scaleIsChanged = true;
 
-        if (this.transform.scale.x <= this.transform.minScale.x) 
+        if (this.transform.scale.x <= this.transform.minScale.x) {
             this.transform.scale = new Vec2(this.transform.minScale.x, this.transform.scale.y);
-        if (this.transform.scale.x >= this.transform.maxScale.x)
+            scaleIsChanged = false;
+        }
+        if (this.transform.scale.x >= this.transform.maxScale.x) {
             this.transform.scale = new Vec2(this.transform.maxScale.x, this.transform.scale.y);
-            
+            scaleIsChanged = false;
+        }
+        
         this.drawEditor();
     }
 
@@ -277,15 +295,10 @@ class Editor {
         const x = this.editorGrid.bpmLines[columnNum].transform.position.x+this.transform.position.x - this.transform.position.x;
         const y = this.editorGrid.beatLines[rowNum].transform.position.y+this.transform.position.y - this.transform.position.y;
 
-        //console.log(this.editorGrid.distanceBetweenBpmLines);
-        //console.log(this.editorGrid.distanceBetweenBeatLines);
         console.log(columnNum+":"+rowNum);
         console.log(Math.abs(x - clickX) + ":" + Math.abs(y - clickY))
 
         if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
-            
-            //console.log(this.notes[columnNum][rowNum]);
-            
             if (this.notes[columnNum][rowNum] != undefined && this.notes[columnNum][rowNum] != null) {
                 console.log("remove timestamp");
                 this.notes[columnNum][rowNum] = null;
@@ -302,7 +315,6 @@ class Editor {
     }
 
     drawEditor() {
-        //console.log("draw editor")
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
         this.ctx.fillStyle = '#EDEDED'
         this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height)
@@ -358,13 +370,14 @@ class AudioController {
         console.log(this.soundId);
         console.log(this.analyser); 
     }
+    
+    playClapSound() {
+        
+    }
 
     setMusicFromCanvasPosition(position : Vec2, editor : Editor) {
         console.log(position);
-        var second = editor.transform.canvasToWorld(position).x;
-        console.log(editor.transform.canvasToWorld(position).x)
-        console.log(editor.transform.position.x)
-        console.log(second)
+        var second = editor.transform.canvasToSongTime(position).x/editor.transform.scale.x;
         this.sound.seek([second]);
     }
 
