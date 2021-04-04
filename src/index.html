@@ -38,6 +38,10 @@
           <input value="60" onchange='bmpValueChange(event)' type="text">
         </div>
 
+        <div class="slider_container">
+          <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+        </div>
+
       </div>
   
       <div class="canvas_holder">
@@ -49,5 +53,6 @@
     <!-- <script> var exports = {};</script>  -->
     <!-- <script defer> var exports = {"__esModule": true};</script> -->
     <script defer src="dist/renderer.js"></script>
+    <script defer src="dist/editor.js"></script>
   </body>
 </html>

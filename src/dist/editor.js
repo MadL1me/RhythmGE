@@ -352,6 +352,8 @@ var Timestamp = /** @class */ (function () {
 }());
 var EditorGrid = /** @class */ (function () {
     function EditorGrid(editor, canvas) {
+        this.beatLinesRange = new Vec2(1, 10);
+        this.bpmRange = new Vec2(1, 10000);
         this.editor = editor;
         this.canvas = canvas;
         this.bpmValue = 60;
@@ -371,21 +373,31 @@ var EditorGrid = /** @class */ (function () {
         return (this.canvas.height) / (this.beatLinesCount + 1);
     };
     EditorGrid.prototype.setBpmValue = function (bpm) {
+        bpm < this.bpmRange.x ? bpm = this.bpmRange.x : bpm = bpm;
+        bpm > this.bpmRange.y ? bpm = this.bpmRange.y : bpm = bpm;
         this.bpmValue = bpm;
         console.log(bpm);
     };
     EditorGrid.prototype.setBeatLinesCount = function (beatLines) {
+        beatLines < this.beatLinesRange.x ? beatLines = this.beatLinesRange.x : beatLines = beatLines;
+        beatLines > this.beatLinesRange.y ? beatLines = this.beatLinesRange.y : beatLines = beatLines;
         this.beatLinesCount = beatLines;
-        console.log(beatLines);
+        this.initGrid();
     };
     EditorGrid.prototype.getGridSize = function () {
         return new Vec2(this.bpmValue, this.beatLinesCount);
     };
     EditorGrid.prototype.initGrid = function () {
-        this.beatLines = [];
         for (var i = 0; i < this.beatLinesCount; i++) {
-            var beatLine = new BeatLine((i + 1) * this.distanceBetweenBeatLines(), this.editor.transform);
-            this.beatLines.push(beatLine);
+            if (i + 1 > this.beatLines.length) {
+                var beatLine = new BeatLine((i + 1) * this.distanceBetweenBeatLines(), this.editor.transform);
+                this.beatLines.push(beatLine);
+            }
+            this.beatLines[i].transform.position = new Vec2(0, (i + 1) * this.distanceBetweenBeatLines());
+            this.beatLines[i].activate();
+        }
+        for (var i = this.beatLinesCount; i < this.beatLines.length; i++) {
+            this.beatLines[i].deactivate();
         }
     };
     EditorGrid.prototype.initBpmLines = function () {
@@ -399,11 +411,6 @@ var EditorGrid = /** @class */ (function () {
     EditorGrid.prototype.draw = function (drawBpmLines, editor) {
         var canvas = this.canvas;
         var ctx = canvas.getContext('2d');
-        //console.log(distanceBetweenBeatLines);
-        //console.log(distanceBetweenBpmLines);
-        // for (var i=0; i<this.beatLines.length; i++){ 
-        //     this.beatLines[i].moveY((i+1)*this.distanceBetweenBeatLines());
-        // }
         this.beatLines.forEach(function (beatLine) {
             if (beatLine.isActive)
                 beatLine.draw(canvas);
@@ -412,11 +419,6 @@ var EditorGrid = /** @class */ (function () {
             var soundLength = editor.audioController.sound.duration();
             var bpmCount = (soundLength / 60) * this.bpmValue;
             var pixelsPerBeat = soundLength / bpmCount;
-            //console.log(this.bpmLines.length);
-            // for (var i=0; i<this.bpmLines.length; i++){ 
-            //     //console.log("bpm line is pushed");
-            //     this.bpmLines[i].moveX(i*scale.x*pixelsPerBeat);
-            // }
             this.bpmLines.forEach(function (bpmLine) {
                 if (bpmLine.isActive)
                     bpmLine.draw(canvas);

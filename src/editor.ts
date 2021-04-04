@@ -461,6 +461,9 @@ class EditorGrid {
     beatLines: Array<BeatLine>;
     editor: Editor;
 
+    private beatLinesRange = new Vec2(1,20);
+    private bpmRange = new Vec2(1,10000);
+
     constructor(editor: Editor, canvas: HTMLCanvasElement) {
         this.editor = editor;
         this.canvas = canvas;
@@ -484,14 +487,24 @@ class EditorGrid {
         return (this.canvas.height)/(this.beatLinesCount+1);
     }
 
-    setBpmValue(bpm : number) {
+    setBpmValue(event) {            
+        var bpm = parseInt(event.target.value);
+        
+        bpm < this.bpmRange.x ? bpm = this.bpmRange.x : bpm = bpm;
+        bpm > this.bpmRange.y ? bpm = this.bpmRange.y : bpm = bpm;
+
         this.bpmValue = bpm;
         console.log(bpm);
     }
 
-    setBeatLinesCount(beatLines : number) {
+    setBeatLinesCount(event) {
+        var beatLines = parseInt(event.target.value);
+        
+        beatLines < this.beatLinesRange.x ? beatLines = this.beatLinesRange.x : beatLines = beatLines;
+        beatLines > this.beatLinesRange.y ? beatLines = this.beatLinesRange.y : beatLines = beatLines;
+        
         this.beatLinesCount = beatLines;
-        console.log(beatLines);
+        this.initGrid();
     }
 
     getGridSize() : Vec2 {
@@ -499,10 +512,16 @@ class EditorGrid {
     }
 
     initGrid() {
-        this.beatLines = [];
         for (var i=0; i<this.beatLinesCount; i++){ 
-            var beatLine = new BeatLine((i+1)*this.distanceBetweenBeatLines(), this.editor.transform);
-            this.beatLines.push(beatLine);
+            if (i+1 > this.beatLines.length) {
+                var beatLine = new BeatLine((i+1)*this.distanceBetweenBeatLines(), this.editor.transform);
+                this.beatLines.push(beatLine);
+            }
+            this.beatLines[i].transform.position = new Vec2(0, (i+1)*this.distanceBetweenBeatLines());
+            this.beatLines[i].activate();
+        }
+        for (var i = this.beatLinesCount; i < this.beatLines.length; i++) {
+            this.beatLines[i].deactivate();
         }
     }
 
@@ -520,13 +539,6 @@ class EditorGrid {
         const canvas = this.canvas;
         const ctx = canvas.getContext('2d');
 
-        //console.log(distanceBetweenBeatLines);
-        //console.log(distanceBetweenBpmLines);
-        
-        // for (var i=0; i<this.beatLines.length; i++){ 
-        //     this.beatLines[i].moveY((i+1)*this.distanceBetweenBeatLines());
-        // }
-
         this.beatLines.forEach(beatLine => {
             if (beatLine.isActive)
                 beatLine.draw(canvas);
@@ -536,13 +548,6 @@ class EditorGrid {
             var soundLength = editor.audioController.sound.duration();
             var bpmCount = (soundLength/60) * this.bpmValue;
             var pixelsPerBeat = soundLength / bpmCount;
-
-            //console.log(this.bpmLines.length);
-            
-            // for (var i=0; i<this.bpmLines.length; i++){ 
-            //     //console.log("bpm line is pushed");
-            //     this.bpmLines[i].moveX(i*scale.x*pixelsPerBeat);
-            // }
             
             this.bpmLines.forEach(bpmLine => {
                 if (bpmLine.isActive)
@@ -654,4 +659,3 @@ class LeftScale {
 
 const editor = new Editor();
 module.exports = editor;
-
