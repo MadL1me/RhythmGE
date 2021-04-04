@@ -1,18 +1,21 @@
-// import { ipcRenderer, ipcMain } from "electron";
-// import { editor } from "./dist/editor";
-// import { Howler, Howl } from "howler";
-//import Howl = require("howler");
-//import Howler = require("howler");
-
 var Howler = require("howler");
 var Howl = require("howler");
 var editor = require("./dist/editor");
-//var editorData = require("./dist/editor");
 
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
+setInterval(() => { editor.updateLoop(); }, 10);
+
+window.onresize = (ev: UIEvent) => {
+    editor.onWindowResize(ev);
+}
+
 function canvasClickHandler(event) {
     editor.canvasClickHandle(event);
+}
+
+function canvasMouseDownHandler(event) {
+    editor.canvasMouseDownHandle(event);
 }
 
 function handleFileSelect(event) {
@@ -24,12 +27,6 @@ function handleFileSelect(event) {
 function playButtonClick() {
     editor.onPlay();
 }
-
-function updateLoop() {
-    editor.updateLoop();
-}
-
-setInterval(updateLoop, 10);
 
 var analyser;
 

@@ -103,30 +103,6 @@ var Transform = /** @class */ (function () {
     };
     return Transform;
 }());
-// var a = new Transform();
-// var b = new Transform();
-// var c = new Transform();
-// b.parent = a;
-// c.parent = a;
-// a.position = new Vec2(0,0);
-// b.localPosition = new Vec2(10,0);
-// c.localPosition = new Vec2(15,0);
-// console.log(a.position);
-// console.log(b.position);
-// console.log(c.position);
-// a.localPosition = new Vec2(10,0);
-// console.log(a.position);
-// console.log(b.position);
-// console.log(c.position);
-// a.position = new Vec2(5,0);
-// console.log(a.position);
-// console.log(b.position);
-// console.log(c.position);
-// b.position = new Vec2(0,0);
-// console.log(a.position);
-// console.log(b.position);
-// console.log(b.localPosition);
-// console.log(c.position);
 var Editor = /** @class */ (function () {
     function Editor() {
         this.isPlaying = false;
@@ -195,6 +171,15 @@ var Editor = /** @class */ (function () {
         console.log(this.transform.position.x);
         this.drawEditor();
     };
+    Editor.prototype.onWindowResize = function (event) {
+        console.log(event);
+        var w = document.documentElement.clientWidth;
+        var h = document.documentElement.clientHeight;
+        this.canvas.setAttribute('width', (w - 100).toString());
+        this.canvas.setAttribute('height', (h / 2).toString());
+        this.editorGrid.initGrid();
+        this.drawEditor();
+    };
     Editor.prototype.onCanvasResize = function (mouseDelta) {
         var resultedDelta = mouseDelta * this.resizingSpeed;
         console.log("resized!!");
@@ -206,6 +191,8 @@ var Editor = /** @class */ (function () {
         if (this.transform.scale.x >= this.transform.maxScale.x)
             this.transform.scale = new Vec2(this.transform.maxScale.x, this.transform.scale.y);
         this.drawEditor();
+    };
+    Editor.prototype.canvasMouseDownHandle = function (event) {
     };
     Editor.prototype.canvasClickHandle = function (event) {
         if (!this.audioLoaded)
@@ -395,8 +382,9 @@ var EditorGrid = /** @class */ (function () {
         return new Vec2(this.bpmValue, this.beatLinesCount);
     };
     EditorGrid.prototype.initGrid = function () {
+        this.beatLines = [];
         for (var i = 0; i < this.beatLinesCount; i++) {
-            var beatLine = new BeatLine(i * this.distanceBetweenBeatLines(), this.editor.transform);
+            var beatLine = new BeatLine((i + 1) * this.distanceBetweenBeatLines(), this.editor.transform);
             this.beatLines.push(beatLine);
         }
     };
