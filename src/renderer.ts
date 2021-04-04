@@ -10,14 +10,6 @@ window.onresize = (ev: UIEvent) => {
     editor.onWindowResize(ev);
 }
 
-function canvasClickHandler(event) {
-    editor.canvasClickHandle(event);
-}
-
-function canvasMouseDownHandler(event) {
-    editor.canvasMouseDownHandle(event);
-}
-
 function handleFileSelect(event) {
     var files = event.target.files;
     audioLoad(files[0]);
@@ -55,7 +47,12 @@ var editorCanvas = document.getElementById("editor_canvas");
 let keysPressed = [];
 
 editorCanvas.addEventListener('wheel', onCanvasWheel);
-editorCanvas.addEventListener('click', canvasClickHandler);
+editorCanvas.addEventListener('click', (event) => { editor.canvasClickHandle(event); });
+
+function canvasMouseDownHandler(event) {
+    editor.canvasMouseDownHandle(event);
+}
+
 window.addEventListener('keydown', onCanvasKeyDown);
 window.addEventListener('keyup', onCanvasKeyUp);
 
@@ -80,14 +77,11 @@ function onCanvasWheel(event) {
 }
 
 function beatLinesValueChange(event) {
-    console.log("beat line changed");
-    console.log(event.target.value);
-    editor.changeBeatlinesCount(parseInt(event.target.value));
+    editor.changeBeatlinesCount(event);
 }
 
 function bmpValueChange(event) {
-    console.log(event.target.value);
-    editor.changeBpmValue(parseInt(event.target.value));
+    editor.changeBpmValue(event);
 }
 
 var drop_zone = document.getElementById("drop_zone")
