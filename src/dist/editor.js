@@ -20,8 +20,30 @@ var Vec2 = /** @class */ (function () {
     };
     return Vec2;
 }());
-var AppSettings = /** @class */ (function () {
+var RgbaColor = /** @class */ (function () {
+    function RgbaColor(r, g, b, a) {
+        if (a === void 0) { a = 1; }
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+    RgbaColor.prototype.value = function () {
+        if (this.a == 1)
+            return 'rgba(' + this.r + ',' + this.g + ',' + this.b + ')';
+        return 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + this.a + ')';
+    };
+    return RgbaColor;
+}());
+var appSettings = new /** @class */ (function () {
     function AppSettings() {
+        this.editorBackgroundColor = new RgbaColor(255, 255, 255);
+        this.beatLineColor = new RgbaColor(74, 74, 74);
+        this.mainBpmLineColor = new RgbaColor(92, 92, 92);
+        this.snapBpmLineColor = new RgbaColor(74, 189, 166);
+        this.customBpmLineColor = new RgbaColor(116, 104, 222);
+        this.loudnessBarColor = new RgbaColor(88, 237, 123);
+        this.timestepLineColor = new RgbaColor(242, 70, 211);
     }
     return AppSettings;
 }());
@@ -264,7 +286,7 @@ var Editor = /** @class */ (function () {
     Editor.prototype.drawEditor = function () {
         var _this = this;
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = '#EDEDED';
+        this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.editorGrid.draw(this.audioController != null && this.audioController.sound.state() == "loaded", this);
         this.notes.forEach(function (notes) {
@@ -349,7 +371,8 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
     };
     AudioAmplitudeCanvas.prototype.draw = function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = "white";
+        console.log(appSettings.editorBackgroundColor.value());
+        this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         if (this.data == undefined || this.data == null)
             return;
@@ -358,7 +381,7 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
         console.log("DRAWING CANVAS!!!");
         for (var i = 0; i < this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i] * this.canvas.height;
-            this.ctx.strokeStyle = "black";
+            this.ctx.strokeStyle = appSettings.loudnessBarColor.value();
             this.ctx.beginPath();
             this.ctx.moveTo(i + this.editor.viewport.position.x, 0);
             this.ctx.lineTo(i + this.editor.viewport.position.x, interpolated);
@@ -407,12 +430,12 @@ var TimestepLine = /** @class */ (function () {
         if (x <= 0)
             x = 0;
         this.ctx.beginPath();
-        this.ctx.fillStyle = "#f7075b";
+        this.ctx.fillStyle = appSettings.timestepLineColor.value();
         this.ctx.moveTo(x, 10);
         this.ctx.lineTo(x - 5, 0);
         this.ctx.lineTo(x + 5, 0);
         this.ctx.fill();
-        this.ctx.strokeStyle = "#f7075b";
+        this.ctx.strokeStyle = appSettings.timestepLineColor.value();
         this.ctx.moveTo(x, 0);
         this.ctx.lineTo(x, this.canvas.height);
         this.ctx.stroke();
@@ -491,10 +514,11 @@ var EditorGrid = /** @class */ (function () {
         }
     };
     EditorGrid.prototype.initBpmLines = function () {
+        this.bpmLines = [];
         var soundLength = editor.audioController.sound.duration();
         var bpmCount = (soundLength / 60) * this.bpmValue;
         for (var i = 0; i < bpmCount; i++) {
-            var bpmLine = new BPMLine(i, this.editor.transform);
+            var bpmLine = new BPMLine(i, this.editor.transform, appSettings.mainBpmLineColor);
             this.bpmLines.push(bpmLine);
         }
     };
@@ -518,9 +542,10 @@ var EditorGrid = /** @class */ (function () {
     return EditorGrid;
 }());
 var BPMLine = /** @class */ (function () {
-    function BPMLine(x, parent) {
+    function BPMLine(x, parent, rgbaColor) {
         this.transform = new Transform();
         this.isActive = true;
+        this.color = rgbaColor;
         this.transform.parent = parent;
         this.transform.localPosition = new Vec2(x, 0);
     }
@@ -528,7 +553,7 @@ var BPMLine = /** @class */ (function () {
         if (!this.isActive)
             return;
         var ctx = canvas.getContext('2d');
-        ctx.strokeStyle = "black";
+        ctx.strokeStyle = this.color.value();
         ctx.beginPath();
         ctx.moveTo(this.transform.position.x + view.position.x, 0);
         ctx.lineTo(this.transform.position.x + view.position.x, canvas.height);
@@ -557,7 +582,7 @@ var BeatLine = /** @class */ (function () {
     }
     BeatLine.prototype.draw = function (view, canvas) {
         var ctx = canvas.getContext('2d');
-        ctx.strokeStyle = "black";
+        ctx.strokeStyle = appSettings.beatLineColor.value();
         ctx.beginPath();
         ctx.moveTo(0, this.transform.position.y);
         ctx.lineTo(canvas.width, this.transform.position.y);

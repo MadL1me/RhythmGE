@@ -28,10 +28,35 @@ class Vec2 {
     }
 }
 
-class AppSettings {
-    constructor() {
-        
+class RgbaColor {
+
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+
+    constructor(r, g, b, a=1) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
     }
+
+    value() : string {
+        if (this.a == 1)
+            return 'rgba('+this.r+','+this.g+','+this.b+')';
+        return 'rgba('+this.r+','+this.g+','+this.b+','+this.a+')';
+    }
+}
+
+const appSettings = new class AppSettings {
+    editorBackgroundColor = new RgbaColor(255,255,255);
+    beatLineColor = new RgbaColor(74, 74, 74);
+    mainBpmLineColor = new RgbaColor(92, 92, 92);
+    snapBpmLineColor = new RgbaColor(74, 189, 166);
+    customBpmLineColor = new RgbaColor(116, 104, 222);
+    loudnessBarColor = new RgbaColor(88, 237, 123);
+    timestepLineColor = new RgbaColor(242, 70, 211);
 }
 
 class Viewport {
@@ -334,7 +359,7 @@ class Editor {
 
     drawEditor() {
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
-        this.ctx.fillStyle = '#EDEDED'
+        this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height)
         
         this.editorGrid.draw(this.audioController != null && this.audioController.sound.state()=="loaded", this);
@@ -454,7 +479,8 @@ class AudioAmplitudeCanvas {
 
     draw() {
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = "white";
+        console.log(appSettings.editorBackgroundColor.value());
+        this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
 
         if (this.data == undefined || this.data == null)
@@ -467,7 +493,7 @@ class AudioAmplitudeCanvas {
 
         for (var i = 0; i<this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i]*this.canvas.height;
-            this.ctx.strokeStyle = "black";
+            this.ctx.strokeStyle = appSettings.loudnessBarColor.value();
             this.ctx.beginPath();
             this.ctx.moveTo(i+this.editor.viewport.position.x, 0);
             this.ctx.lineTo(i+this.editor.viewport.position.x, interpolated);
@@ -515,6 +541,7 @@ class TimestepLine {
     
     transform: Transform = new Transform();
     canvas: HTMLCanvasElement;
+    
     ctx:CanvasRenderingContext2D;
 
     constructor() {
@@ -531,13 +558,13 @@ class TimestepLine {
             x = 0;
 
         this.ctx.beginPath();
-        this.ctx.fillStyle = "#f7075b";
+        this.ctx.fillStyle = appSettings.timestepLineColor.value();
         this.ctx.moveTo(x, 10);
         this.ctx.lineTo(x-5, 0);
         this.ctx.lineTo(x+5, 0);
         this.ctx.fill();
 
-        this.ctx.strokeStyle = "#f7075b";
+        this.ctx.strokeStyle = appSettings.timestepLineColor.value();
         this.ctx.moveTo(x,0);
         this.ctx.lineTo(x, this.canvas.height);
         this.ctx.stroke();
@@ -580,6 +607,7 @@ class EditorGrid {
 
     private beatLinesRange = new Vec2(1,20);
     private bpmRange = new Vec2(1,10000);
+
 
     constructor(editor: Editor, canvas: HTMLCanvasElement) {
         this.editor = editor;
@@ -643,11 +671,12 @@ class EditorGrid {
     }
 
     initBpmLines() {
+        this.bpmLines = [];
         var soundLength = editor.audioController.sound.duration();
         var bpmCount = (soundLength/60) * this.bpmValue;
         
         for (var i=0; i<bpmCount; i++) {
-            var bpmLine = new BPMLine(i, this.editor.transform);
+            var bpmLine = new BPMLine(i, this.editor.transform, appSettings.mainBpmLineColor);
             this.bpmLines.push(bpmLine);
         }
     }
@@ -678,8 +707,10 @@ class BPMLine {
 
     transform: Transform = new Transform();
     isActive: boolean = true;
-    
-    constructor(x : number, parent : Transform) {
+    color: RgbaColor;
+
+    constructor(x : number, parent : Transform, rgbaColor: RgbaColor) {
+        this.color = rgbaColor;
         this.transform.parent = parent;
         this.transform.localPosition = new Vec2(x, 0);
     }
@@ -689,7 +720,7 @@ class BPMLine {
             return;
         
         const ctx = canvas.getContext('2d');
-        ctx.strokeStyle = "black";
+        ctx.strokeStyle = this.color.value();
         ctx.beginPath();
         ctx.moveTo(this.transform.position.x+view.position.x, 0);
         ctx.lineTo(this.transform.position.x+view.position.x, canvas.height);
@@ -727,7 +758,7 @@ class BeatLine {
 
     draw(view: Viewport, canvas : HTMLCanvasElement) {
         const ctx = canvas.getContext('2d');
-        ctx.strokeStyle = "black";
+        ctx.strokeStyle = appSettings.beatLineColor.value();
         ctx.beginPath();
         ctx.moveTo(0, this.transform.position.y);
         ctx.lineTo(canvas.width, this.transform.position.y);
