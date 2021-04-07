@@ -161,7 +161,7 @@ class Editor {
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
         this.editorGrid = new EditorGrid(this, this.canvas);
-        this.audioCanvas = new AudioAmplitudeCanvas();
+        this.audioCanvas = new AudioAmplitudeCanvas(this);
         this.timestepLine = new TimestepLine();
         this.timestepLine.transform.parent = this.transform;
         this.drawEditor();
@@ -343,7 +343,7 @@ class Editor {
             if (note!=null) { note.draw(this.canvas);
         }})});
         
-        this.audioCanvas.draw(this.audioController, this.viewport);
+        this.audioCanvas.draw();
 
         this.topScale.draw(this.canvas);
         this.leftScale.draw(this.canvas);
@@ -426,7 +426,11 @@ class AudioAmplitudeCanvas {
     editor: Editor;
     audio: AudioController;
     data: Float32Array;
-    amplitudeData: Float32Array;
+    amplitudeData = new Array<number>();
+    
+    readonly sampleRate = 48000;
+    samplesPerArrayValue = this.sampleRate/10;
+
 
     constructor(editor: Editor) {
         this.editor = editor;
@@ -443,54 +447,66 @@ class AudioAmplitudeCanvas {
         this.canvas.setAttribute('height', (h/8).toString());
     }
 
-    onAudioLoad() {
-        if (this.audio.bufferSource == undefined || this.audio.bufferSource.buffer == undefined)
-            return;
-        
-        this.data = this.audio.bufferSource.buffer.getChannelData(0);
+    onAudioLoad(audio: AudioController) {        
+        this.data = audio.bufferSource.buffer.getChannelData(0);
+        this.calculateAmplitudeArray();
     }
 
     draw() {
-
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "white";
         this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
-        
-        if (audio == null)
-            return;
 
         if (this.data == undefined || this.data == null)
             return;
 
-        for (var i = 0; i<this.canvas.width; i++) {
-            
-            var interpolated = this.data[i]*this.canvas.height;
+        if (this.amplitudeData == undefined || this.amplitudeData == null)
+            return;
+
+        console.log("DRAWING CANVAS!!!");
+
+        for (var i = 0; i<this.amplitudeData.length; i++) {
+            var interpolated = this.amplitudeData[i]*this.canvas.height;
             this.ctx.strokeStyle = "black";
             this.ctx.beginPath();
-            this.ctx.moveTo(i, 0);
-            this.ctx.lineTo(i, interpolated);
+            this.ctx.moveTo(i+this.editor.viewport.position.x, 0);
+            this.ctx.lineTo(i+this.editor.viewport.position.x, interpolated);
             this.ctx.stroke();
         }
+    }
+
+    private calculateAmplitudeArray() {
+        for (var i = 0; i<this.data.length; i+=this.samplesPerArrayValue) {
+            var value = this.getAvarageAtRange(i, i+this.samplesPerArrayValue);
+            this.amplitudeData.push(value);
+        }
+        console.log(this.amplitudeData);
+    }
+
+    private getAmplitudeBarWitdh() : number {
+        return this.editor.transform.scale.x * this.samplesPerArrayValue / this.sampleRate;
     }
 
     private getMaxAtRange(from: number, to: number) : number {
         var max = -10;
         
         for (var i = from; i<to && i<this.data.length; i++) {
-            if (this.data[i] >= max) {
-                max = this.data[i];
+            if (Math.abs(this.data[i]) >= max) {
+                max = Math.abs(this.data[i]);
             }
         }
-
         return max;
     }
 
-    private drawAmplitude() {
+    private getAvarageAtRange(from: number, to: number) : number {
+        var result = 0;
         
-    }
+        for (var i = from; i<to && i<this.data.length; i++) {
+            result += Math.abs(this.data[i]);
+        }
 
-    private drawVisualizer() {
-
+        result = result/(to-from);
+        return result;
     }
 }
 

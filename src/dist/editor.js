@@ -130,7 +130,7 @@ var Editor = /** @class */ (function () {
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
         this.editorGrid = new EditorGrid(this, this.canvas);
-        this.audioCanvas = new AudioAmplitudeCanvas();
+        this.audioCanvas = new AudioAmplitudeCanvas(this);
         this.timestepLine = new TimestepLine();
         this.timestepLine.transform.parent = this.transform;
         this.drawEditor();
@@ -274,7 +274,7 @@ var Editor = /** @class */ (function () {
                 }
             });
         });
-        this.audioCanvas.draw(this.audioController, this.viewport);
+        this.audioCanvas.draw();
         this.topScale.draw(this.canvas);
         this.leftScale.draw(this.canvas);
         if (this.isPlaying) {
@@ -328,7 +328,12 @@ var AudioController = /** @class */ (function () {
     return AudioController;
 }());
 var AudioAmplitudeCanvas = /** @class */ (function () {
-    function AudioAmplitudeCanvas() {
+    function AudioAmplitudeCanvas(editor) {
+        this.amplitudeData = new Array();
+        this.sampleRate = 48000;
+        this.samplesPerArrayValue = this.sampleRate / 10;
+        this.editor = editor;
+        this.audio = editor.audioController;
         this.canvas = document.getElementById("audio_amplitude_canvas");
         this.ctx = this.canvas.getContext("2d");
     }
@@ -339,39 +344,53 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
         this.canvas.setAttribute('height', (h / 8).toString());
     };
     AudioAmplitudeCanvas.prototype.onAudioLoad = function (audio) {
-        if (audio.bufferSource == undefined || audio.bufferSource.buffer == undefined)
-            return;
         this.data = audio.bufferSource.buffer.getChannelData(0);
+        this.calculateAmplitudeArray();
     };
-    AudioAmplitudeCanvas.prototype.draw = function (audio, view) {
+    AudioAmplitudeCanvas.prototype.draw = function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "white";
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        if (audio == null)
-            return;
         if (this.data == undefined || this.data == null)
             return;
-        for (var i = 300000; i - 300000 < this.canvas.width; i++) {
-            var interpolated = this.data[i] * this.canvas.height;
+        if (this.amplitudeData == undefined || this.amplitudeData == null)
+            return;
+        console.log("DRAWING CANVAS!!!");
+        for (var i = 0; i < this.amplitudeData.length; i++) {
+            var interpolated = this.amplitudeData[i] * this.canvas.height;
             this.ctx.strokeStyle = "black";
             this.ctx.beginPath();
-            this.ctx.moveTo(i, 0);
-            this.ctx.lineTo(i, interpolated);
+            this.ctx.moveTo(i + this.editor.viewport.position.x, 0);
+            this.ctx.lineTo(i + this.editor.viewport.position.x, interpolated);
             this.ctx.stroke();
         }
+    };
+    AudioAmplitudeCanvas.prototype.calculateAmplitudeArray = function () {
+        for (var i = 0; i < this.data.length; i += this.samplesPerArrayValue) {
+            var value = this.getAvarageAtRange(i, i + this.samplesPerArrayValue);
+            this.amplitudeData.push(value);
+        }
+        console.log(this.amplitudeData);
+    };
+    AudioAmplitudeCanvas.prototype.getAmplitudeBarWitdh = function () {
+        return this.editor.transform.scale.x * this.samplesPerArrayValue / this.sampleRate;
     };
     AudioAmplitudeCanvas.prototype.getMaxAtRange = function (from, to) {
         var max = -10;
         for (var i = from; i < to && i < this.data.length; i++) {
-            if (this.data[i] >= max) {
-                max = this.data[i];
+            if (Math.abs(this.data[i]) >= max) {
+                max = Math.abs(this.data[i]);
             }
         }
         return max;
     };
-    AudioAmplitudeCanvas.prototype.drawAmplitude = function () {
-    };
-    AudioAmplitudeCanvas.prototype.drawVisualizer = function () {
+    AudioAmplitudeCanvas.prototype.getAvarageAtRange = function (from, to) {
+        var result = 0;
+        for (var i = from; i < to && i < this.data.length; i++) {
+            result += Math.abs(this.data[i]);
+        }
+        result = result / (to - from);
+        return result;
     };
     return AudioAmplitudeCanvas;
 }());
