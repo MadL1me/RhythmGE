@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var _a = require('howler'), Howl = _a.Howl, Howler = _a.Howler;
 var Vec2 = /** @class */ (function () {
@@ -25,6 +25,24 @@ var AppSettings = /** @class */ (function () {
     }
     return AppSettings;
 }());
+var Viewport = /** @class */ (function () {
+    function Viewport() {
+        this.maxDeviation = new Vec2(100, 100);
+    }
+    Viewport.prototype.worldToCanvas = function (worldCoords) {
+        var pos = this.position;
+        return new Vec2(worldCoords.x - pos.x, worldCoords.y - pos.y);
+    };
+    Viewport.prototype.canvasToWorld = function (canvasCoords) {
+        var pos = this.position;
+        return new Vec2(100, 0);
+    };
+    Viewport.prototype.canvasToSongTime = function (canvasCoords) {
+        var pos = this.position;
+        return new Vec2((canvasCoords.x - pos.x), (canvasCoords.y - pos.y));
+    };
+    return Viewport;
+}());
 var Transform = /** @class */ (function () {
     function Transform() {
         this._parent = null;
@@ -32,7 +50,6 @@ var Transform = /** @class */ (function () {
         this._localPosition = new Vec2(0, 0);
         this.scale = new Vec2(10, 1);
         this.rotation = new Vec2(0, 0);
-        this.maxDeviation = new Vec2(100, 100);
         this.maxScale = new Vec2(100, 100);
         this.minScale = new Vec2(5, 5);
     }
@@ -64,18 +81,6 @@ var Transform = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
-    Transform.prototype.worldToCanvas = function (worldCoords) {
-        var pos = this.position;
-        return new Vec2(worldCoords.x - pos.x, worldCoords.y - pos.y);
-    };
-    Transform.prototype.canvasToWorld = function (canvasCoords) {
-        var pos = this.position;
-        return new Vec2((-canvasCoords.x / this.scale.x) + pos.x / this.scale.x, (-canvasCoords.y / this.scale.y) + pos.y / this.scale.y);
-    };
-    Transform.prototype.canvasToSongTime = function (canvasCoords) {
-        var pos = this.position;
-        return new Vec2((canvasCoords.x - pos.x), (canvasCoords.y - pos.y));
-    };
     Object.defineProperty(Transform.prototype, "parent", {
         get: function () {
             return this._parent;
@@ -115,7 +120,10 @@ var Editor = /** @class */ (function () {
         this.fastScrollingSpeed = 5;
         this.notes = Array(5).fill(null).map(function () { return Array(5); });
         this.transform = new Transform();
-        this.transform.position = new Vec2(100, 0);
+        this.viewport = new Viewport();
+        this.viewport.gridTransform = this.transform;
+        this.viewport.position = new Vec2(100, 0);
+        this.transform.position = new Vec2(0, 0);
         this.canvas = document.getElementById("editor_canvas");
         this.ctx = this.canvas.getContext("2d");
         //this.ctx.translate(0.5,0.5);
@@ -134,6 +142,14 @@ var Editor = /** @class */ (function () {
     Editor.prototype.changeBpmValue = function (bpm) {
         this.editorGrid.setBpmValue(bpm);
         this.drawEditor();
+    };
+    Editor.prototype.debug = function () {
+        console.log(this.audioController.bufferSource.buffer.sampleRate);
+        console.log(this.audioController.bufferSource.buffer);
+        console.log(this.audioController.bufferSource);
+        console.log(this.audioController.sound._soundById(this.audioController.soundId)._node);
+        console.log(this.audioController.bufferSource.buffer.getChannelData(0));
+        console.log(this.audioController.analyser);
     };
     Editor.prototype.updateLoop = function () {
         if (!this.isPlaying)
@@ -172,10 +188,10 @@ var Editor = /** @class */ (function () {
         var resultedDelta = mouseDelta * this.scrollingSpeed;
         if (isSpeededUp)
             resultedDelta *= this.fastScrollingSpeed;
-        this.transform.position = new Vec2(this.transform.position.x + resultedDelta, this.transform.position.y);
-        if (this.transform.position.x > this.transform.maxDeviation.x)
-            this.transform.position = new Vec2(this.transform.maxDeviation.x, this.transform.position.y);
-        console.log(this.transform.position.x);
+        this.viewport.position = new Vec2(this.viewport.position.x + resultedDelta, this.viewport.position.y);
+        if (this.viewport.position.x > this.viewport.maxDeviation.x)
+            this.viewport.position = new Vec2(this.viewport.maxDeviation.x, this.viewport.position.y);
+        console.log(this.viewport.position.x);
         this.drawEditor();
     };
     Editor.prototype.onWindowResize = function (event) {
@@ -185,6 +201,7 @@ var Editor = /** @class */ (function () {
         this.canvas.setAttribute('width', (w - 100).toString());
         this.canvas.setAttribute('height', (h / 2).toString());
         this.editorGrid.initGrid();
+        this.audioCanvas.onWindowResize(event);
         this.drawEditor();
     };
     Editor.prototype.onCanvasResize = function (mouseDelta) {
@@ -201,17 +218,7 @@ var Editor = /** @class */ (function () {
             this.transform.scale = new Vec2(this.transform.maxScale.x, this.transform.scale.y);
             scaleIsChanged = false;
         }
-        var newPosX = (this.transform.position.x - this.canvas.width / 2) / oldScale * this.transform.scale.x;
-        console.log(newPosX);
-        this.transform.position = new Vec2(newPosX, 0);
-        // console.log(newPos);
-        // var newP = newPos.x / oldScale * this.transform.scale.x;
-        // if (this.transform.scale.x < oldScale && scaleIsChanged)
-        //     this.transform.position = Vec2.Substract(this.transform.position, new Vec2(newP, 0)); 
-        // else if (scaleIsChanged)
-        //     this.transform.position = Vec2.Sum(new Vec2(newP, 0), this.transform.position);
-        //console.log("new pos is: ") 
-        //console.log(newPos);
+        this.viewport.position = this.viewport.canvasToWorld(new Vec2(this.canvas.width / 2, 0));
         this.drawEditor();
     };
     Editor.prototype.canvasMouseDownHandle = function (event) {
@@ -267,13 +274,13 @@ var Editor = /** @class */ (function () {
                 }
             });
         });
-        this.audioCanvas.draw(this.transform.position);
+        this.audioCanvas.draw(this.audioController, this.viewport);
         this.topScale.draw(this.canvas);
         this.leftScale.draw(this.canvas);
         if (this.isPlaying) {
             this.timestepLine.transform.localPosition = new Vec2(this.audioController.sound.seek(), 0);
         }
-        this.timestepLine.draw();
+        this.timestepLine.draw(this.viewport);
     };
     return Editor;
 }());
@@ -289,7 +296,14 @@ var AudioController = /** @class */ (function () {
         this.sound.on("play", function () {
             console.log(_this);
             console.log(_this.soundId);
+            _this.bufferSource = _this.sound._soundById(_this.soundId)._node.bufferSource;
             _this.sound._soundById(_this.soundId)._node.bufferSource.connect(_this.analyser);
+            editor.audioCanvas.onAudioLoad(_this);
+        });
+        this.sound.on("seek", function () {
+            _this.bufferSource = _this.sound._soundById(_this.soundId)._node.bufferSource;
+            _this.sound._soundById(_this.soundId)._node.bufferSource.connect(_this.analyser);
+            editor.audioCanvas.onAudioLoad(_this);
         });
     }
     AudioController.prototype.play = function () {
@@ -301,7 +315,7 @@ var AudioController = /** @class */ (function () {
     };
     AudioController.prototype.setMusicFromCanvasPosition = function (position, editor) {
         console.log(position);
-        var second = editor.transform.canvasToSongTime(position).x / editor.transform.scale.x;
+        var second = editor.viewport.canvasToSongTime(position).x / editor.transform.scale.x;
         this.sound.seek([second]);
     };
     AudioController.prototype.setMusicFromTimePosition = function () {
@@ -318,8 +332,46 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
         this.canvas = document.getElementById("audio_amplitude_canvas");
         this.ctx = this.canvas.getContext("2d");
     }
-    AudioAmplitudeCanvas.prototype.draw = function (offset) {
-        //var 
+    AudioAmplitudeCanvas.prototype.onWindowResize = function (event) {
+        var w = document.documentElement.clientWidth;
+        var h = document.documentElement.clientHeight;
+        this.canvas.setAttribute('width', (w - 100).toString());
+        this.canvas.setAttribute('height', (h / 8).toString());
+    };
+    AudioAmplitudeCanvas.prototype.onAudioLoad = function (audio) {
+        if (audio.bufferSource == undefined || audio.bufferSource.buffer == undefined)
+            return;
+        this.data = audio.bufferSource.buffer.getChannelData(0);
+    };
+    AudioAmplitudeCanvas.prototype.draw = function (audio, view) {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = "white";
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        if (audio == null)
+            return;
+        if (this.data == undefined || this.data == null)
+            return;
+        for (var i = 300000; i - 300000 < this.canvas.width; i++) {
+            var interpolated = this.data[i] * this.canvas.height;
+            this.ctx.strokeStyle = "black";
+            this.ctx.beginPath();
+            this.ctx.moveTo(i, 0);
+            this.ctx.lineTo(i, interpolated);
+            this.ctx.stroke();
+        }
+    };
+    AudioAmplitudeCanvas.prototype.getMaxAtRange = function (from, to) {
+        var max = -10;
+        for (var i = from; i < to && i < this.data.length; i++) {
+            if (this.data[i] >= max) {
+                max = this.data[i];
+            }
+        }
+        return max;
+    };
+    AudioAmplitudeCanvas.prototype.drawAmplitude = function () {
+    };
+    AudioAmplitudeCanvas.prototype.drawVisualizer = function () {
     };
     return AudioAmplitudeCanvas;
 }());
@@ -329,8 +381,8 @@ var TimestepLine = /** @class */ (function () {
         this.canvas = document.getElementById("editor_canvas");
         this.ctx = this.canvas.getContext("2d");
     }
-    TimestepLine.prototype.draw = function () {
-        var x = this.transform.position.x;
+    TimestepLine.prototype.draw = function (view) {
+        var x = this.transform.position.x + view.position.x;
         if (x >= this.canvas.width)
             x = this.canvas.width - 5;
         if (x <= 0)
@@ -432,7 +484,7 @@ var EditorGrid = /** @class */ (function () {
         var ctx = canvas.getContext('2d');
         this.beatLines.forEach(function (beatLine) {
             if (beatLine.isActive)
-                beatLine.draw(canvas);
+                beatLine.draw(editor.viewport, canvas);
         });
         if (drawBpmLines) {
             var soundLength = editor.audioController.sound.duration();
@@ -440,7 +492,7 @@ var EditorGrid = /** @class */ (function () {
             var pixelsPerBeat = soundLength / bpmCount;
             this.bpmLines.forEach(function (bpmLine) {
                 if (bpmLine.isActive)
-                    bpmLine.draw(canvas);
+                    bpmLine.draw(editor.viewport, canvas);
             });
         }
     };
@@ -453,14 +505,14 @@ var BPMLine = /** @class */ (function () {
         this.transform.parent = parent;
         this.transform.localPosition = new Vec2(x, 0);
     }
-    BPMLine.prototype.draw = function (canvas) {
+    BPMLine.prototype.draw = function (view, canvas) {
         if (!this.isActive)
             return;
         var ctx = canvas.getContext('2d');
         ctx.strokeStyle = "black";
         ctx.beginPath();
-        ctx.moveTo(this.transform.position.x, 0);
-        ctx.lineTo(this.transform.position.x, canvas.height);
+        ctx.moveTo(this.transform.position.x + view.position.x, 0);
+        ctx.lineTo(this.transform.position.x + view.position.x, canvas.height);
         ctx.stroke();
     };
     BPMLine.prototype.activate = function () {
@@ -484,7 +536,7 @@ var BeatLine = /** @class */ (function () {
         this.transform.parent = parent;
         this.transform.position = new Vec2(0, y);
     }
-    BeatLine.prototype.draw = function (canvas) {
+    BeatLine.prototype.draw = function (view, canvas) {
         var ctx = canvas.getContext('2d');
         ctx.strokeStyle = "black";
         ctx.beginPath();
