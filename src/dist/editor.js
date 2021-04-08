@@ -47,6 +47,13 @@ var appSettings = new /** @class */ (function () {
     }
     return AppSettings;
 }());
+var Visualizer = /** @class */ (function () {
+    function Visualizer() {
+    }
+    Visualizer.prototype.draw = function (editor) {
+    };
+    return Visualizer;
+}());
 var Viewport = /** @class */ (function () {
     function Viewport() {
         this.maxDeviation = new Vec2(100, 100);
@@ -133,7 +140,6 @@ var Transform = /** @class */ (function () {
 }());
 var Editor = /** @class */ (function () {
     function Editor() {
-        this.isPlaying = false;
         this.isFollowingLine = false;
         this.isUsingClaps = false;
         this.audioLoaded = false;
@@ -146,9 +152,10 @@ var Editor = /** @class */ (function () {
         this.viewport.gridTransform = this.transform;
         this.viewport.position = new Vec2(100, 0);
         this.transform.position = new Vec2(0, 0);
-        this.canvas = document.getElementById("editor_canvas");
+        this.canvas = document.getElementById("editor-canvas");
         this.ctx = this.canvas.getContext("2d");
         //this.ctx.translate(0.5,0.5);
+        this.audioPlayer = new AudioPlayer(this);
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
         this.editorGrid = new EditorGrid(this, this.canvas);
@@ -166,23 +173,23 @@ var Editor = /** @class */ (function () {
         this.drawEditor();
     };
     Editor.prototype.debug = function () {
-        console.log(this.audioController.bufferSource.buffer.sampleRate);
-        console.log(this.audioController.bufferSource.buffer);
-        console.log(this.audioController.bufferSource);
-        console.log(this.audioController.sound._soundById(this.audioController.soundId)._node);
-        console.log(this.audioController.bufferSource.buffer.getChannelData(0));
-        console.log(this.audioController.analyser);
+        console.log(this.audioPlayer.bufferSource.buffer.sampleRate);
+        console.log(this.audioPlayer.bufferSource.buffer);
+        console.log(this.audioPlayer.bufferSource);
+        console.log(this.audioPlayer.sound._soundById(this.audioPlayer.soundId)._node);
+        console.log(this.audioPlayer.bufferSource.buffer.getChannelData(0));
+        console.log(this.audioPlayer.analyser);
     };
     Editor.prototype.updateLoop = function () {
-        if (!this.isPlaying)
+        if (!this.audioPlayer.isPlaying())
             return;
         this.drawEditor();
     };
     Editor.prototype.onAudioLoad = function (audioPath) {
         var _this = this;
-        this.audioController = new AudioController(this, audioPath, this.timestepLine);
-        this.audioController.timestepLine.transform.parent = this.transform;
-        this.audioController.sound.on("load", function () {
+        this.audioPlayer.onSoundLoad(audioPath);
+        this.timestepLine.transform.parent = this.transform;
+        this.audioPlayer.sound.on("load", function () {
             _this.audioLoaded = true;
             var gridSize = _this.editorGrid.getGridSize();
             _this.notes = Array(gridSize.y).fill(null).map(function () { return Array(gridSize.x); });
@@ -195,16 +202,14 @@ var Editor = /** @class */ (function () {
     Editor.prototype.onLineFollowingChange = function () {
     };
     Editor.prototype.onPlay = function () {
-        if (this.isPlaying == true)
+        if (this.audioPlayer.isPlaying() == true)
             return;
-        this.isPlaying = true;
-        this.audioController.play();
+        this.audioPlayer.play();
     };
     Editor.prototype.onPause = function () {
-        if (this.isPlaying == false)
+        if (this.audioPlayer.isPlaying() == false)
             return;
-        this.isPlaying = false;
-        this.audioController.sound.pause();
+        this.audioPlayer.sound.pause();
     };
     Editor.prototype.onCanvasScroll = function (mouseDelta, isSpeededUp) {
         var resultedDelta = mouseDelta * this.scrollingSpeed;
@@ -255,7 +260,7 @@ var Editor = /** @class */ (function () {
         console.log(clickY);
         if (clickY <= this.topScale.height) {
             console.log("Set Music!!!");
-            this.audioController.setMusicFromCanvasPosition(click, this);
+            this.audioPlayer.setMusicFromCanvasPosition(click, this);
         }
         var columnNum = Math.round((clickX) / (this.editorGrid.distanceBetweenBeatLines()) - 1);
         var rowNum = Math.round((clickY) / (this.editorGrid.distanceBetweenBpmLines()) - 1);
@@ -288,7 +293,7 @@ var Editor = /** @class */ (function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.editorGrid.draw(this.audioController != null && this.audioController.sound.state() == "loaded", this);
+        this.editorGrid.draw(this.audioPlayer != null && this.audioPlayer.sound != undefined && this.audioPlayer.sound != null && this.audioPlayer.sound.state() == "loaded", this);
         this.notes.forEach(function (notes) {
             notes.forEach(function (note) {
                 if (note != null) {
@@ -299,55 +304,65 @@ var Editor = /** @class */ (function () {
         this.audioCanvas.draw();
         this.topScale.draw(this.canvas);
         this.leftScale.draw(this.canvas);
-        if (this.isPlaying) {
-            this.timestepLine.transform.localPosition = new Vec2(this.audioController.sound.seek(), 0);
+        if (this.audioPlayer.isPlaying()) {
+            this.timestepLine.transform.localPosition = new Vec2(this.audioPlayer.sound.seek(), 0);
         }
         this.timestepLine.draw(this.viewport);
     };
     return Editor;
 }());
-var AudioController = /** @class */ (function () {
-    function AudioController(editor, soundPath, timestepLine) {
-        var _this = this;
+var AudioPlayer = /** @class */ (function () {
+    function AudioPlayer(editor) {
         this.editor = editor;
-        this.timestepLine = timestepLine;
-        this.timestepLine.transform.parent = this.editor.transform;
+    }
+    AudioPlayer.prototype.onSoundLoad = function (soundPath) {
+        var _this = this;
         this.sound = new Howl({ src: [soundPath] });
         this.analyser = Howler.ctx.createAnalyser();
         this.analyser.fftSize = 256;
+        this.sound.on("load", function () {
+            _this.soundId = _this.sound.play();
+            _this.sound.stop();
+        });
         this.sound.on("play", function () {
-            console.log(_this);
-            console.log(_this.soundId);
-            _this.bufferSource = _this.sound._soundById(_this.soundId)._node.bufferSource;
-            _this.sound._soundById(_this.soundId)._node.bufferSource.connect(_this.analyser);
-            editor.audioCanvas.onAudioLoad(_this);
+            _this.setupEditor();
         });
         this.sound.on("seek", function () {
-            _this.bufferSource = _this.sound._soundById(_this.soundId)._node.bufferSource;
-            _this.sound._soundById(_this.soundId)._node.bufferSource.connect(_this.analyser);
-            editor.audioCanvas.onAudioLoad(_this);
+            _this.setupEditor();
         });
-    }
-    AudioController.prototype.play = function () {
+        this.sound.on("stop", function () {
+            //setupEditor();
+        });
+    };
+    AudioPlayer.prototype.setupEditor = function () {
+        this.bufferSource = this.sound._soundById(this.soundId)._node.bufferSource;
+        this.sound._soundById(this.soundId)._node.bufferSource.connect(this.analyser);
+        editor.audioCanvas.onAudioLoad(this);
+        editor.drawEditor();
+    };
+    AudioPlayer.prototype.isPlaying = function () {
+        if (this.sound == undefined || this.sound == null)
+            return false;
+        return this.sound.playing([this.soundId]);
+    };
+    AudioPlayer.prototype.play = function () {
         this.soundId = this.sound.play();
-        console.log(this.soundId);
-        console.log(this.analyser);
     };
-    AudioController.prototype.playClapSound = function () {
+    AudioPlayer.prototype.playClapSound = function () {
     };
-    AudioController.prototype.setMusicFromCanvasPosition = function (position, editor) {
+    AudioPlayer.prototype.setMusicFromCanvasPosition = function (position, editor) {
         console.log(position);
         var second = editor.viewport.canvasToSongTime(position).x / editor.transform.scale.x;
         this.sound.seek([second]);
     };
-    AudioController.prototype.setMusicFromTimePosition = function () {
+    AudioPlayer.prototype.setMusicFromTimePosition = function () {
     };
-    AudioController.prototype.getDomainData = function () {
+    AudioPlayer.prototype.getDomainData = function () {
         var dataArray = new Float32Array(this.analyser.frequencyBinCount);
         this.analyser.getFloatTimeDomainData(dataArray);
         return dataArray;
     };
-    return AudioController;
+    return AudioPlayer;
 }());
 var AudioAmplitudeCanvas = /** @class */ (function () {
     function AudioAmplitudeCanvas(editor) {
@@ -355,8 +370,8 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
         this.sampleRate = 48000;
         this.samplesPerArrayValue = this.sampleRate / 10;
         this.editor = editor;
-        this.audio = editor.audioController;
-        this.canvas = document.getElementById("audio_amplitude_canvas");
+        this.audio = editor.audioPlayer;
+        this.canvas = document.getElementById("audio-amplitude-canvas");
         this.ctx = this.canvas.getContext("2d");
     }
     AudioAmplitudeCanvas.prototype.onWindowResize = function (event) {
@@ -420,7 +435,7 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
 var TimestepLine = /** @class */ (function () {
     function TimestepLine() {
         this.transform = new Transform();
-        this.canvas = document.getElementById("editor_canvas");
+        this.canvas = document.getElementById("editor-canvas");
         this.ctx = this.canvas.getContext("2d");
     }
     TimestepLine.prototype.draw = function (view) {
@@ -474,7 +489,7 @@ var EditorGrid = /** @class */ (function () {
         this.initGrid();
     }
     EditorGrid.prototype.distanceBetweenBpmLines = function () {
-        var soundLength = this.editor.audioController.sound.duration();
+        var soundLength = this.editor.audioPlayer.sound.duration();
         var bpmCount = (soundLength / 60) * this.bpmValue;
         var pixelsPerBeat = soundLength / bpmCount;
         return pixelsPerBeat * this.editor.transform.scale.x;
@@ -515,7 +530,7 @@ var EditorGrid = /** @class */ (function () {
     };
     EditorGrid.prototype.initBpmLines = function () {
         this.bpmLines = [];
-        var soundLength = editor.audioController.sound.duration();
+        var soundLength = editor.audioPlayer.sound.duration();
         var bpmCount = (soundLength / 60) * this.bpmValue;
         for (var i = 0; i < bpmCount; i++) {
             var bpmLine = new BPMLine(i, this.editor.transform, appSettings.mainBpmLineColor);
@@ -530,7 +545,7 @@ var EditorGrid = /** @class */ (function () {
                 beatLine.draw(editor.viewport, canvas);
         });
         if (drawBpmLines) {
-            var soundLength = editor.audioController.sound.duration();
+            var soundLength = editor.audioPlayer.sound.duration();
             var bpmCount = (soundLength / 60) * this.bpmValue;
             var pixelsPerBeat = soundLength / bpmCount;
             this.bpmLines.forEach(function (bpmLine) {

@@ -47,7 +47,7 @@ function dropHandler(event) {
 
 }
 
-var editorCanvas = document.getElementById("editor_canvas");
+var editorCanvas = document.getElementById("editor-canvas");
 let keysPressed = [];
 
 editorCanvas.addEventListener('wheel', onCanvasWheel);
@@ -88,7 +88,7 @@ function bmpValueChange(event) {
     editor.changeBpmValue(event);
 }
 
-var drop_zone = document.getElementById("drop_zone")
+var drop_zone = document.getElementById("drop-zone")
 drop_zone.ondrag = (event) => {
     
 }

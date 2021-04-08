@@ -59,6 +59,21 @@ const appSettings = new class AppSettings {
     timestepLineColor = new RgbaColor(242, 70, 211);
 }
 
+class Visualizer {
+
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+
+    constructor() {
+        
+    }
+
+    draw(editor: Editor) {
+
+
+    }
+}
+
 class Viewport {
     
     position: Vec2;
@@ -149,24 +164,24 @@ class Transform {
 
 class Editor {
 
-    isPlaying: boolean = false;
     isFollowingLine: boolean = false;
     isUsingClaps: boolean = false;
     audioLoaded: boolean = false;
     scrollingSpeed : number = 0.2;
     resizingSpeed: number = 0.01;
-    fastScrollingSpeed :number = 5;
+    fastScrollingSpeed: number = 5;
 
-    viewport: Viewport;
-    transform: Transform;
     notes: Array<Array<Timestamp>>;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
+
+    viewport: Viewport;
+    transform: Transform;
     topScale: TopScale;
     leftScale: LeftScale;
     editorGrid: EditorGrid;
     audioCanvas: AudioAmplitudeCanvas;    
-    audioController: AudioController; 
+    audioPlayer: AudioPlayer; 
     timestepLine: TimestepLine;
 
     constructor() {        
@@ -178,11 +193,11 @@ class Editor {
         this.viewport.position = new Vec2(100,0);
         
         this.transform.position = new Vec2(0,0);
-
-        this.canvas = document.getElementById("editor_canvas") as HTMLCanvasElement;
+        this.canvas = document.getElementById("editor-canvas") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d");
         //this.ctx.translate(0.5,0.5);
         
+        this.audioPlayer = new AudioPlayer(this);
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
         this.editorGrid = new EditorGrid(this, this.canvas);
@@ -203,26 +218,26 @@ class Editor {
     }
 
     debug() {
-        console.log(this.audioController.bufferSource.buffer.sampleRate);
-        console.log(this.audioController.bufferSource.buffer);
-        console.log(this.audioController.bufferSource);
-        console.log(this.audioController.sound._soundById(this.audioController.soundId)._node);
-        console.log(this.audioController.bufferSource.buffer.getChannelData(0));
-        console.log(this.audioController.analyser);
+        console.log(this.audioPlayer.bufferSource.buffer.sampleRate);
+        console.log(this.audioPlayer.bufferSource.buffer);
+        console.log(this.audioPlayer.bufferSource);
+        console.log(this.audioPlayer.sound._soundById(this.audioPlayer.soundId)._node);
+        console.log(this.audioPlayer.bufferSource.buffer.getChannelData(0));
+        console.log(this.audioPlayer.analyser);
     }
 
     updateLoop() {
-        
-        if (!this.isPlaying)
+        if (!this.audioPlayer.isPlaying())
             return;
 
         this.drawEditor();
     }
 
     onAudioLoad(audioPath : string) {
-        this.audioController = new AudioController(this, audioPath, this.timestepLine);
-        this.audioController.timestepLine.transform.parent = this.transform;
-        this.audioController.sound.on("load", () => 
+        this.audioPlayer.onSoundLoad(audioPath);
+        this.timestepLine.transform.parent = this.transform;
+        
+        this.audioPlayer.sound.on("load", () => 
         { 
             this.audioLoaded = true;
             var gridSize = this.editorGrid.getGridSize();
@@ -241,19 +256,17 @@ class Editor {
     }
 
     onPlay() {
-        if (this.isPlaying == true)
+        if (this.audioPlayer.isPlaying() == true)
             return;
         
-        this.isPlaying = true;
-        this.audioController.play();
+        this.audioPlayer.play();
     }
 
     onPause() {
-        if (this.isPlaying == false)
+        if (this.audioPlayer.isPlaying() == false)
             return; 
 
-        this.isPlaying = false;
-        this.audioController.sound.pause();
+        this.audioPlayer.sound.pause();
     }
 
     onCanvasScroll(mouseDelta : number, isSpeededUp : boolean) {
@@ -322,7 +335,7 @@ class Editor {
 
         if (clickY <= this.topScale.height) {
             console.log("Set Music!!!");
-            this.audioController.setMusicFromCanvasPosition(click, this);
+            this.audioPlayer.setMusicFromCanvasPosition(click, this);
         }
 
         var columnNum = Math.round((clickX)/(this.editorGrid.distanceBetweenBeatLines())-1);
@@ -362,7 +375,7 @@ class Editor {
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height)
         
-        this.editorGrid.draw(this.audioController != null && this.audioController.sound.state()=="loaded", this);
+        this.editorGrid.draw(this.audioPlayer != null && this.audioPlayer.sound != undefined && this.audioPlayer.sound != null && this.audioPlayer.sound.state()=="loaded", this);
 
         this.notes.forEach(notes => { notes.forEach(note => {
             if (note!=null) { note.draw(this.canvas);
@@ -373,8 +386,8 @@ class Editor {
         this.topScale.draw(this.canvas);
         this.leftScale.draw(this.canvas);
 
-        if (this.isPlaying){
-            this.timestepLine.transform.localPosition = new Vec2(this.audioController.sound.seek(), 0);
+        if (this.audioPlayer.isPlaying()){
+            this.timestepLine.transform.localPosition = new Vec2(this.audioPlayer.sound.seek(), 0);
         }
 
         this.timestepLine.draw(this.viewport);
@@ -382,58 +395,70 @@ class Editor {
 }
 
 
-class AudioController {
+class AudioPlayer {
    
     sound : any;
     soundId : number;
     analyser : AnalyserNode;
-    timestepLine: TimestepLine;
     editor: Editor;
     bufferSource: AudioBufferSourceNode;
 
-    constructor(editor: Editor, soundPath : string, timestepLine: TimestepLine) {
-
+    constructor(editor: Editor) {
         this.editor = editor;
-        this.timestepLine = timestepLine;
-        this.timestepLine.transform.parent = this.editor.transform;
+    }
 
+    onSoundLoad(soundPath : string) {
         this.sound = new Howl({src:[soundPath]});
         
         this.analyser = Howler.ctx.createAnalyser();
         this.analyser.fftSize = 256;
 
+        this.sound.on("load", () => {
+            this.soundId = this.sound.play();
+            this.sound.stop();
+        })
+
         this.sound.on("play", () => {
-            console.log(this);
-            console.log(this.soundId);
-            this.bufferSource = this.sound._soundById(this.soundId)._node.bufferSource;
-            this.sound._soundById(this.soundId)._node.bufferSource.connect(this.analyser) 
-            editor.audioCanvas.onAudioLoad(this);
+            this.setupEditor();
         });
 
         this.sound.on("seek", () => {
-            this.bufferSource = this.sound._soundById(this.soundId)._node.bufferSource;
-            this.sound._soundById(this.soundId)._node.bufferSource.connect(this.analyser) 
-            editor.audioCanvas.onAudioLoad(this);
-        });    
+            this.setupEditor();
+        });
+    
+        this.sound.on("stop", () => {
+            //setupEditor();
+        });
     }
 
-    play() {
+    private setupEditor() {
+        this.bufferSource = this.sound._soundById(this.soundId)._node.bufferSource;
+        this.sound._soundById(this.soundId)._node.bufferSource.connect(this.analyser) 
+        editor.audioCanvas.onAudioLoad(this);
+        editor.drawEditor();
+    }
+
+    isPlaying() : Boolean {
+        if (this.sound == undefined || this.sound == null)
+            return false;
+        return this.sound.playing([this.soundId]);
+    }
+
+    play() : void {
         this.soundId = this.sound.play();
-        console.log(this.soundId);
-        console.log(this.analyser); 
     }
     
-    playClapSound() {
+    playClapSound() : void {
         
     }
 
-    setMusicFromCanvasPosition(position : Vec2, editor : Editor) {
+    setMusicFromCanvasPosition(position : Vec2, editor : Editor) : void {
         console.log(position);
         var second = editor.viewport.canvasToSongTime(position).x/editor.transform.scale.x;
         this.sound.seek([second]);
     }
 
-    setMusicFromTimePosition() {
+    setMusicFromTimePosition() : void {
 
     }
 
@@ -449,7 +474,7 @@ class AudioAmplitudeCanvas {
     canvas : HTMLCanvasElement;
     ctx : CanvasRenderingContext2D;
     editor: Editor;
-    audio: AudioController;
+    audio: AudioPlayer;
     data: Float32Array;
     amplitudeData = new Array<number>();
     
@@ -459,12 +484,12 @@ class AudioAmplitudeCanvas {
 
     constructor(editor: Editor) {
         this.editor = editor;
-        this.audio = editor.audioController;
-        this.canvas = document.getElementById("audio_amplitude_canvas") as HTMLCanvasElement;
+        this.audio = editor.audioPlayer;
+        this.canvas = document.getElementById("audio-amplitude-canvas") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d");
     }
 
-    onWindowResize(event: UIEvent) {
+    onWindowResize(event: UIEvent) : void {
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
 
@@ -472,12 +497,12 @@ class AudioAmplitudeCanvas {
         this.canvas.setAttribute('height', (h/8).toString());
     }
 
-    onAudioLoad(audio: AudioController) {        
+    onAudioLoad(audio: AudioPlayer) : void {        
         this.data = audio.bufferSource.buffer.getChannelData(0);
         this.calculateAmplitudeArray();
     }
 
-    draw() {
+    draw() : void {
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
         console.log(appSettings.editorBackgroundColor.value());
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
@@ -545,7 +570,7 @@ class TimestepLine {
     ctx:CanvasRenderingContext2D;
 
     constructor() {
-        this.canvas = document.getElementById("editor_canvas") as HTMLCanvasElement;
+        this.canvas = document.getElementById("editor-canvas") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d");
     }
 
@@ -621,7 +646,7 @@ class EditorGrid {
     }
 
     distanceBetweenBpmLines() {
-        var soundLength = this.editor.audioController.sound.duration();
+        var soundLength = this.editor.audioPlayer.sound.duration();
         var bpmCount = (soundLength/60) * this.bpmValue;
         var pixelsPerBeat = soundLength / bpmCount;
         return pixelsPerBeat * this.editor.transform.scale.x;
@@ -672,7 +697,7 @@ class EditorGrid {
 
     initBpmLines() {
         this.bpmLines = [];
-        var soundLength = editor.audioController.sound.duration();
+        var soundLength = editor.audioPlayer.sound.duration();
         var bpmCount = (soundLength/60) * this.bpmValue;
         
         for (var i=0; i<bpmCount; i++) {
@@ -691,7 +716,7 @@ class EditorGrid {
         });
 
         if (drawBpmLines) {
-            var soundLength = editor.audioController.sound.duration();
+            var soundLength = editor.audioPlayer.sound.duration();
             var bpmCount = (soundLength/60) * this.bpmValue;
             var pixelsPerBeat = soundLength / bpmCount;
             

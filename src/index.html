@@ -1,67 +1,76 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>RhythmGE</title>
-    <link rel="stylesheet" href="dist/index.css">
-  </head>
-  <body>
-    <div class="topbar">    
-      
-      <div id = "audio_player">
-    
+
+<head>
+  <meta charset="UTF-8">
+  <title>RhythmGE</title>
+  <link rel="stylesheet" href="dist/index.css">
+</head>
+
+<body>
+  <topbar>
+    <div class="left-column">
+      <div class="first-row">
+        <div class="audio-player">
+          <div class="slider-container">
+            <input type="range" min="1" max="100" value="50" class="slider" id="myRange">Cnj
+          </div>
+        </div>
+        <div class="visualizer">
+          <canvas height="1" width="1"></canvas>
+        </div>
       </div>
-
-      <div id="imports">
-        <div id="drop_zone">
-          <p>Drag audio files here</p>
-        </div>
-          <input type="file" id="files" name="files[]"/>
-          <output id="list"></output>
-          <button onclick='playButtonClick()'>Play</button>
-          <button onclick='loadAudioFile()' id="import_audio_btn"> Import Audio </button> 
-          <button onclick='saveBeatmap()' id="save_beatmap_btn"> Save beatmap file </button>
-          <button onclick='importBeatmap()' id="import_beatmap_btn"> Import beatmap file </button>
-          <button onclick="test()"> TEST </button>
-        </div>
-    </div>
-
-    <div class="editor_container">
-      <div class="input_container"> 
-        
-        <div class="rowflex input_block">
+      <div class="settings-container">
+        <div class="input-block">
           <p>Beat Lines:</p>
           <input value="5" onchange='beatLinesValueChange(event)' type="text">
         </div>
-  
-        <div class="rowflex input_block">
+
+        <div class="input-block">
           <p>BPM</p>
           <input value="60" onchange='bmpValueChange(event)' type="text">
         </div>
 
-        <div class="rowflex slider_container" >
+        <div class="slider-container">
           <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
         </div>
 
-        <div class="rowflex" >
-          <p><input type="checkbox" id="lineFollowing">Follow Line</p>
-        </div> 
-
-        <div class="rowflex" > 
-          <p><input type="checkbox" id="useClaps">Use claps</p>
+        <div class="">
+          <p><input type="checkbox" id="line-following">Follow Line</p>
         </div>
 
-      </div>
-  
-      <div class="canvas_holder">
-        <canvas width="800" height="300" id="editor_canvas"></canvas>
-        <canvas width="800" height="100" id ="audio_amplitude_canvas"></canvas>
+        <div class="">
+          <p><input type="checkbox" id="use-claps">Use claps</p>
+        </div>
       </div>
     </div>
+    <div class="right-column">
+      <div class="drop-zone">
+        <p>Drag audio files here</p>
+      </div>
+      <div class="imports">
+        <input type="file" id="files" name="files[]" />
+        <output id="list"></output>
+        <button onclick='playButtonClick()'>Play</button>
+        <button onclick='loadAudioFile()' id="import-audio-btn"> Import Audio </button>
+        <button onclick='saveBeatmap()' id="save-beatmap-btn"> Save beatmap file </button>
+        <button onclick='importBeatmap()' id="import-beatmap-btn"> Import beatmap file </button>
+        <button onclick="test()"> TEST </button>
+      </div>
+    </div>
+  </topbar>
 
-    <!-- <script> var exports = {};</script>  -->
-    <!-- <script defer> var exports = {"__esModule": true};</script> -->
-    <script defer src="dist/renderer.js"></script>
-    <script defer src="dist/editor.js"></script>
-  </body>
+  <div class="editor-container">
+    <div class="canvas-holder">
+      <canvas width="800" height="300" id="editor-canvas"></canvas>
+      <canvas width="800" height="100" id="audio-amplitude-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- <script> var exports = {};</script>  -->
+  <!-- <script defer> var exports = {"__esModule": true};</script> -->
+  <script defer src="dist/renderer.js"></script>
+  <script defer src="dist/editor.js"></script>
+</body>
+
 </html>

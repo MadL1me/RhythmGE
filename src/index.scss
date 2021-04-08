@@ -30,103 +30,121 @@
     padding: 10px 10px 10px 10px;
   }
 
-  .editor_container {
+  .editor-container {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     margin-top: 2rem;
 
-    .input_container {
+    .input-container {
       display: flex;
       flex-direction: row;
     }
   }
 
-  .topbar {
+  topbar {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
     max-height: 30%;
-  }
 
-  .rowflex {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-  }
+    .left-column {
+      flex: 3;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background-color: magenta;
 
-  .colflex {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+      .first-row {
+        display: flex;
+        flex: 3;
+        background-color: mediumaquamarine;
+
+        .audio-player {
+          flex: 2;
+        }
+
+        .visualizer {
+          flex: 1;
+        }
+      }
+
+      .settings-container {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        background-color: mediumpurple;      
+      }
+    }
+    
+    .right-column {
+      display: flex;
+      flex-direction: row;
+      flex: 1;
+      background-color: maroon;
+
+      .drop-zone {
+        flex: 1;
+      }
+
+      .imports {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+    }
   }
   
-  .canvas_holder {
+  .canvas-holder {
     margin-top: 1rem;
     max-height: calc(40vh);
     //overflow: scroll;
   }
 
-  .input_block {
+  .input-block {
     padding-left: 2rem;
   }
   
-  #audio_player {
-
-  }
-
-  #title {
-   
-  }
-
-  #imports {
-  
-  }
-
-  #editor_canvas {
+  #editor-canvas {
 
 
   }
     
-  #drop_zone {
+  #drop-zone {
     border: 5px solid;
     width:  100px;
     height: 100px;
   }
 
-  .slidecontainer {
-    width: 100%; /* Width of the outside container */
+  .slider-container {
+    width: 100%;
   }
   
-  /* The slider itself */
   .slider {
-    -webkit-appearance: none;  /* Override default CSS styles */
-    appearance: none;
-    width: 100%; /* Full-width */
-    height: 25px; /* Specified height */
-    background: #d3d3d3; /* Grey background */
-    outline: none; /* Remove outline */
-    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
-    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    -webkit-appearance: none;
+    width: 100%;
+    height: 15px;
+    border-radius: 5px;  
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
     transition: opacity .2s;
   
-    :hover {
-      opacity: 1; /* Fully shown on mouse-over */
-    }
-  
-    ::-webkit-slider-thumb {
-      -webkit-appearance: none; /* Override default look */
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
       appearance: none;
-      width: 25px; /* Set a specific slider handle width */
-      height: 25px; /* Slider handle height */
-      background: #4CAF50; /* Green background */
-      cursor: pointer; /* Cursor on hover */
+      width: 25px;
+      height: 25px;
+      border-radius: 50%; 
+      background: #4CAF50;
+      cursor: pointer;
     }
 
-    ::-moz-range-thumb {
-      width: 25px; /* Set a specific slider handle width */
-      height: 25px; /* Slider handle height */
-      background: #4CAF50; /* Green background */
-      cursor: pointer; /* Cursor on hover */
+    &::-moz-range-thumb {
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      background: #4CAF50;
+      cursor: pointer;
     }
   }

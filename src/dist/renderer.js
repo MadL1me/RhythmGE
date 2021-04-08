@@ -30,7 +30,7 @@ function importBeatmap(event) {
 }
 function dropHandler(event) {
 }
-var editorCanvas = document.getElementById("editor_canvas");
+var editorCanvas = document.getElementById("editor-canvas");
 var keysPressed = [];
 editorCanvas.addEventListener('wheel', onCanvasWheel);
 editorCanvas.addEventListener('click', function (event) { editor.canvasClickHandle(event); });
@@ -62,7 +62,7 @@ function beatLinesValueChange(event) {
 function bmpValueChange(event) {
     editor.changeBpmValue(event);
 }
-var drop_zone = document.getElementById("drop_zone");
+var drop_zone = document.getElementById("drop-zone");
 drop_zone.ondrag = function (event) {
 };
 drop_zone.ondrop = function (ev) {

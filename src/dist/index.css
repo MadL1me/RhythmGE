@@ -25,7 +25,7 @@ p {
   padding: 10px 10px 10px 10px;
 }
 
-.editor_container {
+.editor-container {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -39,7 +39,7 @@ p {
   margin-top: 2rem;
 }
 
-.editor_container .input_container {
+.editor-container .input-container {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -49,7 +49,7 @@ p {
           flex-direction: row;
 }
 
-.topbar {
+topbar {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -57,26 +57,13 @@ p {
   -webkit-box-direction: normal;
       -ms-flex-direction: row;
           flex-direction: row;
-  -webkit-box-pack: justify;
-      -ms-flex-pack: justify;
-          justify-content: space-between;
   max-height: 30%;
 }
 
-.rowflex {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: horizontal;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: row;
-          flex-direction: row;
-  -webkit-box-pack: justify;
-      -ms-flex-pack: justify;
-          justify-content: space-between;
-}
-
-.colflex {
+topbar .left-column {
+  -webkit-box-flex: 3;
+      -ms-flex: 3;
+          flex: 3;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -84,80 +71,128 @@ p {
   -webkit-box-direction: normal;
       -ms-flex-direction: column;
           flex-direction: column;
-  -webkit-box-pack: justify;
-      -ms-flex-pack: justify;
-          justify-content: space-between;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  background-color: magenta;
 }
 
-.canvas_holder {
+topbar .left-column .first-row {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-flex: 3;
+      -ms-flex: 3;
+          flex: 3;
+  background-color: mediumaquamarine;
+}
+
+topbar .left-column .first-row .audio-player {
+  -webkit-box-flex: 2;
+      -ms-flex: 2;
+          flex: 2;
+}
+
+topbar .left-column .first-row .visualizer {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+}
+
+topbar .left-column .settings-container {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+          flex-direction: row;
+  background-color: mediumpurple;
+}
+
+topbar .right-column {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+          flex-direction: row;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  background-color: maroon;
+}
+
+topbar .right-column .drop-zone {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+}
+
+topbar .right-column .imports {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+.canvas-holder {
   margin-top: 1rem;
   max-height: calc(40vh);
 }
 
-.input_block {
+.input-block {
   padding-left: 2rem;
 }
 
-#drop_zone {
+#drop-zone {
   border: 5px solid;
   width: 100px;
   height: 100px;
 }
 
-.slidecontainer {
+.slider-container {
   width: 100%;
-  /* Width of the outside container */
 }
 
-/* The slider itself */
 .slider {
   -webkit-appearance: none;
-  /* Override default CSS styles */
-  -moz-appearance: none;
-       appearance: none;
   width: 100%;
-  /* Full-width */
-  height: 25px;
-  /* Specified height */
+  height: 15px;
+  border-radius: 5px;
   background: #d3d3d3;
-  /* Grey background */
   outline: none;
-  /* Remove outline */
   opacity: 0.7;
-  /* Set transparency (for mouse-over effects on hover) */
   -webkit-transition: .2s;
-  /* 0.2 seconds transition on hover */
   -webkit-transition: opacity .2s;
   transition: opacity .2s;
 }
 
-.slider :hover {
-  opacity: 1;
-  /* Fully shown on mouse-over */
-}
-
-.slider ::-webkit-slider-thumb {
+.slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  /* Override default look */
   appearance: none;
   width: 25px;
-  /* Set a specific slider handle width */
   height: 25px;
-  /* Slider handle height */
+  border-radius: 50%;
   background: #4CAF50;
-  /* Green background */
   cursor: pointer;
-  /* Cursor on hover */
 }
 
-.slider ::-moz-range-thumb {
+.slider::-moz-range-thumb {
   width: 25px;
-  /* Set a specific slider handle width */
   height: 25px;
-  /* Slider handle height */
+  border-radius: 50%;
   background: #4CAF50;
-  /* Green background */
   cursor: pointer;
-  /* Cursor on hover */
 }
 /*# sourceMappingURL=index.css.map */
