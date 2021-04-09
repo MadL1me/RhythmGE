@@ -1,3 +1,4 @@
+import { format } from "node:path";
 import { off } from "node:process";
 const { Howl, Howler } = require('howler');
 
@@ -230,11 +231,12 @@ class Editor {
         if (!this.audioPlayer.isPlaying())
             return;
 
+        this.audioPlayer.update();
         this.drawEditor();
     }
 
-    onAudioLoad(audioPath : string) {
-        this.audioPlayer.onSoundLoad(audioPath);
+    onAudioLoad(fileName: string, audioPath : string) {
+        this.audioPlayer.onSoundLoad(fileName, audioPath);
         this.timestepLine.transform.parent = this.transform;
         
         this.audioPlayer.sound.on("load", () => 
@@ -394,6 +396,105 @@ class Editor {
     }
 }
 
+class Event {
+    private listeners = [];
+
+    addListener(listener: any) {
+        this.listeners.push(listener)
+    }
+
+    removeListener(listener: any) {
+        var index = this.listeners.findIndex(listener);
+        this.listeners.slice(index,index);
+    }   
+
+    invoke(data: any) {
+        this.listeners.forEach(listener => {
+            listener(data);
+        });
+    }
+}
+
+class Slider {
+    
+    maxValue: number = 100;
+    minValue: number = 0;
+    value: number
+    sliderInput: HTMLInputElement;
+    onValueChange = new Event();
+
+    constructor(sliderId: string) {
+        this.sliderInput = document.getElementById(sliderId) as HTMLInputElement;
+        this.sliderInput.value = "0";
+        this.value = 0;
+    }
+
+    setMaxValue(value: number) {
+        this.maxValue = value;
+        this.sliderInput.max = value.toString();
+    }
+
+    setMinValue(value: number) {
+        this.minValue = value;
+        this.sliderInput.min = value.toString();
+    }
+
+    setValue(value: number) {
+        this.value = value;
+        this.sliderInput.value = value.toString();
+        this.onValueChange.invoke(value);
+    }
+}
+
+
+enum TimeAccuracy {
+    seconds, 
+    milliseconds
+}
+
+class AudioPlayerView {
+    
+    playButton: HTMLButtonElement;
+    audioFileName: HTMLParagraphElement;
+    audioCurrentTime: HTMLParagraphElement;
+    audioDuration: HTMLParagraphElement;
+    slider: Slider;
+    
+    constructor() {
+        this.audioFileName = document.getElementById("file-name") as HTMLParagraphElement;
+        this.audioCurrentTime = document.getElementById("current-audio-time") as  HTMLParagraphElement;
+        this.audioDuration = document.getElementById("audio-duration") as HTMLParagraphElement;
+        this.slider = new Slider("audio-slider");
+    }
+
+    onAudioLoad(fileName: string, duration: number) {
+        this.audioFileName.innerHTML = fileName;
+        this.audioCurrentTime.innerHTML = "0:00";
+        this.audioDuration.innerHTML = this.formatTime(duration, TimeAccuracy.seconds);
+        this.slider.setMaxValue(duration);
+    }
+
+    update(currentTime: number) {
+        this.audioCurrentTime.innerHTML = this.formatTime(currentTime, TimeAccuracy.seconds);
+        this.slider.setValue(currentTime);
+    }
+    
+    private formatTime(time: number, accuracy: TimeAccuracy) : string {
+        console.log("Format time time is: " + time);
+        
+        var minutes = Math.floor(time/60);
+        var seconds = Math.floor(time - minutes*60) as any;
+        var milliseconds = time % 1;
+        
+        if (seconds < 10)
+            seconds = "0" + seconds.toString();
+
+        if (accuracy == TimeAccuracy.milliseconds)
+            return minutes + ":" + seconds + ":" + milliseconds;
+        else 
+            return minutes + ":" + seconds;
+    }
+}
 
 class AudioPlayer {
    
@@ -402,20 +503,22 @@ class AudioPlayer {
     analyser : AnalyserNode;
     editor: Editor;
     bufferSource: AudioBufferSourceNode;
+    view = new AudioPlayerView();
 
     constructor(editor: Editor) {
         this.editor = editor;
     }
 
-    onSoundLoad(soundPath : string) {
+    onSoundLoad(fileName: string, soundPath : string) {
         this.sound = new Howl({src:[soundPath]});
         
         this.analyser = Howler.ctx.createAnalyser();
         this.analyser.fftSize = 256;
 
         this.sound.on("load", () => {
-            this.soundId = this.sound.play();
-            this.sound.stop();
+            //this.soundId = this.sound.play();
+            //this.sound.stop();
+            this.view.onAudioLoad(fileName, this.sound.duration());
         })
 
         this.sound.on("play", () => {
@@ -425,10 +528,15 @@ class AudioPlayer {
         this.sound.on("seek", () => {
             this.setupEditor();
         });
-    
+
         this.sound.on("stop", () => {
             //setupEditor();
         });
+
+    }
+
+    update() {
+        this.view.update(this.sound.seek());
     }
 
     private setupEditor() {
@@ -504,7 +612,7 @@ class AudioAmplitudeCanvas {
 
     draw() : void {
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
-        console.log(appSettings.editorBackgroundColor.value());
+        //console.log(appSettings.editorBackgroundColor.value());
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
 
@@ -514,7 +622,7 @@ class AudioAmplitudeCanvas {
         if (this.amplitudeData == undefined || this.amplitudeData == null)
             return;
 
-        console.log("DRAWING CANVAS!!!");
+        //console.log("DRAWING CANVAS!!!");
 
         for (var i = 0; i<this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i]*this.canvas.height;

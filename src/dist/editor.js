@@ -183,11 +183,12 @@ var Editor = /** @class */ (function () {
     Editor.prototype.updateLoop = function () {
         if (!this.audioPlayer.isPlaying())
             return;
+        this.audioPlayer.update();
         this.drawEditor();
     };
-    Editor.prototype.onAudioLoad = function (audioPath) {
+    Editor.prototype.onAudioLoad = function (fileName, audioPath) {
         var _this = this;
-        this.audioPlayer.onSoundLoad(audioPath);
+        this.audioPlayer.onSoundLoad(fileName, audioPath);
         this.timestepLine.transform.parent = this.transform;
         this.audioPlayer.sound.on("load", function () {
             _this.audioLoaded = true;
@@ -311,18 +312,98 @@ var Editor = /** @class */ (function () {
     };
     return Editor;
 }());
+var Event = /** @class */ (function () {
+    function Event() {
+        this.listeners = [];
+    }
+    Event.prototype.addListener = function (listener) {
+        this.listeners.push(listener);
+    };
+    Event.prototype.removeListener = function (listener) {
+        var index = this.listeners.findIndex(listener);
+        this.listeners.slice(index, index);
+    };
+    Event.prototype.invoke = function (data) {
+        this.listeners.forEach(function (listener) {
+            listener(data);
+        });
+    };
+    return Event;
+}());
+var Slider = /** @class */ (function () {
+    function Slider(sliderId) {
+        this.maxValue = 100;
+        this.minValue = 0;
+        this.onValueChange = new Event();
+        this.sliderInput = document.getElementById(sliderId);
+        this.sliderInput.value = "0";
+        this.value = 0;
+    }
+    Slider.prototype.setMaxValue = function (value) {
+        this.maxValue = value;
+        this.sliderInput.max = value.toString();
+    };
+    Slider.prototype.setMinValue = function (value) {
+        this.minValue = value;
+        this.sliderInput.min = value.toString();
+    };
+    Slider.prototype.setValue = function (value) {
+        this.value = value;
+        this.sliderInput.value = value.toString();
+        this.onValueChange.invoke(value);
+    };
+    return Slider;
+}());
+var TimeAccuracy;
+(function (TimeAccuracy) {
+    TimeAccuracy[TimeAccuracy["seconds"] = 0] = "seconds";
+    TimeAccuracy[TimeAccuracy["milliseconds"] = 1] = "milliseconds";
+})(TimeAccuracy || (TimeAccuracy = {}));
+var AudioPlayerView = /** @class */ (function () {
+    function AudioPlayerView() {
+        this.audioFileName = document.getElementById("file-name");
+        this.audioCurrentTime = document.getElementById("current-audio-time");
+        this.audioDuration = document.getElementById("audio-duration");
+        this.slider = new Slider("audio-slider");
+    }
+    AudioPlayerView.prototype.onAudioLoad = function (fileName, duration) {
+        this.audioFileName.innerHTML = fileName;
+        this.audioCurrentTime.innerHTML = "0:00";
+        this.audioDuration.innerHTML = this.formatTime(duration, TimeAccuracy.seconds);
+        this.slider.setMaxValue(duration);
+    };
+    AudioPlayerView.prototype.update = function (currentTime) {
+        this.audioCurrentTime.innerHTML = this.formatTime(currentTime, TimeAccuracy.seconds);
+        this.slider.setValue(currentTime);
+    };
+    AudioPlayerView.prototype.formatTime = function (time, accuracy) {
+        console.log("Format time time is: " + time);
+        var minutes = Math.floor(time / 60);
+        var seconds = Math.floor(time - minutes * 60);
+        var milliseconds = time % 1;
+        if (seconds < 10)
+            seconds = "0" + seconds.toString();
+        if (accuracy == TimeAccuracy.milliseconds)
+            return minutes + ":" + seconds + ":" + milliseconds;
+        else
+            return minutes + ":" + seconds;
+    };
+    return AudioPlayerView;
+}());
 var AudioPlayer = /** @class */ (function () {
     function AudioPlayer(editor) {
+        this.view = new AudioPlayerView();
         this.editor = editor;
     }
-    AudioPlayer.prototype.onSoundLoad = function (soundPath) {
+    AudioPlayer.prototype.onSoundLoad = function (fileName, soundPath) {
         var _this = this;
         this.sound = new Howl({ src: [soundPath] });
         this.analyser = Howler.ctx.createAnalyser();
         this.analyser.fftSize = 256;
         this.sound.on("load", function () {
-            _this.soundId = _this.sound.play();
-            _this.sound.stop();
+            //this.soundId = this.sound.play();
+            //this.sound.stop();
+            _this.view.onAudioLoad(fileName, _this.sound.duration());
         });
         this.sound.on("play", function () {
             _this.setupEditor();
@@ -333,6 +414,9 @@ var AudioPlayer = /** @class */ (function () {
         this.sound.on("stop", function () {
             //setupEditor();
         });
+    };
+    AudioPlayer.prototype.update = function () {
+        this.view.update(this.sound.seek());
     };
     AudioPlayer.prototype.setupEditor = function () {
         this.bufferSource = this.sound._soundById(this.soundId)._node.bufferSource;
@@ -386,14 +470,14 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
     };
     AudioAmplitudeCanvas.prototype.draw = function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        console.log(appSettings.editorBackgroundColor.value());
+        //console.log(appSettings.editorBackgroundColor.value());
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         if (this.data == undefined || this.data == null)
             return;
         if (this.amplitudeData == undefined || this.amplitudeData == null)
             return;
-        console.log("DRAWING CANVAS!!!");
+        //console.log("DRAWING CANVAS!!!");
         for (var i = 0; i < this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i] * this.canvas.height;
             this.ctx.strokeStyle = appSettings.loudnessBarColor.value();
