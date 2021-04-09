@@ -1,11 +1,14 @@
   $font-stack: Helvetica, sans-serif;
   $text-color: white;
-  $accent-color: #966;
+  $background-second-color: #494b5a;
+  $background-main-color: #30323D;
+  $accent-color: #ff6700;
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     //margin: auto;
     padding: 2rem;
+    background-color: $background-main-color;
   }
 
   input {
@@ -23,6 +26,7 @@
     font-size: 15px;
     margin-top: 5px;
     margin-bottom: 5px;
+    color: $text-color;
   }
 
   .files {
@@ -30,11 +34,17 @@
     padding: 10px 10px 10px 10px;
   }
 
+  canvas {
+    //display: block;
+    margin-bottom: 5px;
+  }
+
   .editor-container {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     margin-top: 1em;
+    margin-left: 5px;
 
     .input-container {
       display: flex;
@@ -52,17 +62,16 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      background-color: magenta;
 
       .first-row {
         display: flex;
         flex: 3;
-        background-color: mediumaquamarine;
 
         .audio-player {
           flex: 2;
           display: flex;
           flex-direction: column;
+          background-color: $background-second-color;
           //position: relative;
           margin: 5px;
 
@@ -101,8 +110,8 @@
 
         .visualizer {
           flex: 1;
-          background-color: mediumvioletred;
           margin: 5px;
+          background-color: $background-second-color;
         }
       }
 
@@ -111,7 +120,7 @@
         display: flex;
         flex-direction: row;
         margin: 5px;
-        background-color: mediumpurple;      
+        background-color: #494b5a;      
       }
     }
     
@@ -119,7 +128,7 @@
       display: flex;
       flex-direction: row;
       flex: 1;
-      background-color: maroon;
+      background-color: $background-second-color;
       margin: 5px;
 
       .drop-zone {
@@ -159,9 +168,7 @@
     }
   }
 
-  #editor-canvas {
-  }
-    
+
   #drop-zone {
     border: 5px solid;
     width:  100px;
@@ -185,7 +192,7 @@
       width: 25px;
       height: 25px;
       border-radius: 50%; 
-      background: #4CAF50;
+      background: $accent-color;
       cursor: pointer;
     }
 
@@ -193,7 +200,7 @@
       width: 25px;
       height: 25px;
       border-radius: 50%;
-      background: #4CAF50;
+      background: $accent-color;
       cursor: pointer;
     }
   }

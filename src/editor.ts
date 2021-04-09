@@ -51,13 +51,13 @@ class RgbaColor {
 }
 
 const appSettings = new class AppSettings {
-    editorBackgroundColor = new RgbaColor(255,255,255);
-    beatLineColor = new RgbaColor(74, 74, 74);
-    mainBpmLineColor = new RgbaColor(92, 92, 92);
-    snapBpmLineColor = new RgbaColor(74, 189, 166);
+    editorBackgroundColor = new RgbaColor(73, 75, 90);
+    beatLineColor = new RgbaColor(255,255,255); // (74, 74, 74)
+    mainBpmLineColor = new RgbaColor(255,255,255);  //(92, 92, 92);
+    snapBpmLineColor = new RgbaColor(255,255,255);  //(74, 189, 166);
     customBpmLineColor = new RgbaColor(116, 104, 222);
-    loudnessBarColor = new RgbaColor(88, 237, 123);
-    timestepLineColor = new RgbaColor(242, 70, 211);
+    loudnessBarColor = new RgbaColor(255, 103, 0);
+    timestepLineColor = new RgbaColor(255, 103, 0);
 }
 
 class Visualizer {
@@ -384,9 +384,8 @@ class Editor {
         }})});
         
         this.audioCanvas.draw();
-
         this.topScale.draw(this.canvas);
-        this.leftScale.draw(this.canvas);
+        //this.leftScale.draw(this.canvas);
 
         if (this.audioPlayer.isPlaying()){
             this.timestepLine.transform.localPosition = new Vec2(this.audioPlayer.sound.seek(), 0);
@@ -918,7 +917,7 @@ class TopScale {
 
     draw(canvas : HTMLCanvasElement) {
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#A6A6A6';
+        ctx.fillStyle = '#1B1C21';
         ctx.fillRect(0,-5,canvas.width,this.height+5);
     }
 }
@@ -933,7 +932,7 @@ class LeftScale {
 
     draw(canvas : HTMLCanvasElement) {
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#A6A6A6';
+        ctx.fillStyle = '#1B1C21';
         ctx.fillRect(0,0, this.width,canvas.height);
     }
 }

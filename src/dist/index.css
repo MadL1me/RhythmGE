@@ -1,6 +1,7 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   padding: 2rem;
+  background-color: #30323D;
 }
 
 input {
@@ -18,11 +19,16 @@ p {
   font-size: 15px;
   margin-top: 5px;
   margin-bottom: 5px;
+  color: white;
 }
 
 .files {
   margin-top: 10px;
   padding: 10px 10px 10px 10px;
+}
+
+canvas {
+  margin-bottom: 5px;
 }
 
 .editor-container {
@@ -37,6 +43,7 @@ p {
       -ms-flex-pack: justify;
           justify-content: space-between;
   margin-top: 1em;
+  margin-left: 5px;
 }
 
 .editor-container .input-container {
@@ -74,7 +81,6 @@ topbar .left-column {
   -webkit-box-pack: center;
       -ms-flex-pack: center;
           justify-content: center;
-  background-color: magenta;
 }
 
 topbar .left-column .first-row {
@@ -84,7 +90,6 @@ topbar .left-column .first-row {
   -webkit-box-flex: 3;
       -ms-flex: 3;
           flex: 3;
-  background-color: mediumaquamarine;
 }
 
 topbar .left-column .first-row .audio-player {
@@ -98,6 +103,7 @@ topbar .left-column .first-row .audio-player {
   -webkit-box-direction: normal;
       -ms-flex-direction: column;
           flex-direction: column;
+  background-color: #494b5a;
   margin: 5px;
 }
 
@@ -136,8 +142,8 @@ topbar .left-column .first-row .visualizer {
   -webkit-box-flex: 1;
       -ms-flex: 1;
           flex: 1;
-  background-color: mediumvioletred;
   margin: 5px;
+  background-color: #494b5a;
 }
 
 topbar .left-column .settings-container {
@@ -152,7 +158,7 @@ topbar .left-column .settings-container {
       -ms-flex-direction: row;
           flex-direction: row;
   margin: 5px;
-  background-color: mediumpurple;
+  background-color: #494b5a;
 }
 
 topbar .right-column {
@@ -166,7 +172,7 @@ topbar .right-column {
   -webkit-box-flex: 1;
       -ms-flex: 1;
           flex: 1;
-  background-color: maroon;
+  background-color: #494b5a;
   margin: 5px;
 }
 
@@ -242,7 +248,7 @@ topbar .right-column .imports {
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  background: #4CAF50;
+  background: #ff6700;
   cursor: pointer;
 }
 
@@ -250,7 +256,7 @@ topbar .right-column .imports {
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  background: #4CAF50;
+  background: #ff6700;
   cursor: pointer;
 }
 /*# sourceMappingURL=index.css.map */
