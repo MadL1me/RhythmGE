@@ -20,7 +20,7 @@
   }
 
   p {
-    font-size: 20px;
+    font-size: 15px;
     margin-top: 5px;
     margin-bottom: 5px;
   }
@@ -34,7 +34,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    margin-top: 2rem;
+    margin-top: 1em;
 
     .input-container {
       display: flex;
@@ -61,10 +61,48 @@
 
         .audio-player {
           flex: 2;
+          display: flex;
+          flex-direction: column;
+          //position: relative;
+          margin: 5px;
+
+          .slider-top {
+            display: flex;
+            width: 80%;
+            justify-content: space-between;
+            margin-left: 10px;
+         
+            button {
+              margin-top: 8px;
+              margin-bottom: 8px;
+              max-height: 50%;
+            }
+          }
+
+          .file-name {
+            margin-left: 10px;
+          }
+
+          .slider-container {
+            //position: absolute;
+            bottom: 10px;
+            width: 80%;
+          }
+
+          .buttons-container {
+
+          }
+          
+          p {
+            margin-top: 5px;
+            font-size: 20px;
+          }
         }
 
         .visualizer {
           flex: 1;
+          background-color: mediumvioletred;
+          margin: 5px;
         }
       }
 
@@ -72,6 +110,7 @@
         flex: 1;
         display: flex;
         flex-direction: row;
+        margin: 5px;
         background-color: mediumpurple;      
       }
     }
@@ -81,15 +120,19 @@
       flex-direction: row;
       flex: 1;
       background-color: maroon;
+      margin: 5px;
 
       .drop-zone {
-        flex: 1;
+        flex: 2;
       }
 
       .imports {
-        flex: 1;
+        flex: 1 10px;
         display: flex;
         flex-direction: column;
+
+        button {
+        }
       }
     }
   }
@@ -101,12 +144,22 @@
   }
 
   .input-block {
-    padding-left: 2rem;
+    margin: 5px;
+    padding: 5px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    p {
+      font-size: 15px;
+    }
+
+    input {
+      max-width: 30px;
+    }
   }
-  
+
   #editor-canvas {
-
-
   }
     
   #drop-zone {
@@ -114,15 +167,11 @@
     width:  100px;
     height: 100px;
   }
-
-  .slider-container {
-    width: 100%;
-  }
   
   .slider {
     -webkit-appearance: none;
     width: 100%;
-    height: 15px;
+    height: 12px;
     border-radius: 5px;  
     background: #d3d3d3;
     outline: none;

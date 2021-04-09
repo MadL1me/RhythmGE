@@ -15,7 +15,7 @@ h1 {
 }
 
 p {
-  font-size: 20px;
+  font-size: 15px;
   margin-top: 5px;
   margin-bottom: 5px;
 }
@@ -36,7 +36,7 @@ p {
   -webkit-box-pack: justify;
       -ms-flex-pack: justify;
           justify-content: space-between;
-  margin-top: 2rem;
+  margin-top: 1em;
 }
 
 .editor-container .input-container {
@@ -91,12 +91,53 @@ topbar .left-column .first-row .audio-player {
   -webkit-box-flex: 2;
       -ms-flex: 2;
           flex: 2;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  margin: 5px;
+}
+
+topbar .left-column .first-row .audio-player .slider-top {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  width: 80%;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  margin-left: 10px;
+}
+
+topbar .left-column .first-row .audio-player .slider-top button {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  max-height: 50%;
+}
+
+topbar .left-column .first-row .audio-player .file-name {
+  margin-left: 10px;
+}
+
+topbar .left-column .first-row .audio-player .slider-container {
+  bottom: 10px;
+  width: 80%;
+}
+
+topbar .left-column .first-row .audio-player p {
+  margin-top: 5px;
+  font-size: 20px;
 }
 
 topbar .left-column .first-row .visualizer {
   -webkit-box-flex: 1;
       -ms-flex: 1;
           flex: 1;
+  background-color: mediumvioletred;
+  margin: 5px;
 }
 
 topbar .left-column .settings-container {
@@ -110,6 +151,7 @@ topbar .left-column .settings-container {
   -webkit-box-direction: normal;
       -ms-flex-direction: row;
           flex-direction: row;
+  margin: 5px;
   background-color: mediumpurple;
 }
 
@@ -125,18 +167,19 @@ topbar .right-column {
       -ms-flex: 1;
           flex: 1;
   background-color: maroon;
+  margin: 5px;
 }
 
 topbar .right-column .drop-zone {
-  -webkit-box-flex: 1;
-      -ms-flex: 1;
-          flex: 1;
+  -webkit-box-flex: 2;
+      -ms-flex: 2;
+          flex: 2;
 }
 
 topbar .right-column .imports {
   -webkit-box-flex: 1;
-      -ms-flex: 1;
-          flex: 1;
+      -ms-flex: 1 10px;
+          flex: 1 10px;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -152,7 +195,26 @@ topbar .right-column .imports {
 }
 
 .input-block {
-  padding-left: 2rem;
+  margin: 5px;
+  padding: 5px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+          flex-direction: row;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+}
+
+.input-block p {
+  font-size: 15px;
+}
+
+.input-block input {
+  max-width: 30px;
 }
 
 #drop-zone {
@@ -161,14 +223,10 @@ topbar .right-column .imports {
   height: 100px;
 }
 
-.slider-container {
-  width: 100%;
-}
-
 .slider {
   -webkit-appearance: none;
   width: 100%;
-  height: 15px;
+  height: 12px;
   border-radius: 5px;
   background: #d3d3d3;
   outline: none;

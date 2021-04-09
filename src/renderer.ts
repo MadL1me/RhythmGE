@@ -21,14 +21,14 @@ function test() {
 }
 
 function playButtonClick() {
-    editor.onPlay();
+    editor.onPlay();   
 }
 
 var analyser;
 
 function audioLoad(file) {
     console.log("audio load");
-    editor.onAudioLoad(file.path);
+    editor.onAudioLoad(file.name, file.path);
 }
 
 function dragOverhandler(event) {
@@ -88,34 +88,24 @@ function bmpValueChange(event) {
     editor.changeBpmValue(event);
 }
 
-var drop_zone = document.getElementById("drop-zone")
-drop_zone.ondrag = (event) => {
-    
+let dropzone = document.getElementById("drop-zone")
+dropzone.addEventListener('dragenter', onDragEnter, false)
+dropzone.addEventListener('dragleave', onDragLeave, false)
+dropzone.addEventListener('dragover', onDragOver, false)
+dropzone.addEventListener('drop', onDrop, false)
+
+function onDragEnter() {
+
 }
 
-drop_zone.ondrop = (ev) => {
-    console.log('File(s) dropped');
+function onDragLeave() {
 
-    ev.preventDefault();
-
-    if (ev.dataTransfer.items) {
-        // Use DataTransferItemList interface to access the file(s)
-        for (var i = 0; i < ev.dataTransfer.items.length; i++) {
-        // If dropped items aren't files, reject them
-        if (ev.dataTransfer.items[i].kind === 'file') {
-            var file = ev.dataTransfer.items[i].getAsFile();
-            console.log('... file[' + i + '].name = ' + file.name);
-            }
-        }
-    } else {
-        // Use DataTransfer interface to access the file(s)
-        for (var i = 0; i < ev.dataTransfer.files.length; i++) {
-        console.log('... file[' + i + '].name = ' + ev.dataTransfer.files[i].name);
-        }
-    }
 }
 
-drop_zone.ondragover = (event) => {
-    event.preventDefault()
-    console.log("fuck3");
+function onDragOver() {
+
+}
+
+function onDrop() {
+
 }

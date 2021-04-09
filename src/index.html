@@ -12,8 +12,14 @@
     <div class="left-column">
       <div class="first-row">
         <div class="audio-player">
+          <p id ="file-name" class="file-name">File name</p>
+          <div class="slider-top"> 
+            <p id="current-audio-time">0:00</p>
+            <button onclick='playButtonClick()'>Play</button>
+            <p id="audio-duration">0:00</p>
+          </div>
           <div class="slider-container">
-            <input type="range" min="1" max="100" value="50" class="slider" id="myRange">Cnj
+            <input disabled type="range" min="1" max="100" value="50" class="slider" id="audio-slider">
           </div>
         </div>
         <div class="visualizer">
@@ -45,13 +51,11 @@
       </div>
     </div>
     <div class="right-column">
-      <div class="drop-zone">
+      <div id="drop-zone" class="drop-zone">
         <p>Drag audio files here</p>
+        <input type="file" id="files" name="files[]" />
       </div>
       <div class="imports">
-        <input type="file" id="files" name="files[]" />
-        <output id="list"></output>
-        <button onclick='playButtonClick()'>Play</button>
         <button onclick='loadAudioFile()' id="import-audio-btn"> Import Audio </button>
         <button onclick='saveBeatmap()' id="save-beatmap-btn"> Save beatmap file </button>
         <button onclick='importBeatmap()' id="import-beatmap-btn"> Import beatmap file </button>
