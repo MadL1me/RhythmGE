@@ -61,6 +61,7 @@ const appSettings = new class AppSettings {
     timestepLineColor = new RgbaColor(255, 103, 0);
 }
 
+
 class Visualizer {
 
     canvas: HTMLCanvasElement;
@@ -73,6 +74,95 @@ class Visualizer {
     draw(editor: Editor) {
 
 
+    }
+}
+
+class InputsController {
+    
+    editor: Editor;
+    onKeyUp = new Event;
+    onKeyDown = new Event;
+
+    private keysPressed = [];
+
+    constructor(editor: Editor) {
+        this.editor = editor;
+
+        document.getElementById('files').onchange = (event) => {
+            this.onAudioLoad(event); 
+        };
+
+        window.onresize = (event: UIEvent) => {
+            this.editor.onWindowResize(event);
+        }
+
+        window.addEventListener('keydown', (event) => {this.onCanvasKeyDown(event);});
+        window.addEventListener('keyup', (event) => { this.onCanvasKeyUp(event);});
+
+        var editorCanvas = document.getElementById("editor-canvas");
+        editorCanvas.addEventListener('wheel', (event) => { this.onCanvasWheel(event); });
+        editorCanvas.addEventListener('click', (event) => { editor.canvasClickHandle(event); });
+    
+        document.getElementById("play-button").onclick = () => {
+            this.playButtonClick();
+        }
+    }
+
+    onAudioLoad(event) {
+        var files = event.target.files;
+        var file = files[0];
+        this.editor.onAudioLoad(file.name, file.path);
+        console.log(files[0]);
+    }
+
+    playButtonClick() {
+        this.editor.onPlay();   
+    }
+
+    onCanvasKeyDown(event) {
+        this.keysPressed[event.key] = true;
+        if (event.code == "Space")
+            this.editor.createCustomBpmLine();
+        console.log("Key pressed!" + event.key);
+    }
+
+    onCanvasKeyUp(event) {
+        delete this.keysPressed[event.key];
+        console.log("Key removed" + event.key);
+    }
+
+    onCanvasWheel(event) {
+        if (this.keysPressed['Control'])
+            this.editor.onCanvasResize(parseInt(event.deltaY));
+        else if (this.keysPressed['Shift'])
+            this.editor.onCanvasScroll(parseInt(event.deltaY), true);
+        else
+            this.editor.onCanvasScroll(parseInt(event.deltaY), false); 
+    }
+
+    onBeatLinesValueChange(event) {
+        this.editor.changeBeatlinesCount(event);
+    }
+
+    onBpmValueChange(event) {
+        this.editor.changeBpmValue(event);
+    }
+
+    onUseClapsValueChange(event) {
+        console.log(event);
+        this.editor.usingClaps = true;
+    }
+
+    onHideBpmLinesChange(event) {
+        console.log(event);
+    }
+
+    onFollowLineChange(event) {
+        console.log(event);
+    }
+
+    onHideCreatableLinesChange(event) {
+        console.log(event);
     }
 }
 
@@ -166,8 +256,11 @@ class Transform {
 
 class Editor {
 
-    isFollowingLine: boolean = false;
-    isUsingClaps: boolean = false;
+    usingClaps: boolean = false;
+    followingLine: boolean = false;
+    hideBpmLines: boolean = false;
+    hideCreatableLines: boolean = false;
+
     audioLoaded: boolean = false;
     scrollingSpeed : number = 0.2;
     resizingSpeed: number = 0.01;
@@ -240,14 +333,6 @@ class Editor {
             this.editorGrid.initBpmLines();
             this.drawEditor(); 
         })
-    }
-
-    onUseClaps() {
-
-    }
-
-    onLineFollowingChange() {
-
     }
 
     onPlay() {
@@ -982,4 +1067,5 @@ class LeftScale {
 }
 
 const editor = new Editor();
+const inputController = new InputsController(editor);
 module.exports = editor;

@@ -151,8 +151,58 @@ topbar .left-column .settings-container {
   -webkit-box-direction: normal;
       -ms-flex-direction: row;
           flex-direction: row;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
   margin: 5px;
   background-color: #494b5a;
+}
+
+topbar .left-column .settings-container .input-block {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-pack: start;
+      -ms-flex-pack: start;
+          justify-content: start;
+}
+
+topbar .left-column .settings-container .input-block p {
+  text-align: center;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+topbar .left-column .settings-container .input-block input {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+topbar .left-column .settings-container .checkbox-holder {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+}
+
+topbar .left-column .settings-container label {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
 }
 
 topbar .right-column {
@@ -187,6 +237,31 @@ topbar .right-column .imports {
   -webkit-box-direction: normal;
       -ms-flex-direction: column;
           flex-direction: column;
+}
+
+label {
+  margin: 5px;
+  color: white;
+}
+
+label input {
+  visibility: hidden;
+  display: block;
+  height: 0;
+  width: 0;
+  position: absolute;
+  overflow: hidden;
+}
+
+label span {
+  height: 10px;
+  width: 10px;
+  border: 1px solid grey;
+  display: inline-block;
+}
+
+[type=checkbox]:checked + span {
+  background: #ff6700;
 }
 
 .canvas-holder {

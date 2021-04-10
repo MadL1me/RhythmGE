@@ -15,7 +15,7 @@
           <p id="file-name" class="file-name">File name</p>
           <div class="slider-top">
             <p id="current-audio-time">0:00</p>
-            <button onclick='playButtonClick()'>Play</button>
+            <button id="play-button">Play</button>
             <p id="audio-duration">0:00</p>
           </div>
           <div class="slider-container">
@@ -40,14 +40,33 @@
         <div class="slider-container">
           <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
         </div>
-
-        <div class="">
-          <p><input type="checkbox" id="line-following"></p>
+ 
+        <div class="checkbox-holder">
+          <label>
+            <input id="use-claps" type='checkbox'>
+            <span></span>
+            Claps
+          </label>
+  
+          <label>
+            <input id="follow-line" type='checkbox'>
+            <span></span>
+            Follow Line
+          </label>
+  
+          <label>
+            <input id="hide-bpm" type='checkbox'>
+            <span></span>
+            Hide bpm lines
+          </label>
+  
+          <label>
+            <input id="hide-creatable" type='checkbox'>
+            <span></span>
+            Hide creatable lines
+          </label>
         </div>
 
-        <div class="">
-          <p><input type="checkbox" id="use-claps">Claps</p>
-        </div>
       </div>
     </div>
     <div class="right-column">
@@ -56,7 +75,6 @@
         <input type="file" id="files" name="files[]" />
       </div>
       <div class="imports">
-        <button onclick='loadAudioFile()' id="import-audio-btn"> Import Audio </button>
         <button onclick='saveBeatmap()' id="save-beatmap-btn"> Save beatmap file </button>
         <button onclick='importBeatmap()' id="import-beatmap-btn"> Import beatmap file </button>
       </div>

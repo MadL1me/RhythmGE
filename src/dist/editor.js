@@ -55,6 +55,76 @@ var Visualizer = /** @class */ (function () {
     };
     return Visualizer;
 }());
+var InputsController = /** @class */ (function () {
+    function InputsController(editor) {
+        var _this = this;
+        this.onKeyUp = new Event;
+        this.onKeyDown = new Event;
+        this.keysPressed = [];
+        this.editor = editor;
+        document.getElementById('files').onchange = function (event) {
+            _this.onAudioLoad(event);
+        };
+        window.onresize = function (event) {
+            _this.editor.onWindowResize(event);
+        };
+        window.addEventListener('keydown', function (event) { _this.onCanvasKeyDown(event); });
+        window.addEventListener('keyup', function (event) { _this.onCanvasKeyUp(event); });
+        var editorCanvas = document.getElementById("editor-canvas");
+        editorCanvas.addEventListener('wheel', function (event) { _this.onCanvasWheel(event); });
+        editorCanvas.addEventListener('click', function (event) { editor.canvasClickHandle(event); });
+        document.getElementById("play-button").onclick = function () {
+            _this.playButtonClick();
+        };
+    }
+    InputsController.prototype.onAudioLoad = function (event) {
+        var files = event.target.files;
+        var file = files[0];
+        this.editor.onAudioLoad(file.name, file.path);
+        console.log(files[0]);
+    };
+    InputsController.prototype.playButtonClick = function () {
+        this.editor.onPlay();
+    };
+    InputsController.prototype.onCanvasKeyDown = function (event) {
+        this.keysPressed[event.key] = true;
+        if (event.code == "Space")
+            this.editor.createCustomBpmLine();
+        console.log("Key pressed!" + event.key);
+    };
+    InputsController.prototype.onCanvasKeyUp = function (event) {
+        delete this.keysPressed[event.key];
+        console.log("Key removed" + event.key);
+    };
+    InputsController.prototype.onCanvasWheel = function (event) {
+        if (this.keysPressed['Control'])
+            this.editor.onCanvasResize(parseInt(event.deltaY));
+        else if (this.keysPressed['Shift'])
+            this.editor.onCanvasScroll(parseInt(event.deltaY), true);
+        else
+            this.editor.onCanvasScroll(parseInt(event.deltaY), false);
+    };
+    InputsController.prototype.onBeatLinesValueChange = function (event) {
+        this.editor.changeBeatlinesCount(event);
+    };
+    InputsController.prototype.onBpmValueChange = function (event) {
+        this.editor.changeBpmValue(event);
+    };
+    InputsController.prototype.onUseClapsValueChange = function (event) {
+        console.log(event);
+        this.editor.usingClaps = true;
+    };
+    InputsController.prototype.onHideBpmLinesChange = function (event) {
+        console.log(event);
+    };
+    InputsController.prototype.onFollowLineChange = function (event) {
+        console.log(event);
+    };
+    InputsController.prototype.onHideCreatableLinesChange = function (event) {
+        console.log(event);
+    };
+    return InputsController;
+}());
 var Viewport = /** @class */ (function () {
     function Viewport() {
         this.maxDeviation = new Vec2(100, 100);
@@ -141,8 +211,10 @@ var Transform = /** @class */ (function () {
 }());
 var Editor = /** @class */ (function () {
     function Editor() {
-        this.isFollowingLine = false;
-        this.isUsingClaps = false;
+        this.usingClaps = false;
+        this.followingLine = false;
+        this.hideBpmLines = false;
+        this.hideCreatableLines = false;
         this.audioLoaded = false;
         this.scrollingSpeed = 0.2;
         this.resizingSpeed = 0.01;
@@ -191,10 +263,6 @@ var Editor = /** @class */ (function () {
             _this.editorGrid.initBpmLines();
             _this.drawEditor();
         });
-    };
-    Editor.prototype.onUseClaps = function () {
-    };
-    Editor.prototype.onLineFollowingChange = function () {
     };
     Editor.prototype.onPlay = function () {
         if (this.audioPlayer.isPlaying() == true)
@@ -752,5 +820,6 @@ var LeftScale = /** @class */ (function () {
     return LeftScale;
 }());
 var editor = new Editor();
+var inputController = new InputsController(editor);
 module.exports = editor;
 //# sourceMappingURL=editor.js.map

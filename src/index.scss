@@ -118,11 +118,39 @@
         flex: 1;
         display: flex;
         flex-direction: row;
+        justify-content: space-between;
         margin: 5px;
-        background-color: $background-second-color;      
+        background-color: $background-second-color;     
+        
+        .input-block {
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+          justify-content: start;
+
+          p{
+            text-align: center;
+            user-select: none;
+          }
+
+          input {
+            margin-left: auto;
+            margin-right: auto;
+          }
+        }
+
+        .checkbox-holder {
+          flex: 1;
+          display: flex;
+          flex-wrap: wrap;
+        }
+
+        label {
+          user-select: none;
+        }
       }
     }
-    
+
     .right-column {
       display: flex;
       flex-direction: row;
@@ -144,6 +172,32 @@
       }
     }
   }
+
+  label {
+    margin: 5px;
+    color: $text-color;
+  
+    input {
+      visibility: hidden;
+      display: block;
+      height: 0;
+      width: 0;
+      position: absolute;
+      overflow: hidden;
+    }
+
+    span {
+      height: 10px;
+      width: 10px;
+      border: 1px solid grey;
+      display: inline-block;
+    }
+  }
+
+  [type=checkbox]:checked + span {
+    background: $accent-color;
+  }
+  
   
   .canvas-holder {
     margin-top: 1rem;
