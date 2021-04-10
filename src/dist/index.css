@@ -31,21 +31,6 @@ canvas {
   margin-bottom: 5px;
 }
 
-.editor-container {
-  margin-top: 1em;
-  margin-left: 5px;
-}
-
-.editor-container .input-container {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: horizontal;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: row;
-          flex-direction: row;
-}
-
 topbar {
   display: -webkit-box;
   display: -ms-flexbox;

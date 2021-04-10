@@ -4,7 +4,7 @@ var editor = require("./dist/editor");
 
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
-setInterval(() => { editor.updateLoop(); }, 10);
+setInterval(() => { editor.updateLoop(); }, 15);
 
 window.onresize = (ev: UIEvent) => {
     editor.onWindowResize(ev);
@@ -62,13 +62,13 @@ window.addEventListener('keyup', onCanvasKeyUp);
 
 function onCanvasKeyUp(this:GlobalEventHandlers, event:KeyboardEvent) {
     delete keysPressed[event.key];
-    if (event.code == "Space")
-        editor.createCustomBpmLine();
     console.log("Key removed" + event.key);
 }
 
 function onCanvasKeyDown(event) {
     keysPressed[event.key] = true;
+    if (event.code == "Space")
+        editor.createCustomBpmLine();
     console.log("Key pressed!" + event.key);
 }
 

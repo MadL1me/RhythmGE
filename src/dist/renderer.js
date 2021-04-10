@@ -2,7 +2,7 @@ var Howler = require("howler");
 var Howl = require("howler");
 var editor = require("./dist/editor");
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
-setInterval(function () { editor.updateLoop(); }, 10);
+setInterval(function () { editor.updateLoop(); }, 15);
 window.onresize = function (ev) {
     editor.onWindowResize(ev);
 };
@@ -41,12 +41,12 @@ window.addEventListener('keydown', onCanvasKeyDown);
 window.addEventListener('keyup', onCanvasKeyUp);
 function onCanvasKeyUp(event) {
     delete keysPressed[event.key];
-    if (event.code == "Space")
-        editor.createCustomBpmLine();
     console.log("Key removed" + event.key);
 }
 function onCanvasKeyDown(event) {
     keysPressed[event.key] = true;
+    if (event.code == "Space")
+        editor.createCustomBpmLine();
     console.log("Key pressed!" + event.key);
 }
 function onCanvasWheel(event) {

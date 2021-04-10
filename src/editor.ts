@@ -110,7 +110,7 @@ class Transform {
     rotation: Vec2 = new Vec2(0,0);
 
     maxScale: Vec2 = new Vec2(100, 100);
-    minScale: Vec2 = new Vec2(5, 5);
+    minScale: Vec2 = new Vec2(10, 10);
 
     get localPosition() : Vec2 {
         return this._localPosition;
@@ -133,7 +133,7 @@ class Transform {
         }
         
         var pos = Vec2.Substract(value, this.position);
-        console.log("position change")
+        //console.log("position change")
         this.localPosition = Vec2.Divide(Vec2.Sum(this.localPosition, pos), this._parent.scale);
     } 
 
@@ -283,12 +283,12 @@ class Editor {
         if (this.viewport.position.x > this.viewport.maxDeviation.x)
             this.viewport.position = new Vec2(this.viewport.maxDeviation.x, this.viewport.position.y);
 
-        console.log(this.viewport.position.x);
+        //console.log(this.viewport.position.x);
         this.drawEditor();
     }
 
     onWindowResize(event: UIEvent) {
-        console.log(event);
+        //console.log(event);
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
 
@@ -303,7 +303,7 @@ class Editor {
 
     onCanvasResize(mouseDelta : number) {
         var resultedDelta = mouseDelta*this.resizingSpeed;
-        console.log("resized!!");
+        //console.log("resized!!");
         var oldScale = this.transform.scale.x;
         this.transform.scale = new Vec2(this.transform.scale.x-resultedDelta, this.transform.scale.y);
         var scaleIsChanged = true;
@@ -338,7 +338,7 @@ class Editor {
         console.log(clickY);
 
         if (clickY <= this.topScale.height) {
-            console.log("Set Music!!!");
+            //console.log("Set Music!!!");
             this.audioPlayer.setMusicFromCanvasPosition(click, this);
         }
 
@@ -349,14 +349,14 @@ class Editor {
             return;
         }
 
-        console.log(columnNum);
-        console.log(rowNum);
+        //console.log(columnNum);
+        //console.log(rowNum);
 
         const x = this.editorGrid.bpmLines[columnNum].transform.position.x+this.transform.position.x - this.transform.position.x;
         const y = this.editorGrid.beatLines[rowNum].transform.position.y+this.transform.position.y - this.transform.position.y;
 
-        console.log(columnNum+":"+rowNum);
-        console.log(Math.abs(x - clickX) + ":" + Math.abs(y - clickY))
+        //console.log(columnNum+":"+rowNum);
+       // console.log(Math.abs(x - clickX) + ":" + Math.abs(y - clickY))
 
         if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
             if (this.notes[columnNum][rowNum] != undefined && this.notes[columnNum][rowNum] != null) {
@@ -572,7 +572,7 @@ class AudioPlayer {
     }
 
     setMusicFromCanvasPosition(position : Vec2, editor : Editor) : void {
-        console.log(position);
+        //console.log(position);
         var second = editor.viewport.canvasToSongTime(position).x/editor.transform.scale.x;
         this.sound.seek([second]);
     }
@@ -637,15 +637,19 @@ class AudioAmplitudeCanvas {
 
         for (var i = 0; i<this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i]*this.canvas.height;
-            this.ctx.strokeStyle = appSettings.loudnessBarColor.value();
-            this.ctx.beginPath();
-            this.ctx.moveTo(i+this.editor.viewport.position.x, 0);
-            this.ctx.lineTo(i+this.editor.viewport.position.x, interpolated);
-            this.ctx.stroke();
+            var position = this.editor.viewport.position.x + i*this.editor.transform.scale.x/10;
+            var width = this.editor.transform.scale.x/10;
+            var gap = Math.floor(width/3);
+
+            this.ctx.fillStyle = appSettings.loudnessBarColor.value();
+            this.ctx.fillRect(position + gap, 0, width - gap, interpolated)
+            this.ctx.fill();
         }
     }
 
     private calculateAmplitudeArray() {
+        this.amplitudeData = [];
+        
         for (var i = 0; i<this.data.length; i+=this.samplesPerArrayValue) {
             var value = this.getAvarageAtRange(i, i+this.samplesPerArrayValue);
             this.amplitudeData.push(value);
