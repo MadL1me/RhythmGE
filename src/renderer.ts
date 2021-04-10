@@ -16,10 +16,6 @@ function handleFileSelect(event) {
     console.log(files[0]);
 }
 
-function test() {
-    editor.debug();
-}
-
 function playButtonClick() {
     editor.onPlay();   
 }

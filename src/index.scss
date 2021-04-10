@@ -11,6 +11,12 @@
     background-color: $background-main-color;
   }
 
+  .holder {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
   input {
     height: 30%;
     margin-left: 10px;
@@ -37,6 +43,12 @@
   canvas {
     //display: block;
     margin-bottom: 5px;
+  }
+
+  .editor-container {
+    margin-left: 5px;
+    margin-right: 5px;
+    max-height: 70%;
   }
 
   topbar {
@@ -155,6 +167,19 @@
     }
   }
 
+  .imports {
+    display: flex;
+    justify-content: space-around;
+
+    button {
+      margin: 5px;
+      color: $text-color;
+      border: none;
+      text-align: center;
+      text-decoration: none;
+      background-color: $accent-color;
+    }
+  }
 
   #drop-zone {
     border: 5px solid;

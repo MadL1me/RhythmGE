@@ -220,15 +220,6 @@ class Editor {
         this.drawEditor();
     }
 
-    debug() {
-        console.log(this.audioPlayer.bufferSource.buffer.sampleRate);
-        console.log(this.audioPlayer.bufferSource.buffer);
-        console.log(this.audioPlayer.bufferSource);
-        console.log(this.audioPlayer.sound._soundById(this.audioPlayer.soundId)._node);
-        console.log(this.audioPlayer.bufferSource.buffer.getChannelData(0));
-        console.log(this.audioPlayer.analyser);
-    }
-
     updateLoop() {
         if (!this.audioPlayer.isPlaying())
             return;
@@ -292,8 +283,12 @@ class Editor {
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
 
-        this.canvas.setAttribute('width', (w-100).toString());
-        this.canvas.setAttribute('height', (h/2).toString());
+        var div = this.canvas.parentElement;
+        div.setAttribute("style", "height:" + (h*0.6).toString() + "px");
+        var info = this.canvas.parentElement.getBoundingClientRect();
+        
+        this.canvas.setAttribute('width', (info.width).toString());
+        this.canvas.setAttribute('height', (info.height/4*3).toString());
     
         this.editorGrid.initGrid();
         this.audioCanvas.onWindowResize(event);
@@ -612,8 +607,10 @@ class AudioAmplitudeCanvas {
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
 
-        this.canvas.setAttribute('width', (w-100).toString());
-        this.canvas.setAttribute('height', (h/8).toString());
+        var info = this.canvas.parentElement.getBoundingClientRect();
+
+        this.canvas.setAttribute('width', info.width.toString());
+        this.canvas.setAttribute('height', (info.height/4).toString());
     }
 
     onAudioLoad(audio: AudioPlayer) : void {        

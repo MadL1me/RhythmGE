@@ -174,14 +174,6 @@ var Editor = /** @class */ (function () {
         this.editorGrid.setBpmValue(bpm);
         this.drawEditor();
     };
-    Editor.prototype.debug = function () {
-        console.log(this.audioPlayer.bufferSource.buffer.sampleRate);
-        console.log(this.audioPlayer.bufferSource.buffer);
-        console.log(this.audioPlayer.bufferSource);
-        console.log(this.audioPlayer.sound._soundById(this.audioPlayer.soundId)._node);
-        console.log(this.audioPlayer.bufferSource.buffer.getChannelData(0));
-        console.log(this.audioPlayer.analyser);
-    };
     Editor.prototype.updateLoop = function () {
         if (!this.audioPlayer.isPlaying())
             return;
@@ -228,8 +220,11 @@ var Editor = /** @class */ (function () {
         //console.log(event);
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
-        this.canvas.setAttribute('width', (w - 100).toString());
-        this.canvas.setAttribute('height', (h / 2).toString());
+        var div = this.canvas.parentElement;
+        div.setAttribute("style", "height:" + (h * 0.6).toString() + "px");
+        var info = this.canvas.parentElement.getBoundingClientRect();
+        this.canvas.setAttribute('width', (info.width).toString());
+        this.canvas.setAttribute('height', (info.height / 4 * 3).toString());
         this.editorGrid.initGrid();
         this.audioCanvas.onWindowResize(event);
         this.drawEditor();
@@ -472,8 +467,9 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
     AudioAmplitudeCanvas.prototype.onWindowResize = function (event) {
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
-        this.canvas.setAttribute('width', (w - 100).toString());
-        this.canvas.setAttribute('height', (h / 8).toString());
+        var info = this.canvas.parentElement.getBoundingClientRect();
+        this.canvas.setAttribute('width', info.width.toString());
+        this.canvas.setAttribute('height', (info.height / 4).toString());
     };
     AudioAmplitudeCanvas.prototype.onAudioLoad = function (audio) {
         this.data = audio.bufferSource.buffer.getChannelData(0);
