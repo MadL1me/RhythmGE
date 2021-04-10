@@ -38,10 +38,11 @@ var RgbaColor = /** @class */ (function () {
 var appSettings = new /** @class */ (function () {
     function AppSettings() {
         this.editorBackgroundColor = new RgbaColor(73, 75, 90);
-        this.beatLineColor = new RgbaColor(255, 255, 255); // (74, 74, 74)
-        this.mainBpmLineColor = new RgbaColor(255, 255, 255); //(92, 92, 92);
+        this.beatLineColor = new RgbaColor(130, 130, 130); // (74, 74, 74)
+        this.mainBpmLineColorStrong = new RgbaColor(255, 255, 255); //(92, 92, 92);
+        this.mainBpmLineColorWeak = new RgbaColor(150, 150, 150);
         this.snapBpmLineColor = new RgbaColor(255, 255, 255); //(74, 189, 166);
-        this.customBpmLineColor = new RgbaColor(116, 104, 222);
+        this.creatableTimestampLineColor = new RgbaColor(10, 255, 206); //(116, 104, 222);
         this.loudnessBarColor = new RgbaColor(255, 103, 0);
         this.timestepLineColor = new RgbaColor(255, 103, 0);
     }
@@ -146,6 +147,7 @@ var Editor = /** @class */ (function () {
         this.scrollingSpeed = 0.2;
         this.resizingSpeed = 0.01;
         this.fastScrollingSpeed = 5;
+        this.creatableLines = new Array();
         this.notes = Array(5).fill(null).map(function () { return Array(5); });
         this.transform = new Transform();
         this.viewport = new Viewport();
@@ -289,12 +291,21 @@ var Editor = /** @class */ (function () {
             }
         }
     };
+    Editor.prototype.createCustomBpmLine = function () {
+        console.log("Custom bpm line created");
+        var xPos = this.timestepLine.transform.position.x;
+        var line = new CreatableTimestampLine(xPos, this.transform);
+        this.creatableLines.push(line);
+    };
     Editor.prototype.drawEditor = function () {
         var _this = this;
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.editorGrid.draw(this.audioPlayer != null && this.audioPlayer.sound != undefined && this.audioPlayer.sound != null && this.audioPlayer.sound.state() == "loaded", this);
+        this.creatableLines.forEach(function (line) {
+            line.draw(_this.viewport);
+        });
         this.notes.forEach(function (notes) {
             notes.forEach(function (note) {
                 if (note != null) {
@@ -377,7 +388,7 @@ var AudioPlayerView = /** @class */ (function () {
         this.slider.setValue(currentTime);
     };
     AudioPlayerView.prototype.formatTime = function (time, accuracy) {
-        console.log("Format time time is: " + time);
+        //console.log("Format time time is: " + time);
         var minutes = Math.floor(time / 60);
         var seconds = Math.floor(time - minutes * 60);
         var milliseconds = time % 1;
@@ -516,6 +527,31 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
     };
     return AudioAmplitudeCanvas;
 }());
+var CreatableTimestampLine = /** @class */ (function () {
+    function CreatableTimestampLine(x, parent) {
+        this.transform = new Transform();
+        this.transform.parent = parent;
+        this.transform.position = new Vec2(x, 0);
+        this.canvas = document.getElementById("editor-canvas");
+        this.ctx = this.canvas.getContext("2d");
+    }
+    CreatableTimestampLine.prototype.draw = function (view) {
+        var x = this.transform.position.x + view.position.x;
+        this.ctx.beginPath();
+        this.ctx.fillStyle = appSettings.creatableTimestampLineColor.value();
+        this.ctx.moveTo(x, this.canvas.height - 10);
+        this.ctx.lineTo(x - 5, this.canvas.height);
+        this.ctx.lineTo(x + 5, this.canvas.height);
+        this.ctx.fill();
+        this.ctx.strokeStyle = appSettings.creatableTimestampLineColor.value();
+        this.ctx.moveTo(x, 0);
+        this.ctx.lineTo(x, this.canvas.height);
+        this.ctx.stroke();
+    };
+    CreatableTimestampLine.prototype.move = function () {
+    };
+    return CreatableTimestampLine;
+}());
 var TimestepLine = /** @class */ (function () {
     function TimestepLine() {
         this.transform = new Transform();
@@ -617,7 +653,13 @@ var EditorGrid = /** @class */ (function () {
         var soundLength = editor.audioPlayer.sound.duration();
         var bpmCount = (soundLength / 60) * this.bpmValue;
         for (var i = 0; i < bpmCount; i++) {
-            var bpmLine = new BPMLine(i, this.editor.transform, appSettings.mainBpmLineColor);
+            var color;
+            if (i % 2 == 0) {
+                color = appSettings.mainBpmLineColorStrong;
+            }
+            else
+                color = appSettings.mainBpmLineColorWeak;
+            var bpmLine = new BPMLine(i, this.editor.transform, color);
             this.bpmLines.push(bpmLine);
         }
     };
@@ -665,12 +707,6 @@ var BPMLine = /** @class */ (function () {
         this.isActive = false;
     };
     return BPMLine;
-}());
-var CreatableTimestampLine = /** @class */ (function () {
-    function CreatableTimestampLine(x) {
-        this.transform = new Transform();
-    }
-    return CreatableTimestampLine;
 }());
 var BeatLine = /** @class */ (function () {
     function BeatLine(y, parent) {

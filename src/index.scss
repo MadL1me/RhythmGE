@@ -40,9 +40,6 @@
   }
 
   .editor-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
     margin-top: 1em;
     margin-left: 5px;
 
@@ -120,7 +117,7 @@
         display: flex;
         flex-direction: row;
         margin: 5px;
-        background-color: #494b5a;      
+        background-color: $background-second-color;      
       }
     }
     

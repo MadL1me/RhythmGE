@@ -52,10 +52,11 @@ class RgbaColor {
 
 const appSettings = new class AppSettings {
     editorBackgroundColor = new RgbaColor(73, 75, 90);
-    beatLineColor = new RgbaColor(255,255,255); // (74, 74, 74)
-    mainBpmLineColor = new RgbaColor(255,255,255);  //(92, 92, 92);
+    beatLineColor = new RgbaColor(130, 130, 130); // (74, 74, 74)
+    mainBpmLineColorStrong = new RgbaColor(255,255,255);  //(92, 92, 92);
+    mainBpmLineColorWeak = new RgbaColor(150, 150, 150);
     snapBpmLineColor = new RgbaColor(255,255,255);  //(74, 189, 166);
-    customBpmLineColor = new RgbaColor(116, 104, 222);
+    creatableTimestampLineColor = new RgbaColor(10, 255, 206); //(116, 104, 222);
     loudnessBarColor = new RgbaColor(255, 103, 0);
     timestepLineColor = new RgbaColor(255, 103, 0);
 }
@@ -172,6 +173,7 @@ class Editor {
     resizingSpeed: number = 0.01;
     fastScrollingSpeed: number = 5;
 
+    creatableLines = new Array<CreatableTimestampLine>();
     notes: Array<Array<Timestamp>>;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
@@ -372,12 +374,22 @@ class Editor {
         }
     }
 
+    createCustomBpmLine() {
+        console.log("Custom bpm line created");
+        var xPos = this.timestepLine.transform.position.x;
+        var line = new CreatableTimestampLine(xPos, this.transform);
+        this.creatableLines.push(line);
+    }
+
     drawEditor() {
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height)
         
         this.editorGrid.draw(this.audioPlayer != null && this.audioPlayer.sound != undefined && this.audioPlayer.sound != null && this.audioPlayer.sound.state()=="loaded", this);
+        this.creatableLines.forEach(line => { 
+            line.draw(this.viewport);
+        });
 
         this.notes.forEach(notes => { notes.forEach(note => {
             if (note!=null) { note.draw(this.canvas);
@@ -479,7 +491,7 @@ class AudioPlayerView {
     }
     
     private formatTime(time: number, accuracy: TimeAccuracy) : string {
-        console.log("Format time time is: " + time);
+        //console.log("Format time time is: " + time);
         
         var minutes = Math.floor(time/60);
         var seconds = Math.floor(time - minutes*60) as any;
@@ -638,7 +650,7 @@ class AudioAmplitudeCanvas {
             var value = this.getAvarageAtRange(i, i+this.samplesPerArrayValue);
             this.amplitudeData.push(value);
         }
-        console.log(this.amplitudeData);
+        //console.log(this.amplitudeData);
     }
 
     private getAmplitudeBarWitdh() : number {
@@ -668,12 +680,45 @@ class AudioAmplitudeCanvas {
     }
 }
 
+class CreatableTimestampLine {
+    
+    transform: Transform = new Transform();
+    canvas: HTMLCanvasElement;
+    ctx:CanvasRenderingContext2D;
+
+    constructor(x: number, parent: Transform) {
+        this.transform.parent = parent;
+        this.transform.position = new Vec2(x, 0);
+
+        this.canvas = document.getElementById("editor-canvas") as HTMLCanvasElement;
+        this.ctx = this.canvas.getContext("2d");
+    }
+
+    draw(view: Viewport) {
+        var x = this.transform.position.x + view.position.x;
+        
+        this.ctx.beginPath();
+        this.ctx.fillStyle = appSettings.creatableTimestampLineColor.value();
+        this.ctx.moveTo(x, this.canvas.height-10);
+        this.ctx.lineTo(x-5, this.canvas.height);
+        this.ctx.lineTo(x+5, this.canvas.height);
+        this.ctx.fill();
+
+        this.ctx.strokeStyle = appSettings.creatableTimestampLineColor.value();
+        this.ctx.moveTo(x,0);
+        this.ctx.lineTo(x, this.canvas.height);
+        this.ctx.stroke();
+    }
+
+    move() {
+
+    }
+}
 
 class TimestepLine {
     
     transform: Transform = new Transform();
     canvas: HTMLCanvasElement;
-    
     ctx:CanvasRenderingContext2D;
 
     constructor() {
@@ -808,7 +853,15 @@ class EditorGrid {
         var bpmCount = (soundLength/60) * this.bpmValue;
         
         for (var i=0; i<bpmCount; i++) {
-            var bpmLine = new BPMLine(i, this.editor.transform, appSettings.mainBpmLineColor);
+            var color: RgbaColor;
+            
+            if (i%2 == 0) {
+                color = appSettings.mainBpmLineColorStrong;
+            }
+            else 
+                color = appSettings.mainBpmLineColorWeak;
+            
+            var bpmLine = new BPMLine(i, this.editor.transform, color);
             this.bpmLines.push(bpmLine);
         }
     }
@@ -867,16 +920,6 @@ class BPMLine {
         this.isActive = false;
     }
 }
-
-class CreatableTimestampLine {
-    
-    transform: Transform = new Transform();
-
-    constructor(x: number) {
-        
-    }
-}
-
 
 class BeatLine {
     

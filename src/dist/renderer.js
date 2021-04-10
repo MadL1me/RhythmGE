@@ -41,6 +41,8 @@ window.addEventListener('keydown', onCanvasKeyDown);
 window.addEventListener('keyup', onCanvasKeyUp);
 function onCanvasKeyUp(event) {
     delete keysPressed[event.key];
+    if (event.code == "Space")
+        editor.createCustomBpmLine();
     console.log("Key removed" + event.key);
 }
 function onCanvasKeyDown(event) {
