@@ -1,4 +1,19 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 var _a = require('howler'), Howl = _a.Howl, Howler = _a.Howler;
 var Vec2 = /** @class */ (function () {
@@ -73,9 +88,15 @@ var InputsController = /** @class */ (function () {
         var editorCanvas = document.getElementById("editor-canvas");
         editorCanvas.addEventListener('wheel', function (event) { _this.onCanvasWheel(event); });
         editorCanvas.addEventListener('click', function (event) { editor.canvasClickHandle(event); });
-        document.getElementById("play-button").onclick = function () {
+        var playBtn = document.getElementById("play-button");
+        playBtn.onclick = function () {
             _this.playButtonClick();
+            playBtn.toggleAttribute("paused");
         };
+        document.getElementById("follow-line").onchange = function (event) { _this.onFollowLineChange(event); };
+        document.getElementById("use-claps").onchange = function (event) { _this.onUseClapsValueChange(event); };
+        document.getElementById("hide-bpm").onchange = function (event) { _this.onHideBpmLinesChange(event); };
+        document.getElementById("hide-creatable").onchange = function (event) { _this.onHideCreatableLinesChange(event); };
     }
     InputsController.prototype.onAudioLoad = function (event) {
         var files = event.target.files;
@@ -115,12 +136,15 @@ var InputsController = /** @class */ (function () {
         this.editor.usingClaps = true;
     };
     InputsController.prototype.onHideBpmLinesChange = function (event) {
+        this.editor.hideBpmLines = event.target.checked;
         console.log(event);
     };
     InputsController.prototype.onFollowLineChange = function (event) {
+        this.editor.followingLine = event.target.checked;
         console.log(event);
     };
     InputsController.prototype.onHideCreatableLinesChange = function (event) {
+        this.editor.hideCreatableLines = event.target.checked;
         console.log(event);
     };
     return InputsController;
@@ -232,6 +256,7 @@ var Editor = /** @class */ (function () {
         this.audioPlayer = new AudioPlayer(this);
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
+        this.bottomScale = new BottomScale(10);
         this.editorGrid = new EditorGrid(this, this.canvas);
         this.audioCanvas = new AudioAmplitudeCanvas(this);
         this.timestepLine = new TimestepLine();
@@ -275,6 +300,8 @@ var Editor = /** @class */ (function () {
         this.audioPlayer.sound.pause();
     };
     Editor.prototype.onCanvasScroll = function (mouseDelta, isSpeededUp) {
+        if (this.followingLine)
+            return;
         var resultedDelta = mouseDelta * this.scrollingSpeed;
         if (isSpeededUp)
             resultedDelta *= this.fastScrollingSpeed;
@@ -324,7 +351,7 @@ var Editor = /** @class */ (function () {
         var clickY = event.clientY - rect.top;
         var click = new Vec2(clickX, clickY);
         console.log(clickY);
-        if (clickY <= this.topScale.height) {
+        if (clickY <= this.topScale.width) {
             //console.log("Set Music!!!");
             this.audioPlayer.setMusicFromCanvasPosition(click, this);
         }
@@ -366,6 +393,8 @@ var Editor = /** @class */ (function () {
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.editorGrid.draw(this.audioPlayer != null && this.audioPlayer.sound != undefined && this.audioPlayer.sound != null && this.audioPlayer.sound.state() == "loaded", this);
+        //this.bottomScale.draw(this.canvas);
+        //this.leftScale.draw(this.canvas);
         this.creatableLines.forEach(function (line) {
             line.draw(_this.viewport);
         });
@@ -378,11 +407,12 @@ var Editor = /** @class */ (function () {
         });
         this.audioCanvas.draw();
         this.topScale.draw(this.canvas);
-        //this.leftScale.draw(this.canvas);
         if (this.audioPlayer.isPlaying()) {
             this.timestepLine.transform.localPosition = new Vec2(this.audioPlayer.sound.seek(), 0);
         }
         this.timestepLine.draw(this.viewport);
+        if (this.followingLine)
+            this.viewport.position = new Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 0);
     };
     return Editor;
 }());
@@ -444,11 +474,11 @@ var AudioPlayerView = /** @class */ (function () {
         this.audioFileName.innerHTML = fileName;
         this.audioCurrentTime.innerHTML = "0:00";
         this.audioDuration.innerHTML = this.formatTime(duration, TimeAccuracy.seconds);
-        this.slider.setMaxValue(duration);
+        this.slider.setMaxValue(duration * 100);
     };
     AudioPlayerView.prototype.update = function (currentTime) {
         this.audioCurrentTime.innerHTML = this.formatTime(currentTime, TimeAccuracy.seconds);
-        this.slider.setValue(currentTime);
+        this.slider.setValue(currentTime * 100);
     };
     AudioPlayerView.prototype.formatTime = function (time, accuracy) {
         //console.log("Format time time is: " + time);
@@ -797,20 +827,40 @@ var BeatLine = /** @class */ (function () {
     };
     return BeatLine;
 }());
-var TopScale = /** @class */ (function () {
-    function TopScale(height) {
-        this.height = height;
+var Scale = /** @class */ (function () {
+    function Scale(width) {
+        this.width = width;
+    }
+    return Scale;
+}());
+var TopScale = /** @class */ (function (_super) {
+    __extends(TopScale, _super);
+    function TopScale() {
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     TopScale.prototype.draw = function (canvas) {
         var ctx = canvas.getContext('2d');
         ctx.fillStyle = '#1B1C21';
-        ctx.fillRect(0, -5, canvas.width, this.height + 5);
+        ctx.fillRect(0, -5, canvas.width, this.width + 5);
     };
     return TopScale;
-}());
-var LeftScale = /** @class */ (function () {
-    function LeftScale(width) {
-        this.width = width;
+}(Scale));
+var BottomScale = /** @class */ (function (_super) {
+    __extends(BottomScale, _super);
+    function BottomScale() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    BottomScale.prototype.draw = function (canvas) {
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#1B1C21';
+        ctx.fillRect(0, canvas.height + 5, canvas.width, -this.width - 5);
+    };
+    return BottomScale;
+}(Scale));
+var LeftScale = /** @class */ (function (_super) {
+    __extends(LeftScale, _super);
+    function LeftScale() {
+        return _super !== null && _super.apply(this, arguments) || this;
     }
     LeftScale.prototype.draw = function (canvas) {
         var ctx = canvas.getContext('2d');
@@ -818,7 +868,7 @@ var LeftScale = /** @class */ (function () {
         ctx.fillRect(0, 0, this.width, canvas.height);
     };
     return LeftScale;
-}());
+}(Scale));
 var editor = new Editor();
 var inputController = new InputsController(editor);
 module.exports = editor;

@@ -73,7 +73,6 @@ class Visualizer {
 
     draw(editor: Editor) {
 
-
     }
 }
 
@@ -103,9 +102,16 @@ class InputsController {
         editorCanvas.addEventListener('wheel', (event) => { this.onCanvasWheel(event); });
         editorCanvas.addEventListener('click', (event) => { editor.canvasClickHandle(event); });
     
-        document.getElementById("play-button").onclick = () => {
+        var playBtn = document.getElementById("play-button");
+        playBtn.onclick = () => {
             this.playButtonClick();
-        }
+            playBtn.toggleAttribute("paused");
+        };
+
+        document.getElementById("follow-line").onchange = (event) => { this.onFollowLineChange(event); }
+        document.getElementById("use-claps").onchange = (event) => { this.onUseClapsValueChange(event); }
+        document.getElementById("hide-bpm").onchange = (event) => { this.onHideBpmLinesChange(event); }
+        document.getElementById("hide-creatable").onchange = (event) => { this.onHideCreatableLinesChange(event); }
     }
 
     onAudioLoad(event) {
@@ -154,14 +160,17 @@ class InputsController {
     }
 
     onHideBpmLinesChange(event) {
+        this.editor.hideBpmLines = event.target.checked;
         console.log(event);
     }
 
     onFollowLineChange(event) {
+        this.editor.followingLine = event.target.checked;
         console.log(event);
     }
 
     onHideCreatableLinesChange(event) {
+        this.editor.hideCreatableLines = event.target.checked
         console.log(event);
     }
 }
@@ -275,6 +284,7 @@ class Editor {
     transform: Transform;
     topScale: TopScale;
     leftScale: LeftScale;
+    bottomScale: BottomScale;
     editorGrid: EditorGrid;
     audioCanvas: AudioAmplitudeCanvas;    
     audioPlayer: AudioPlayer; 
@@ -296,6 +306,7 @@ class Editor {
         this.audioPlayer = new AudioPlayer(this);
         this.topScale = new TopScale(10);
         this.leftScale = new LeftScale(10);
+        this.bottomScale = new BottomScale(10);
         this.editorGrid = new EditorGrid(this, this.canvas);
         this.audioCanvas = new AudioAmplitudeCanvas(this);
         this.timestepLine = new TimestepLine();
@@ -350,6 +361,9 @@ class Editor {
     }
 
     onCanvasScroll(mouseDelta : number, isSpeededUp : boolean) {
+        if (this.followingLine)
+            return;
+        
         var resultedDelta = mouseDelta*this.scrollingSpeed;
         if (isSpeededUp) 
             resultedDelta *= this.fastScrollingSpeed; 
@@ -417,7 +431,7 @@ class Editor {
 
         console.log(clickY);
 
-        if (clickY <= this.topScale.height) {
+        if (clickY <= this.topScale.width) {
             //console.log("Set Music!!!");
             this.audioPlayer.setMusicFromCanvasPosition(click, this);
         }
@@ -467,6 +481,10 @@ class Editor {
         this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height)
         
         this.editorGrid.draw(this.audioPlayer != null && this.audioPlayer.sound != undefined && this.audioPlayer.sound != null && this.audioPlayer.sound.state()=="loaded", this);
+        
+        //this.bottomScale.draw(this.canvas);
+        //this.leftScale.draw(this.canvas);
+
         this.creatableLines.forEach(line => { 
             line.draw(this.viewport);
         });
@@ -477,13 +495,15 @@ class Editor {
         
         this.audioCanvas.draw();
         this.topScale.draw(this.canvas);
-        //this.leftScale.draw(this.canvas);
 
         if (this.audioPlayer.isPlaying()){
             this.timestepLine.transform.localPosition = new Vec2(this.audioPlayer.sound.seek(), 0);
         }
 
         this.timestepLine.draw(this.viewport);
+
+        if (this.followingLine)
+            this.viewport.position = new Vec2(-this.timestepLine.transform.position.x+this.canvas.width/2, 0);
     }
 }
 
@@ -562,12 +582,12 @@ class AudioPlayerView {
         this.audioFileName.innerHTML = fileName;
         this.audioCurrentTime.innerHTML = "0:00";
         this.audioDuration.innerHTML = this.formatTime(duration, TimeAccuracy.seconds);
-        this.slider.setMaxValue(duration);
+        this.slider.setMaxValue(duration*100);
     }
 
     update(currentTime: number) {
         this.audioCurrentTime.innerHTML = this.formatTime(currentTime, TimeAccuracy.seconds);
-        this.slider.setValue(currentTime);
+        this.slider.setValue(currentTime*100);
     }
     
     private formatTime(time: number, accuracy: TimeAccuracy) : string {
@@ -1035,33 +1055,36 @@ class BeatLine {
     }
 }
 
-
-class TopScale {
-   
-    height: number;
-   
-    constructor(height : number) {
-        this.height = height;
-    }
-
-    draw(canvas : HTMLCanvasElement) {
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#1B1C21';
-        ctx.fillRect(0,-5,canvas.width,this.height+5);
-    }
-}
-
-class LeftScale {
-    
+abstract class Scale {
     width: number;
-    
+   
     constructor(width : number) {
         this.width = width;
     }
 
+    abstract draw(canvas : HTMLCanvasElement);
+}
+
+class TopScale extends Scale {
     draw(canvas : HTMLCanvasElement) {
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#1B1C21';
+        ctx.fillRect(0,-5,canvas.width,this.width+5);
+    }
+}
+
+class BottomScale extends Scale {
+    draw(canvas : HTMLCanvasElement) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#1B1C21';
+        ctx.fillRect(0, canvas.height+5, canvas.width, -this.width-5);
+    }
+}
+
+class LeftScale extends Scale {
+    draw(canvas : HTMLCanvasElement) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#1B1C21'; 
         ctx.fillRect(0,0, this.width,canvas.height);
     }
 }

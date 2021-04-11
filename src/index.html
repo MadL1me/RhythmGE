@@ -12,14 +12,21 @@
     <div class="left-column">
       <div class="first-row">
         <div class="audio-player">
-          <p id="file-name" class="file-name">File name</p>
-          <div class="slider-top">
-            <p id="current-audio-time">0:00</p>
-            <button id="play-button">Play</button>
-            <p id="audio-duration">0:00</p>
+          <div class="col-1">
+            <p id="file-name" class="file-name">File name</p>
+            <div class="slider-top">
+              <p id="current-audio-time">0:00</p>
+              <button class="play-button" id="play-button"></button>
+              <p id="audio-duration">0:00</p>
+            </div>
+            <div class="slider-container">
+              <input disabled type="range" min="1" max="100" value="50" class="slider" id="audio-slider">
+            </div>
           </div>
-          <div class="slider-container">
-            <input disabled type="range" min="1" max="100" value="50" class="slider" id="audio-slider">
+          <div class="col-2">
+            <div class="slider-container">
+              <input type="range" min="1" max="100" value="50" class="slider slider-vertical" id="volume-slider">
+            </div>
           </div>
         </div>
         <div class="visualizer">
@@ -27,18 +34,32 @@
         </div>
       </div>
       <div class="settings-container">
-        <div class="input-block">
-          <p>LPB</p>
-          <input value="5" onchange='beatLinesValueChange(event)' type="text">
+        <div class="inputs-block-container"> 
+          <div class="input-block">
+            <p>LPB</p>
+            <input value="5" id="beat-lines" type="text">
+          </div>
+  
+          <div class="input-block">
+            <p>BPM</p>
+            <input value="60" id="bpm" type="text">
+          </div>
+  
+          <div class="input-block">
+            <p>Offset</p>
+            <input value="60" id="offset" type="text">
+          </div>
         </div>
-
-        <div class="input-block">
-          <p>BPM</p>
-          <input value="60" onchange='bmpValueChange(event)' type="text">
-        </div>
-
-        <div class="slider-container">
-          <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+      
+        <div class="sliders"> 
+          <div class="slider-container">
+            <p>Snap lines</p>
+            <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+          </div>
+          <div class="slider-container">
+            <p>Playback rate</p>
+            <input type="range" min="5" max="40" value="10" class="slider" id="myRange">
+          </div>
         </div>
  
         <div class="checkbox-holder">

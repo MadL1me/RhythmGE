@@ -8,6 +8,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     //margin: auto;
     padding: 2rem;
+    padding-top: 1rem;
     background-color: $background-main-color;
   }
 
@@ -69,41 +70,56 @@
         .audio-player {
           flex: 2;
           display: flex;
-          flex-direction: column;
+          flex-direction: row;
           background-color: $background-second-color;
-          //position: relative;
           margin: 5px;
 
-          .slider-top {
+          .col-1 {
+            flex: 4;
             display: flex;
-            width: 80%;
-            justify-content: space-between;
-            margin-left: 10px;
-         
-            button {
-              margin-top: 8px;
-              margin-bottom: 8px;
-              max-height: 50%;
+            flex-direction: column;
+
+            .slider-top {
+              display: flex;
+              //width: 100%;
+              justify-content: space-between;
+              margin-left: 10px;
+           
+              button {
+                margin-top: 8px;
+                margin-bottom: 8px;
+                max-height: 50%;
+              }
+            }
+  
+            .file-name {
+              margin-left: 10px;
+            }
+  
+            .slider-container {
+              bottom: 10px;
+              //width: 100%;
+              margin: 0px;
+              margin-left: 10px;
+              margin-bottom: 10px;
+
+              .slider {
+                margin: 0px;
+              }
+            }
+  
+            .buttons-container {
+  
+            }
+            
+            p {
+              margin-top: 5px;
+              font-size: 20px;
             }
           }
 
-          .file-name {
-            margin-left: 10px;
-          }
-
-          .slider-container {
-            //position: absolute;
-            bottom: 10px;
-            width: 80%;
-          }
-
-          .buttons-container {
-
-          }
-          
-          p {
-            margin-top: 5px;
-            font-size: 20px;
+          .col-2 {
+            flex: 1;
           }
         }
 
@@ -117,26 +133,41 @@
       .settings-container {
         flex: 1;
         display: flex;
+        flex-shrink: 1;
         flex-direction: row;
         justify-content: space-between;
         margin: 5px;
         background-color: $background-second-color;     
         
-        .input-block {
+        .inputs-block-container {
           display: flex;
+          flex-direction: row;
           flex: 1;
-          flex-direction: column;
-          justify-content: start;
 
-          p{
-            text-align: center;
-            user-select: none;
+          .input-block {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            justify-content: start;
+  
+            p{
+              text-align: center;
+              user-select: none;
+            }
+  
+            input {
+              margin-left: auto;
+              margin-right: auto;
+            }
           }
+        }
 
-          input {
-            margin-left: auto;
-            margin-right: auto;
-          }
+        .sliders {
+           flex: 1;
+           display: flex;
+           flex-direction: column;
+           justify-content: space-between;
+           flex-wrap: wrap;
         }
 
         .checkbox-holder {
@@ -240,13 +271,25 @@
     width:  100px;
     height: 100px;
   }
+
+  .slider-container {
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 10px;
+  }
+
+  .slider-vertical {
+    top: 40%;
+    transform: rotate(270deg);
+  }
   
   .slider {
     -webkit-appearance: none;
     width: 100%;
-    height: 12px;
+    height: 7px;
+    margin: 0px;
     border-radius: 5px;  
-    background: #d3d3d3;
+    background: #f0f0f0;
     outline: none;
     opacity: 0.7;
     -webkit-transition: .2s;
@@ -255,18 +298,49 @@
     &::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 25px;
-      height: 25px;
-      border-radius: 50%; 
+      width: 10px;
+      height: 15px;
+      border-radius: 20%; 
       background: $accent-color;
       cursor: pointer;
     }
 
     &::-moz-range-thumb {
-      width: 25px;
-      height: 25px;
-      border-radius: 50%;
+      width: 10px;
+      height: 15px;
+      border-radius: 20%;
       background: $accent-color;
       cursor: pointer;
     }
   }
+
+  .play-button {
+    border: 0;
+    background: transparent;
+    box-sizing: border-box;
+    width: 0;
+    height: 1px;
+  
+    border-color: transparent transparent transparent $accent-color;
+    transition: 100ms all ease;
+    cursor: pointer;
+  
+    border-style: solid;
+    border-width: 10px 0 10px 20px;
+  
+    &.paused {
+      border-style: double;
+      border-width: 0px 0 0px 60px;
+    }
+  
+    &:hover {
+      border-color: transparent transparent transparent #ffffff;
+    }
+  }
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+    outline: none;
+}
