@@ -62,6 +62,26 @@ const appSettings = new class AppSettings {
 }
 
 
+class Event {
+    private listeners = [];
+
+    addListener(listener: any) {
+        this.listeners.push(listener)
+    }
+
+    removeListener(listener: any) {
+        var index = this.listeners.findIndex(listener);
+        this.listeners.slice(index,index);
+    }   
+
+    invoke(data: any) {
+        this.listeners.forEach(listener => {
+            listener(data);
+        });
+    }
+}
+
+
 class Visualizer {
 
     canvas: HTMLCanvasElement;
@@ -123,6 +143,10 @@ class InputsController {
         document.getElementById("use-claps").onchange = (event) => { this.onUseClapsValueChange(event); }
         document.getElementById("hide-bpm").onchange = (event) => { this.onHideBpmLinesChange(event); }
         document.getElementById("hide-creatable").onchange = (event) => { this.onHideCreatableLinesChange(event); }
+        
+        document.getElementById("beat-lines").onchange = (event) => { this.onBeatLinesValueChange(event); }
+        document.getElementById("bpm").onchange = (event) => { this.onBpmValueChange(event); }
+        document.getElementById("offset").onchange = (event) => { this.onOffsetValueChange(event); }
     }
 
     onAudioLoad(event) {
@@ -158,11 +182,18 @@ class InputsController {
     }
 
     onBeatLinesValueChange(event) {
+        console.log(event);
         this.editor.changeBeatlinesCount(event);
     }
 
     onBpmValueChange(event) {
+        console.log(event);
         this.editor.changeBpmValue(event);
+    }
+
+    onOffsetValueChange(event) {
+        console.log(event);
+        this.editor.changeOffset(event);
     }
 
     onUseClapsValueChange(event) {
@@ -215,12 +246,12 @@ class Transform {
     private _parent: Transform = null;
     private _children: Array<Transform> = new Array<Transform>();
     private _localPosition: Vec2 = new Vec2(0,0);
-    
-    scale: Vec2 = new Vec2(10,1);
+    private _localScale: Vec2 = new Vec2(1,1);
+
     rotation: Vec2 = new Vec2(0,0);
 
     maxScale: Vec2 = new Vec2(100, 100);
-    minScale: Vec2 = new Vec2(10, 10);
+    minScale: Vec2 = new Vec2(1, 1);
 
     get localPosition() : Vec2 {
         return this._localPosition;
@@ -237,15 +268,38 @@ class Transform {
     }
 
     set position(value: Vec2) {
-        if (this.parent == null) {
+        if (this._parent == null) {
             this.localPosition = value;
             return;
         }
         
         var pos = Vec2.Substract(value, this.position);
-        //console.log("position change")
         this.localPosition = Vec2.Divide(Vec2.Sum(this.localPosition, pos), this._parent.scale);
     } 
+
+    get scale() {
+        if (this._parent == null)
+            return this._localScale;
+        
+        return Vec2.Multiply(this._localScale, this._parent.scale);
+    }
+    
+    set scale(value: Vec2) {
+        if (this._parent == null) {
+            this.localScale = value;
+            return;
+        }
+        
+        this.localScale = Vec2.Divide(this._parent.scale, value);
+    } 
+
+    get localScale() {
+        return this._localScale;
+    }
+
+    set localScale(value) {
+        this._localScale = value;
+    }
 
     get parent() {
         return this._parent;
@@ -261,6 +315,7 @@ class Transform {
         this._parent = parent;
         this._parent?.addChild(this);
     }
+
 
     private addChild(child : Transform) : void {
         this._children.push(child);
@@ -285,6 +340,7 @@ class Editor {
     scrollingSpeed : number = 0.2;
     resizingSpeed: number = 0.01;
     fastScrollingSpeed: number = 5;
+    offset: number = 0;
 
     creatableLines = new Array<CreatableTimestampLine>();
     notes: Array<Array<Timestamp>>;
@@ -304,12 +360,13 @@ class Editor {
     constructor() {        
         this.notes = Array(5).fill(null).map(() => Array(5));
         this.transform = new Transform();
-        
+
         this.viewport = new Viewport();
         this.viewport.gridTransform = this.transform;
         this.viewport.position = new Vec2(100,0);
         
         this.transform.position = new Vec2(0,0);
+        this.transform.scale = new Vec2(10,1);
         this.canvas = document.getElementById("editor-canvas") as HTMLCanvasElement;
         this.ctx = this.canvas.getContext("2d");
         //this.ctx.translate(0.5,0.5);
@@ -333,6 +390,12 @@ class Editor {
     changeBpmValue(bpm) {
         this.editorGrid.setBpmValue(bpm);
         this.drawEditor();
+    }
+
+    changeOffset(offset) {
+        console.log(offset.target.value);
+        this.offset = parseInt(offset.target.value);
+        this.editorGrid.transform.localPosition = new Vec2(this.offset/100, 0);
     }
 
     updateLoop() {
@@ -521,25 +584,6 @@ class Editor {
 
         if (this.followingLine)
             this.viewport.position = new Vec2(-this.timestepLine.transform.position.x+this.canvas.width/2, 0);
-    }
-}
-
-class Event {
-    private listeners = [];
-
-    addListener(listener: any) {
-        this.listeners.push(listener)
-    }
-
-    removeListener(listener: any) {
-        var index = this.listeners.findIndex(listener);
-        this.listeners.slice(index,index);
-    }   
-
-    invoke(data: any) {
-        this.listeners.forEach(listener => {
-            listener(data);
-        });
     }
 }
 
@@ -756,8 +800,8 @@ class AudioAmplitudeCanvas {
 
         for (var i = 0; i<this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i]*this.canvas.height;
-            var position = this.editor.viewport.position.x + i*this.editor.transform.scale.x/10;
-            var width = this.editor.transform.scale.x/10;
+            var position = this.editor.viewport.position.x + i*this.editor.editorGrid.transform.scale.x/10;
+            var width = this.editor.editorGrid.transform.scale.x/10;
             var gap = Math.floor(width/3);
 
             this.ctx.fillStyle = appSettings.loudnessBarColor.value();
@@ -822,9 +866,9 @@ class CreatableTimestampLine {
         
         this.ctx.beginPath();
         this.ctx.fillStyle = appSettings.creatableTimestampLineColor.value();
-        this.ctx.moveTo(x, this.canvas.height-10);
-        this.ctx.lineTo(x-5, this.canvas.height);
-        this.ctx.lineTo(x+5, this.canvas.height);
+        this.ctx.moveTo((x), this.canvas.height-10);
+        this.ctx.lineTo((x-5), this.canvas.height);
+        this.ctx.lineTo((x+5), this.canvas.height);
         this.ctx.fill();
 
         this.ctx.strokeStyle = appSettings.creatableTimestampLineColor.value();
@@ -904,6 +948,8 @@ class EditorGrid {
     bpmLines: Array<BPMLine>;
     beatLines: Array<BeatLine>;
     editor: Editor;
+    transform: Transform;
+
 
     private beatLinesRange = new Vec2(1,20);
     private bpmRange = new Vec2(1,10000);
@@ -917,6 +963,9 @@ class EditorGrid {
         this.bpmLines = [];
         this.beatLines = [];
 
+        this.transform = new Transform();
+        this.transform.parent = editor.transform;
+        this.transform.localScale = new Vec2(1,1);
         this.initGrid();
     }
 
@@ -924,7 +973,7 @@ class EditorGrid {
         var soundLength = this.editor.audioPlayer.sound.duration();
         var bpmCount = (soundLength/60) * this.bpmValue;
         var pixelsPerBeat = soundLength / bpmCount;
-        return pixelsPerBeat * this.editor.transform.scale.x;
+        return pixelsPerBeat;
         //return (this.canvas.width)/(this.bpmValue+1);
     }
 
@@ -939,6 +988,7 @@ class EditorGrid {
         bpm > this.bpmRange.y ? bpm = this.bpmRange.y : bpm = bpm;
 
         this.bpmValue = bpm;
+        this.initBpmLines();
         console.log(bpm);
     }
 
@@ -959,7 +1009,7 @@ class EditorGrid {
     initGrid() {
         for (var i=0; i<this.beatLinesCount; i++){ 
             if (i+1 > this.beatLines.length) {
-                var beatLine = new BeatLine((i+1)*this.distanceBetweenBeatLines(), this.editor.transform);
+                var beatLine = new BeatLine((i+1)*this.distanceBetweenBeatLines(), this.transform);
                 this.beatLines.push(beatLine);
             }
             this.beatLines[i].transform.position = new Vec2(0, (i+1)*this.distanceBetweenBeatLines());
@@ -974,7 +1024,7 @@ class EditorGrid {
         this.bpmLines = [];
         var soundLength = editor.audioPlayer.sound.duration();
         var bpmCount = (soundLength/60) * this.bpmValue;
-        
+
         for (var i=0; i<bpmCount; i++) {
             var color: RgbaColor;
             
@@ -984,7 +1034,7 @@ class EditorGrid {
             else 
                 color = appSettings.mainBpmLineColorWeak;
             
-            var bpmLine = new BPMLine(i, this.editor.transform, color);
+            var bpmLine = new BPMLine(i*this.distanceBetweenBpmLines(), this.transform, color);
             this.bpmLines.push(bpmLine);
         }
     }

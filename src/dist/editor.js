@@ -63,6 +63,24 @@ var appSettings = new /** @class */ (function () {
     }
     return AppSettings;
 }());
+var Event = /** @class */ (function () {
+    function Event() {
+        this.listeners = [];
+    }
+    Event.prototype.addListener = function (listener) {
+        this.listeners.push(listener);
+    };
+    Event.prototype.removeListener = function (listener) {
+        var index = this.listeners.findIndex(listener);
+        this.listeners.slice(index, index);
+    };
+    Event.prototype.invoke = function (data) {
+        this.listeners.forEach(function (listener) {
+            listener(data);
+        });
+    };
+    return Event;
+}());
 var Visualizer = /** @class */ (function () {
     function Visualizer() {
     }
@@ -104,6 +122,9 @@ var InputsController = /** @class */ (function () {
         document.getElementById("use-claps").onchange = function (event) { _this.onUseClapsValueChange(event); };
         document.getElementById("hide-bpm").onchange = function (event) { _this.onHideBpmLinesChange(event); };
         document.getElementById("hide-creatable").onchange = function (event) { _this.onHideCreatableLinesChange(event); };
+        document.getElementById("beat-lines").onchange = function (event) { _this.onBeatLinesValueChange(event); };
+        document.getElementById("bpm").onchange = function (event) { _this.onBpmValueChange(event); };
+        document.getElementById("offset").onchange = function (event) { _this.onOffsetValueChange(event); };
     }
     InputsController.prototype.onAudioLoad = function (event) {
         var files = event.target.files;
@@ -133,10 +154,16 @@ var InputsController = /** @class */ (function () {
             this.editor.onCanvasScroll(parseInt(event.deltaY), false);
     };
     InputsController.prototype.onBeatLinesValueChange = function (event) {
+        console.log(event);
         this.editor.changeBeatlinesCount(event);
     };
     InputsController.prototype.onBpmValueChange = function (event) {
+        console.log(event);
         this.editor.changeBpmValue(event);
+    };
+    InputsController.prototype.onOffsetValueChange = function (event) {
+        console.log(event);
+        this.editor.changeOffset(event);
     };
     InputsController.prototype.onUseClapsValueChange = function (event) {
         console.log(event);
@@ -179,10 +206,10 @@ var Transform = /** @class */ (function () {
         this._parent = null;
         this._children = new Array();
         this._localPosition = new Vec2(0, 0);
-        this.scale = new Vec2(10, 1);
+        this._localScale = new Vec2(1, 1);
         this.rotation = new Vec2(0, 0);
         this.maxScale = new Vec2(100, 100);
-        this.minScale = new Vec2(10, 10);
+        this.minScale = new Vec2(0.5, 0.5);
     }
     Object.defineProperty(Transform.prototype, "localPosition", {
         get: function () {
@@ -201,13 +228,38 @@ var Transform = /** @class */ (function () {
             return Vec2.Sum(Vec2.Multiply(this._localPosition, this._parent.scale), this._parent.position);
         },
         set: function (value) {
-            if (this.parent == null) {
+            if (this._parent == null) {
                 this.localPosition = value;
                 return;
             }
             var pos = Vec2.Substract(value, this.position);
-            //console.log("position change")
             this.localPosition = Vec2.Divide(Vec2.Sum(this.localPosition, pos), this._parent.scale);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Transform.prototype, "scale", {
+        get: function () {
+            if (this._parent == null)
+                return this._localScale;
+            return Vec2.Multiply(this._localScale, this._parent.scale);
+        },
+        set: function (value) {
+            if (this._parent == null) {
+                this.localScale = value;
+                return;
+            }
+            this.localScale = Vec2.Divide(this._parent.scale, value);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Transform.prototype, "localScale", {
+        get: function () {
+            return this._localScale;
+        },
+        set: function (value) {
+            this._localScale = value;
         },
         enumerable: false,
         configurable: true
@@ -250,6 +302,7 @@ var Editor = /** @class */ (function () {
         this.scrollingSpeed = 0.2;
         this.resizingSpeed = 0.01;
         this.fastScrollingSpeed = 5;
+        this.offset = 0;
         this.creatableLines = new Array();
         this.notes = Array(5).fill(null).map(function () { return Array(5); });
         this.transform = new Transform();
@@ -257,6 +310,7 @@ var Editor = /** @class */ (function () {
         this.viewport.gridTransform = this.transform;
         this.viewport.position = new Vec2(100, 0);
         this.transform.position = new Vec2(0, 0);
+        this.transform.scale = new Vec2(10, 1);
         this.canvas = document.getElementById("editor-canvas");
         this.ctx = this.canvas.getContext("2d");
         //this.ctx.translate(0.5,0.5);
@@ -277,6 +331,11 @@ var Editor = /** @class */ (function () {
     Editor.prototype.changeBpmValue = function (bpm) {
         this.editorGrid.setBpmValue(bpm);
         this.drawEditor();
+    };
+    Editor.prototype.changeOffset = function (offset) {
+        console.log(offset.target.value);
+        this.offset = parseInt(offset.target.value);
+        this.editorGrid.transform.localPosition = new Vec2(this.offset / 100, 0);
     };
     Editor.prototype.updateLoop = function () {
         if (!this.audioPlayer.isPlaying())
@@ -427,24 +486,6 @@ var Editor = /** @class */ (function () {
             this.viewport.position = new Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 0);
     };
     return Editor;
-}());
-var Event = /** @class */ (function () {
-    function Event() {
-        this.listeners = [];
-    }
-    Event.prototype.addListener = function (listener) {
-        this.listeners.push(listener);
-    };
-    Event.prototype.removeListener = function (listener) {
-        var index = this.listeners.findIndex(listener);
-        this.listeners.slice(index, index);
-    };
-    Event.prototype.invoke = function (data) {
-        this.listeners.forEach(function (listener) {
-            listener(data);
-        });
-    };
-    return Event;
 }());
 var Slider = /** @class */ (function () {
     function Slider(sliderId) {
@@ -597,8 +638,8 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
         //console.log("DRAWING CANVAS!!!");
         for (var i = 0; i < this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i] * this.canvas.height;
-            var position = this.editor.viewport.position.x + i * this.editor.transform.scale.x / 10;
-            var width = this.editor.transform.scale.x / 10;
+            var position = this.editor.viewport.position.x + i * this.editor.editorGrid.transform.scale.x / 10;
+            var width = this.editor.editorGrid.transform.scale.x / 10;
             var gap = Math.floor(width / 3);
             this.ctx.fillStyle = appSettings.loudnessBarColor.value();
             this.ctx.fillRect(position + gap, 0, width - gap, interpolated);
@@ -647,9 +688,9 @@ var CreatableTimestampLine = /** @class */ (function () {
         var x = this.transform.position.x + view.position.x;
         this.ctx.beginPath();
         this.ctx.fillStyle = appSettings.creatableTimestampLineColor.value();
-        this.ctx.moveTo(x, this.canvas.height - 10);
-        this.ctx.lineTo(x - 5, this.canvas.height);
-        this.ctx.lineTo(x + 5, this.canvas.height);
+        this.ctx.moveTo((x), this.canvas.height - 10);
+        this.ctx.lineTo((x - 5), this.canvas.height);
+        this.ctx.lineTo((x + 5), this.canvas.height);
         this.ctx.fill();
         this.ctx.strokeStyle = appSettings.creatableTimestampLineColor.value();
         this.ctx.moveTo(x, 0);
@@ -714,13 +755,16 @@ var EditorGrid = /** @class */ (function () {
         this.beatLinesCount = 5;
         this.bpmLines = [];
         this.beatLines = [];
+        this.transform = new Transform();
+        this.transform.parent = editor.transform;
+        this.transform.localScale = new Vec2(1, 1);
         this.initGrid();
     }
     EditorGrid.prototype.distanceBetweenBpmLines = function () {
         var soundLength = this.editor.audioPlayer.sound.duration();
         var bpmCount = (soundLength / 60) * this.bpmValue;
         var pixelsPerBeat = soundLength / bpmCount;
-        return pixelsPerBeat * this.editor.transform.scale.x;
+        return pixelsPerBeat;
         //return (this.canvas.width)/(this.bpmValue+1);
     };
     EditorGrid.prototype.distanceBetweenBeatLines = function () {
@@ -731,6 +775,7 @@ var EditorGrid = /** @class */ (function () {
         bpm < this.bpmRange.x ? bpm = this.bpmRange.x : bpm = bpm;
         bpm > this.bpmRange.y ? bpm = this.bpmRange.y : bpm = bpm;
         this.bpmValue = bpm;
+        this.initBpmLines();
         console.log(bpm);
     };
     EditorGrid.prototype.setBeatLinesCount = function (event) {
@@ -746,7 +791,7 @@ var EditorGrid = /** @class */ (function () {
     EditorGrid.prototype.initGrid = function () {
         for (var i = 0; i < this.beatLinesCount; i++) {
             if (i + 1 > this.beatLines.length) {
-                var beatLine = new BeatLine((i + 1) * this.distanceBetweenBeatLines(), this.editor.transform);
+                var beatLine = new BeatLine((i + 1) * this.distanceBetweenBeatLines(), this.transform);
                 this.beatLines.push(beatLine);
             }
             this.beatLines[i].transform.position = new Vec2(0, (i + 1) * this.distanceBetweenBeatLines());
@@ -767,7 +812,7 @@ var EditorGrid = /** @class */ (function () {
             }
             else
                 color = appSettings.mainBpmLineColorWeak;
-            var bpmLine = new BPMLine(i, this.editor.transform, color);
+            var bpmLine = new BPMLine(i * this.distanceBetweenBpmLines(), this.transform, color);
             this.bpmLines.push(bpmLine);
         }
     };
