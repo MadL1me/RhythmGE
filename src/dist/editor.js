@@ -70,6 +70,13 @@ var Visualizer = /** @class */ (function () {
     };
     return Visualizer;
 }());
+var SelectController = /** @class */ (function () {
+    function SelectController() {
+    }
+    SelectController.prototype.drawSelectZone = function (from, to) {
+    };
+    return SelectController;
+}());
 var InputsController = /** @class */ (function () {
     function InputsController(editor) {
         var _this = this;
@@ -392,12 +399,17 @@ var Editor = /** @class */ (function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.editorGrid.draw(this.audioPlayer != null && this.audioPlayer.sound != undefined && this.audioPlayer.sound != null && this.audioPlayer.sound.state() == "loaded", this);
+        this.editorGrid.draw(this.audioPlayer != null
+            && this.audioPlayer.sound != undefined
+            && this.audioPlayer.sound != null
+            && this.audioPlayer.sound.state() == "loaded" && !this.hideBpmLines, this);
         //this.bottomScale.draw(this.canvas);
         //this.leftScale.draw(this.canvas);
-        this.creatableLines.forEach(function (line) {
-            line.draw(_this.viewport);
-        });
+        if (!this.hideCreatableLines) {
+            this.creatableLines.forEach(function (line) {
+                line.draw(_this.viewport);
+            });
+        }
         this.notes.forEach(function (notes) {
             notes.forEach(function (note) {
                 if (note != null) {
@@ -777,6 +789,11 @@ var EditorGrid = /** @class */ (function () {
         }
     };
     return EditorGrid;
+}());
+var BPMSnapLine = /** @class */ (function () {
+    function BPMSnapLine() {
+    }
+    return BPMSnapLine;
 }());
 var BPMLine = /** @class */ (function () {
     function BPMLine(x, parent, rgbaColor) {

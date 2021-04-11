@@ -76,6 +76,17 @@ class Visualizer {
     }
 }
 
+class SelectController {
+
+    selectedElements: [];
+
+    drawSelectZone(from, to) {
+        
+
+
+    }
+}
+
 class InputsController {
     
     editor: Editor;
@@ -480,14 +491,20 @@ class Editor {
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height)
         
-        this.editorGrid.draw(this.audioPlayer != null && this.audioPlayer.sound != undefined && this.audioPlayer.sound != null && this.audioPlayer.sound.state()=="loaded", this);
+        this.editorGrid.draw(this.audioPlayer != null 
+            && this.audioPlayer.sound != undefined 
+            && this.audioPlayer.sound != null 
+            && this.audioPlayer.sound.state()=="loaded" && !this.hideBpmLines, 
+            this);
         
         //this.bottomScale.draw(this.canvas);
         //this.leftScale.draw(this.canvas);
 
-        this.creatableLines.forEach(line => { 
-            line.draw(this.viewport);
-        });
+        if (!this.hideCreatableLines) {
+            this.creatableLines.forEach(line => { 
+                line.draw(this.viewport);
+            });
+        }
 
         this.notes.forEach(notes => { notes.forEach(note => {
             if (note!=null) { note.draw(this.canvas);
@@ -992,6 +1009,10 @@ class EditorGrid {
             });
         }
     }
+}
+
+class BPMSnapLine {
+
 }
 
 class BPMLine {
