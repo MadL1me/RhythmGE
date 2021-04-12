@@ -103,9 +103,9 @@ topbar .left-column .first-row .audio-player {
 }
 
 topbar .left-column .first-row .audio-player .col-1 {
-  -webkit-box-flex: 4;
-      -ms-flex: 4;
-          flex: 4;
+  -webkit-box-flex: 6;
+      -ms-flex: 6;
+          flex: 6;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -379,8 +379,23 @@ label span {
   margin-bottom: 10px;
 }
 
-.slider-vertical {
-  top: 40%;
+.col-2 {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+}
+
+.col-2 .slider-vertical-container {
+  width: 10vh;
+  -webkit-transform-origin: center;
+          transform-origin: center;
   -webkit-transform: rotate(270deg);
           transform: rotate(270deg);
 }

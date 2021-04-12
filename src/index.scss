@@ -75,7 +75,7 @@
           margin: 5px;
 
           .col-1 {
-            flex: 4;
+            flex: 6;
             display: flex;
             flex-direction: column;
 
@@ -278,11 +278,18 @@
     margin-bottom: 10px;
   }
 
-  .slider-vertical {
-    top: 40%;
-    transform: rotate(270deg);
+  .col-2 {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    .slider-vertical-container {
+      width: 10vh;
+      transform-origin: center;
+      transform:rotate(270deg);
+    }
   }
-  
+
   .slider {
     -webkit-appearance: none;
     width: 100%;

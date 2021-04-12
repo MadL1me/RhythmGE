@@ -101,6 +101,7 @@ class InputsController {
 
     private snapSlider = new Slider("snap-lines");
     private playbackSlider = new Slider("playback-rate");
+    private volumeSlider = new Slider("volume-slider");
     private keysPressed = [];
 
     constructor(editor: Editor) {
@@ -142,6 +143,11 @@ class InputsController {
         document.getElementById("bpm").onchange = (event) => { this.onBpmValueChange(event); }
         document.getElementById("offset").onchange = (event) => { this.onOffsetValueChange(event); }
     
+        this.volumeSlider.setValue(0.5);
+        this.snapSlider.setValue(1);
+        this.playbackSlider.setValue(1);
+        
+        this.volumeSlider.onValueChange.addListener((value) => {this.onVolumeSliderValueChange(value); });
         this.snapSlider.onValueChange.addListener((value) => { this.onSnapSliderValueChange(value); });
         this.playbackSlider.onValueChange.addListener((value) => { this.onPlaybackRateValueChange(value); });
     }
@@ -152,9 +158,16 @@ class InputsController {
         this.editor.onAudioLoad(file.name, file.path);
         console.log(files[0]);
     }
+    
+    onVolumeSliderValueChange(value: string) {
+        var val = parseFloat(value);
+        this.editor.audioPlayer.setVolume(val);
+    }
 
     onSnapSliderValueChange(value: string) {
         var val = parseInt(value);
+        val = Math.pow(2, val);
+        document.getElementById("snap-lines-text").innerText = "Snap lines 1/" + val.toString();
         this.editor.editorGrid.setSnapValue(val);
     }
 
@@ -459,7 +472,7 @@ class Editor {
     }
 
     onWindowResize(event: UIEvent) {
-        //console.log(event);
+        console.log(event);
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
 
@@ -716,6 +729,10 @@ class AudioPlayer {
             //setupEditor();
         });
 
+    }
+
+    setVolume(value: number) {
+        this.sound.volume([value]);
     }
 
     update() {

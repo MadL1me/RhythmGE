@@ -95,6 +95,7 @@ var InputsController = /** @class */ (function () {
         this.onKeyDown = new Event;
         this.snapSlider = new Slider("snap-lines");
         this.playbackSlider = new Slider("playback-rate");
+        this.volumeSlider = new Slider("volume-slider");
         this.keysPressed = [];
         this.editor = editor;
         document.getElementById('files').onchange = function (event) {
@@ -124,6 +125,10 @@ var InputsController = /** @class */ (function () {
         document.getElementById("beat-lines").onchange = function (event) { _this.onBeatLinesValueChange(event); };
         document.getElementById("bpm").onchange = function (event) { _this.onBpmValueChange(event); };
         document.getElementById("offset").onchange = function (event) { _this.onOffsetValueChange(event); };
+        this.volumeSlider.setValue(0.5);
+        this.snapSlider.setValue(1);
+        this.playbackSlider.setValue(1);
+        this.volumeSlider.onValueChange.addListener(function (value) { _this.onVolumeSliderValueChange(value); });
         this.snapSlider.onValueChange.addListener(function (value) { _this.onSnapSliderValueChange(value); });
         this.playbackSlider.onValueChange.addListener(function (value) { _this.onPlaybackRateValueChange(value); });
     }
@@ -133,8 +138,14 @@ var InputsController = /** @class */ (function () {
         this.editor.onAudioLoad(file.name, file.path);
         console.log(files[0]);
     };
+    InputsController.prototype.onVolumeSliderValueChange = function (value) {
+        var val = parseFloat(value);
+        this.editor.audioPlayer.setVolume(val);
+    };
     InputsController.prototype.onSnapSliderValueChange = function (value) {
         var val = parseInt(value);
+        val = Math.pow(2, val);
+        document.getElementById("snap-lines-text").innerText = "Snap lines 1/" + val.toString();
         this.editor.editorGrid.setSnapValue(val);
     };
     InputsController.prototype.onPlaybackRateValueChange = function (value) {
@@ -387,7 +398,7 @@ var Editor = /** @class */ (function () {
         this.drawEditor();
     };
     Editor.prototype.onWindowResize = function (event) {
-        //console.log(event);
+        console.log(event);
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
         var div = this.canvas.parentElement;
@@ -584,6 +595,9 @@ var AudioPlayer = /** @class */ (function () {
         this.sound.on("stop", function () {
             //setupEditor();
         });
+    };
+    AudioPlayer.prototype.setVolume = function (value) {
+        this.sound.volume([value]);
     };
     AudioPlayer.prototype.update = function () {
         this.view.update(this.sound.seek());
