@@ -82,20 +82,6 @@ class Event {
 }
 
 
-class Visualizer {
-
-    canvas: HTMLCanvasElement;
-    ctx: CanvasRenderingContext2D;
-
-    constructor() {
-        
-    }
-
-    draw(editor: Editor) {
-
-    }
-}
-
 class SelectController {
 
     selectedElements: [];
@@ -113,6 +99,8 @@ class InputsController {
     onKeyUp = new Event;
     onKeyDown = new Event;
 
+    private snapSlider = new Slider("snap-lines");
+    private playbackSlider = new Slider("playback-rate");
     private keysPressed = [];
 
     constructor(editor: Editor) {
@@ -134,9 +122,15 @@ class InputsController {
         editorCanvas.addEventListener('click', (event) => { editor.canvasClickHandle(event); });
     
         var playBtn = document.getElementById("play-button");
+        
         playBtn.onclick = () => {
+            var paused = playBtn.classList.contains("paused");
+            if (!paused)
+                playBtn.classList.add("paused");
+            else 
+                playBtn.classList.remove("paused");
+
             this.playButtonClick();
-            playBtn.toggleAttribute("paused");
         };
 
         document.getElementById("follow-line").onchange = (event) => { this.onFollowLineChange(event); }
@@ -147,6 +141,9 @@ class InputsController {
         document.getElementById("beat-lines").onchange = (event) => { this.onBeatLinesValueChange(event); }
         document.getElementById("bpm").onchange = (event) => { this.onBpmValueChange(event); }
         document.getElementById("offset").onchange = (event) => { this.onOffsetValueChange(event); }
+    
+        this.snapSlider.onValueChange.addListener((value) => { this.onSnapSliderValueChange(value); });
+        this.playbackSlider.onValueChange.addListener((value) => { this.onPlaybackRateValueChange(value); });
     }
 
     onAudioLoad(event) {
@@ -154,6 +151,17 @@ class InputsController {
         var file = files[0];
         this.editor.onAudioLoad(file.name, file.path);
         console.log(files[0]);
+    }
+
+    onSnapSliderValueChange(value: string) {
+        var val = parseInt(value);
+        this.editor.editorGrid.setSnapValue(val);
+    }
+
+    onPlaybackRateValueChange(value: string) {
+        var val = parseFloat(value);
+        document.getElementById("playback-rate-text").innerText = "Playback rate " + val.toString() + "x";
+        this.editor.audioPlayer.setPlaybackRate(val);
     }
 
     playButtonClick() {
@@ -249,7 +257,7 @@ class Transform {
     private _localScale: Vec2 = new Vec2(1,1);
 
     rotation: Vec2 = new Vec2(0,0);
-
+    
     maxScale: Vec2 = new Vec2(100, 100);
     minScale: Vec2 = new Vec2(1, 1);
 
@@ -377,8 +385,7 @@ class Editor {
         this.bottomScale = new BottomScale(10);
         this.editorGrid = new EditorGrid(this, this.canvas);
         this.audioCanvas = new AudioAmplitudeCanvas(this);
-        this.timestepLine = new TimestepLine();
-        this.timestepLine.transform.parent = this.transform;
+        this.timestepLine = new TimestepLine(this.transform, appSettings.timestepLineColor);
         this.drawEditor();
     }
 
@@ -545,7 +552,7 @@ class Editor {
     createCustomBpmLine() {
         console.log("Custom bpm line created");
         var xPos = this.timestepLine.transform.position.x;
-        var line = new CreatableTimestampLine(xPos, this.transform);
+        var line = new CreatableTimestampLine(xPos, this.transform, appSettings.creatableTimestampLineColor);
         this.creatableLines.push(line);
     }
 
@@ -565,7 +572,7 @@ class Editor {
 
         if (!this.hideCreatableLines) {
             this.creatableLines.forEach(line => { 
-                line.draw(this.viewport);
+                line.draw(this.viewport, this.canvas);
             });
         }
 
@@ -580,7 +587,7 @@ class Editor {
             this.timestepLine.transform.localPosition = new Vec2(this.audioPlayer.sound.seek(), 0);
         }
 
-        this.timestepLine.draw(this.viewport);
+        this.timestepLine.draw(this.viewport, this.canvas);
 
         if (this.followingLine)
             this.viewport.position = new Vec2(-this.timestepLine.transform.position.x+this.canvas.width/2, 0);
@@ -598,6 +605,9 @@ class Slider {
     constructor(sliderId: string) {
         this.sliderInput = document.getElementById(sliderId) as HTMLInputElement;
         this.sliderInput.value = "0";
+        this.sliderInput.oninput = (event : any) => {
+            this.setValue(event.target.value);
+        };
         this.value = 0;
     }
 
@@ -669,9 +679,10 @@ class AudioPlayerView {
 }
 
 class AudioPlayer {
-   
+
     sound : any;
     soundId : number;
+    clapSoundId: number;
     analyser : AnalyserNode;
     editor: Editor;
     bufferSource: AudioBufferSourceNode;
@@ -711,6 +722,12 @@ class AudioPlayer {
         this.view.update(this.sound.seek());
     }
 
+    setPlaybackRate(value: number) {
+        //this.bufferSource.playbackRate.value = value;
+        console.log(value);
+        this.sound.rate([value]);
+    }
+
     private setupEditor() {
         this.bufferSource = this.sound._soundById(this.soundId)._node.bufferSource;
         this.sound._soundById(this.soundId)._node.bufferSource.connect(this.analyser) 
@@ -728,6 +745,10 @@ class AudioPlayer {
         this.soundId = this.sound.play();
     }
     
+    pause() : void {
+
+    }
+
     playClapSound() : void {
         
     }
@@ -847,74 +868,6 @@ class AudioAmplitudeCanvas {
     }
 }
 
-class CreatableTimestampLine {
-    
-    transform: Transform = new Transform();
-    canvas: HTMLCanvasElement;
-    ctx:CanvasRenderingContext2D;
-
-    constructor(x: number, parent: Transform) {
-        this.transform.parent = parent;
-        this.transform.position = new Vec2(x, 0);
-
-        this.canvas = document.getElementById("editor-canvas") as HTMLCanvasElement;
-        this.ctx = this.canvas.getContext("2d");
-    }
-
-    draw(view: Viewport) {
-        var x = this.transform.position.x + view.position.x;
-        
-        this.ctx.beginPath();
-        this.ctx.fillStyle = appSettings.creatableTimestampLineColor.value();
-        this.ctx.moveTo((x), this.canvas.height-10);
-        this.ctx.lineTo((x-5), this.canvas.height);
-        this.ctx.lineTo((x+5), this.canvas.height);
-        this.ctx.fill();
-
-        this.ctx.strokeStyle = appSettings.creatableTimestampLineColor.value();
-        this.ctx.moveTo(x,0);
-        this.ctx.lineTo(x, this.canvas.height);
-        this.ctx.stroke();
-    }
-
-    move() {
-
-    }
-}
-
-class TimestepLine {
-    
-    transform: Transform = new Transform();
-    canvas: HTMLCanvasElement;
-    ctx:CanvasRenderingContext2D;
-
-    constructor() {
-        this.canvas = document.getElementById("editor-canvas") as HTMLCanvasElement;
-        this.ctx = this.canvas.getContext("2d");
-    }
-
-    draw(view : Viewport) {
-        var x = this.transform.position.x + view.position.x;
-        
-        if (x>=this.canvas.width)
-            x = this.canvas.width-5;
-        if (x<=0)
-            x = 0;
-
-        this.ctx.beginPath();
-        this.ctx.fillStyle = appSettings.timestepLineColor.value();
-        this.ctx.moveTo(x, 10);
-        this.ctx.lineTo(x-5, 0);
-        this.ctx.lineTo(x+5, 0);
-        this.ctx.fill();
-
-        this.ctx.strokeStyle = appSettings.timestepLineColor.value();
-        this.ctx.moveTo(x,0);
-        this.ctx.lineTo(x, this.canvas.height);
-        this.ctx.stroke();
-    }
-}
-
 class Timestamp {    
     
     transform: Transform = new Transform();
@@ -944,6 +897,7 @@ class EditorGrid {
 
     bpmValue: number;
     beatLinesCount: number;
+    snapValue = 0;
 
     bpmLines: Array<BPMLine>;
     beatLines: Array<BeatLine>;
@@ -974,11 +928,14 @@ class EditorGrid {
         var bpmCount = (soundLength/60) * this.bpmValue;
         var pixelsPerBeat = soundLength / bpmCount;
         return pixelsPerBeat;
-        //return (this.canvas.width)/(this.bpmValue+1);
     }
 
     distanceBetweenBeatLines() {
         return (this.canvas.height)/(this.beatLinesCount+1);
+    }
+
+    setSnapValue(val: number) {
+        this.snapValue = val;
     }
 
     setBpmValue(event) {            
@@ -1009,7 +966,7 @@ class EditorGrid {
     initGrid() {
         for (var i=0; i<this.beatLinesCount; i++){ 
             if (i+1 > this.beatLines.length) {
-                var beatLine = new BeatLine((i+1)*this.distanceBetweenBeatLines(), this.transform);
+                var beatLine = new BeatLine((i+1)*this.distanceBetweenBeatLines(), this.transform, appSettings.beatLineColor);
                 this.beatLines.push(beatLine);
             }
             this.beatLines[i].transform.position = new Vec2(0, (i+1)*this.distanceBetweenBeatLines());
@@ -1061,19 +1018,93 @@ class EditorGrid {
     }
 }
 
-class BPMSnapLine {
-
-}
-
-class BPMLine {
-
+abstract class GridLine {
+    
     transform: Transform = new Transform();
     isActive: boolean = true;
     color: RgbaColor;
 
-    constructor(x : number, parent : Transform, rgbaColor: RgbaColor) {
+    constructor(parent : Transform, rgbaColor: RgbaColor) {
         this.color = rgbaColor;
         this.transform.parent = parent;
+    }
+
+    abstract draw(view : Viewport, canvas : HTMLCanvasElement);
+
+    activate() {
+        this.isActive = true;
+    }
+
+    deactivate() {
+        this.isActive = false;
+    }
+}
+
+class CreatableTimestampLine extends GridLine {
+
+    constructor(x: number, parent: Transform, color: RgbaColor) {
+        super(parent, color);
+        this.transform.parent = parent;
+        this.transform.position = new Vec2(x, 0);
+    }
+
+    draw(view: Viewport, canvas: HTMLCanvasElement) {
+        var x = this.transform.position.x + view.position.x;
+        const ctx = canvas.getContext('2d');
+
+        ctx.beginPath();
+        ctx.fillStyle = this.color.value();
+        ctx.moveTo((x), canvas.height-10);
+        ctx.lineTo((x-5), canvas.height);
+        ctx.lineTo((x+5), canvas.height);
+        ctx.fill();
+
+        ctx.strokeStyle = this.color.value();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+}
+
+class TimestepLine extends GridLine {
+    
+    constructor(parent: Transform, color: RgbaColor) {
+        super(parent, color);
+    }
+
+    draw(view : Viewport, canvas: HTMLCanvasElement) {
+        var x = this.transform.position.x + view.position.x;
+        const ctx = canvas.getContext('2d');
+
+        if (x >= canvas.width)
+            x = canvas.width-5;
+        if (x<=0)
+            x = 0;
+
+        ctx.beginPath();
+        ctx.fillStyle = appSettings.timestepLineColor.value();
+        ctx.moveTo(x, 10);
+        ctx.lineTo(x-5, 0);
+        ctx.lineTo(x+5, 0);
+        ctx.fill();
+
+        ctx.strokeStyle = appSettings.timestepLineColor.value();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+    }
+}
+
+class BPMSnapLine extends GridLine {
+    draw(view: Viewport, canvas: HTMLCanvasElement) {
+        throw new Error("Method not implemented.");
+    }
+}
+
+class BPMLine extends GridLine {
+    
+    constructor(x : number, parent : Transform, rgbaColor: RgbaColor) {
+        super(parent, rgbaColor)
         this.transform.localPosition = new Vec2(x, 0);
     }
 
@@ -1088,41 +1119,22 @@ class BPMLine {
         ctx.lineTo(this.transform.position.x+view.position.x, canvas.height);
         ctx.stroke();
     }
-
-    activate() {
-        this.isActive = true;
-    }
-
-    deactivate() {
-        this.isActive = false;
-    }
 }
 
-class BeatLine {
+class BeatLine extends GridLine {
     
-    transform: Transform = new Transform();
-    isActive: boolean = true;
-
-    constructor(y:number, parent: Transform) {
-        this.transform.parent = parent;
+    constructor(y:number, parent: Transform, rgbaColor: RgbaColor) {
+        super(parent, rgbaColor)
         this.transform.position = new Vec2(0,y)
     }
 
     draw(view: Viewport, canvas : HTMLCanvasElement) {
         const ctx = canvas.getContext('2d');
-        ctx.strokeStyle = appSettings.beatLineColor.value();
+        ctx.strokeStyle = this.color.value();
         ctx.beginPath();
         ctx.moveTo(0, this.transform.position.y);
         ctx.lineTo(canvas.width, this.transform.position.y);
         ctx.stroke();
-    }
-
-    activate() {
-        this.isActive = true;
-    }
-
-    deactivate() {
-        this.isActive = false;
     }
 }
 
