@@ -56,7 +56,7 @@ var appSettings = new /** @class */ (function () {
         this.beatLineColor = new RgbaColor(130, 130, 130); // (74, 74, 74)
         this.mainBpmLineColorStrong = new RgbaColor(255, 255, 255); //(92, 92, 92);
         this.mainBpmLineColorWeak = new RgbaColor(150, 150, 150);
-        this.snapBpmLineColor = new RgbaColor(255, 255, 255); //(74, 189, 166);
+        this.snapBpmLineColor = new RgbaColor(100, 100, 100); //(74, 189, 166);
         this.creatableTimestampLineColor = new RgbaColor(10, 255, 206); //(116, 104, 222);
         this.loudnessBarColor = new RgbaColor(255, 103, 0);
         this.timestepLineColor = new RgbaColor(255, 103, 0);
@@ -229,7 +229,7 @@ var Transform = /** @class */ (function () {
         this._localPosition = new Vec2(0, 0);
         this._localScale = new Vec2(1, 1);
         this.rotation = new Vec2(0, 0);
-        this.maxScale = new Vec2(100, 100);
+        this.maxScale = new Vec2(1000, 1);
         this.minScale = new Vec2(1, 1);
     }
     Object.defineProperty(Transform.prototype, "localPosition", {
@@ -325,7 +325,7 @@ var Editor = /** @class */ (function () {
         this.fastScrollingSpeed = 5;
         this.offset = 0;
         this.creatableLines = new Array();
-        this.notes = Array(5).fill(null).map(function () { return Array(5); });
+        this.timestamps = Array(5).fill(null).map(function () { return Array(5); });
         this.transform = new Transform();
         this.viewport = new Viewport();
         this.viewport.gridTransform = this.transform;
@@ -370,7 +370,7 @@ var Editor = /** @class */ (function () {
         this.audioPlayer.sound.on("load", function () {
             _this.audioLoaded = true;
             var gridSize = _this.editorGrid.getGridSize();
-            _this.notes = Array(gridSize.y).fill(null).map(function () { return Array(gridSize.x); });
+            _this.timestamps = Array(gridSize.y).fill(null).map(function () { return Array(gridSize.x); });
             _this.editorGrid.initBpmLines();
             _this.drawEditor();
         });
@@ -453,19 +453,25 @@ var Editor = /** @class */ (function () {
         //console.log(columnNum+":"+rowNum);
         // console.log(Math.abs(x - clickX) + ":" + Math.abs(y - clickY))
         if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
-            if (this.notes[columnNum][rowNum] != undefined && this.notes[columnNum][rowNum] != null) {
+            if (this.timestamps[columnNum][rowNum] != undefined && this.timestamps[columnNum][rowNum] != null) {
                 console.log("remove timestamp");
-                this.notes[columnNum][rowNum] = null;
+                this.timestamps[columnNum][rowNum] = null;
                 this.drawEditor();
             }
             else {
                 console.log("add timestamp");
-                var note = new Timestamp(x, y, 10);
+                var note = new Timestamp(x, y, 1, this.transform);
                 note.transform.parent = this.transform;
-                this.notes[columnNum][rowNum] = note;
+                this.timestamps[columnNum][rowNum] = note;
                 note.draw(this.canvas);
             }
         }
+    };
+    Editor.prototype.findClosestCreatableLine = function () {
+    };
+    Editor.prototype.findClosestBeatLine = function () {
+    };
+    Editor.prototype.findClosestBpmLine = function () {
     };
     Editor.prototype.createCustomBpmLine = function () {
         console.log("Custom bpm line created");
@@ -489,8 +495,8 @@ var Editor = /** @class */ (function () {
                 line.draw(_this.viewport, _this.canvas);
             });
         }
-        this.notes.forEach(function (notes) {
-            notes.forEach(function (note) {
+        this.timestamps.forEach(function (timestamps) {
+            timestamps.forEach(function (note) {
                 if (note != null) {
                     note.draw(_this.canvas);
                 }
@@ -711,20 +717,22 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
     return AudioAmplitudeCanvas;
 }());
 var Timestamp = /** @class */ (function () {
-    function Timestamp(x, y, width) {
+    function Timestamp(x, y, width, parent) {
         this.transform = new Transform();
         this.transform.position = new Vec2(x, y);
         this.width = width;
+        this.transform.parent = parent;
     }
     Timestamp.prototype.draw = function (canvas) {
         var ctx = canvas.getContext('2d');
         var pos = new Vec2(this.transform.position.x, this.transform.position.y);
+        var width = this.width * this.transform.parent.localScale.x;
         ctx.fillStyle = "green";
         ctx.beginPath();
-        ctx.moveTo(pos.x - this.width, pos.y);
-        ctx.lineTo(pos.x, pos.y - this.width);
-        ctx.lineTo(pos.x + this.width, pos.y);
-        ctx.lineTo(pos.x, pos.y + this.width);
+        ctx.moveTo(pos.x - width, pos.y);
+        ctx.lineTo(pos.x, pos.y - width);
+        ctx.lineTo(pos.x + width, pos.y);
+        ctx.lineTo(pos.x, pos.y + width);
         ctx.fill();
     };
     return Timestamp;
@@ -755,7 +763,12 @@ var EditorGrid = /** @class */ (function () {
         return (this.canvas.height) / (this.beatLinesCount + 1);
     };
     EditorGrid.prototype.setSnapValue = function (val) {
+        console.log(val);
         this.snapValue = val;
+        var distance = this.distanceBetweenBpmLines();
+        this.bpmLines.forEach(function (line) {
+            line.setSnapLines(val, distance);
+        });
     };
     EditorGrid.prototype.setBpmValue = function (event) {
         var bpm = parseInt(event.target.value);
@@ -886,20 +899,23 @@ var TimestepLine = /** @class */ (function (_super) {
     };
     return TimestepLine;
 }(GridLine));
-var BPMSnapLine = /** @class */ (function (_super) {
-    __extends(BPMSnapLine, _super);
-    function BPMSnapLine() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    BPMSnapLine.prototype.draw = function (view, canvas) {
-        throw new Error("Method not implemented.");
-    };
-    return BPMSnapLine;
-}(GridLine));
+// class BPMSnapLine extends GridLine {
+//     draw(view: Viewport, canvas: HTMLCanvasElement) {
+//         if (!this.isActive)
+//             return;
+//         const ctx = canvas.getContext('2d');
+//         ctx.strokeStyle = this.color.value();
+//         ctx.beginPath();
+//         ctx.moveTo(this.transform.position.x+view.position.x, 0);
+//         ctx.lineTo(this.transform.position.x+view.position.x, canvas.height);
+//         ctx.stroke();
+//     }
+// }
 var BPMLine = /** @class */ (function (_super) {
     __extends(BPMLine, _super);
     function BPMLine(x, parent, rgbaColor) {
         var _this = _super.call(this, parent, rgbaColor) || this;
+        _this.snapLines = new Array();
         _this.transform.localPosition = new Vec2(x, 0);
         return _this;
     }
@@ -912,6 +928,14 @@ var BPMLine = /** @class */ (function (_super) {
         ctx.moveTo(this.transform.position.x + view.position.x, 0);
         ctx.lineTo(this.transform.position.x + view.position.x, canvas.height);
         ctx.stroke();
+        this.snapLines.forEach(function (line) { line.draw(view, canvas); });
+    };
+    BPMLine.prototype.setSnapLines = function (snapValue, distanceBetweenBpmLines) {
+        this.snapLines = new Array();
+        var distance = distanceBetweenBpmLines / snapValue;
+        for (var i = 0; i < snapValue - 1; i++) {
+            this.snapLines.push(new BPMLine((i + 1) * distance, this.transform, appSettings.snapBpmLineColor));
+        }
     };
     return BPMLine;
 }(GridLine));

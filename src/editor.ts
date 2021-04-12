@@ -1,3 +1,4 @@
+import { throws } from "node:assert";
 import { format } from "node:path";
 import { off } from "node:process";
 const { Howl, Howler } = require('howler');
@@ -55,12 +56,11 @@ const appSettings = new class AppSettings {
     beatLineColor = new RgbaColor(130, 130, 130); // (74, 74, 74)
     mainBpmLineColorStrong = new RgbaColor(255,255,255);  //(92, 92, 92);
     mainBpmLineColorWeak = new RgbaColor(150, 150, 150);
-    snapBpmLineColor = new RgbaColor(255,255,255);  //(74, 189, 166);
+    snapBpmLineColor = new RgbaColor(100,100,100);  //(74, 189, 166);
     creatableTimestampLineColor = new RgbaColor(10, 255, 206); //(116, 104, 222);
     loudnessBarColor = new RgbaColor(255, 103, 0);
     timestepLineColor = new RgbaColor(255, 103, 0);
 }
-
 
 class Event {
     private listeners = [];
@@ -271,7 +271,7 @@ class Transform {
 
     rotation: Vec2 = new Vec2(0,0);
     
-    maxScale: Vec2 = new Vec2(100, 100);
+    maxScale: Vec2 = new Vec2(1000, 1);
     minScale: Vec2 = new Vec2(1, 1);
 
     get localPosition() : Vec2 {
@@ -364,7 +364,7 @@ class Editor {
     offset: number = 0;
 
     creatableLines = new Array<CreatableTimestampLine>();
-    notes: Array<Array<Timestamp>>;
+    timestamps: Array<Array<Timestamp>>;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
 
@@ -379,7 +379,7 @@ class Editor {
     timestepLine: TimestepLine;
 
     constructor() {        
-        this.notes = Array(5).fill(null).map(() => Array(5));
+        this.timestamps = Array(5).fill(null).map(() => Array(5));
         this.transform = new Transform();
 
         this.viewport = new Viewport();
@@ -434,7 +434,7 @@ class Editor {
         { 
             this.audioLoaded = true;
             var gridSize = this.editorGrid.getGridSize();
-            this.notes = Array(gridSize.y).fill(null).map(() => Array(gridSize.x));
+            this.timestamps = Array(gridSize.y).fill(null).map(() => Array(gridSize.x));
             this.editorGrid.initBpmLines();
             this.drawEditor(); 
         })
@@ -547,19 +547,31 @@ class Editor {
        // console.log(Math.abs(x - clickX) + ":" + Math.abs(y - clickY))
 
         if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
-            if (this.notes[columnNum][rowNum] != undefined && this.notes[columnNum][rowNum] != null) {
+            if (this.timestamps[columnNum][rowNum] != undefined && this.timestamps[columnNum][rowNum] != null) {
                 console.log("remove timestamp");
-                this.notes[columnNum][rowNum] = null;
+                this.timestamps[columnNum][rowNum] = null;
                 this.drawEditor();
             }
             else {
                 console.log("add timestamp")
-                const note = new Timestamp(x, y, 10);
+                const note = new Timestamp(x, y, 1, this.transform);
                 note.transform.parent = this.transform;
-                this.notes[columnNum][rowNum] = note;
+                this.timestamps[columnNum][rowNum] = note;
                 note.draw(this.canvas);
             }
         }
+    }
+
+    private findClosestCreatableLine() {
+  
+    }
+
+    private findClosestBeatLine() {
+
+    }
+
+    private findClosestBpmLine() {
+
     }
 
     createCustomBpmLine() {
@@ -589,7 +601,7 @@ class Editor {
             });
         }
 
-        this.notes.forEach(notes => { notes.forEach(note => {
+        this.timestamps.forEach(timestamps => { timestamps.forEach(note => {
             if (note!=null) { note.draw(this.canvas);
         }})});
         
@@ -890,20 +902,22 @@ class Timestamp {
     transform: Transform = new Transform();
     width: number;
    
-    constructor(x : number, y : number, width : number) {
+    constructor(x : number, y : number, width : number, parent: Transform) {
         this.transform.position = new Vec2(x,y);
         this.width = width;
+        this.transform.parent = parent;
     }
 
     draw(canvas : HTMLCanvasElement) {
         const ctx = canvas.getContext('2d');
         const pos = new Vec2(this.transform.position.x, this.transform.position.y);
+        const width = this.width*this.transform.parent.localScale.x;
         ctx.fillStyle = "green";
         ctx.beginPath();
-        ctx.moveTo(pos.x -this.width, pos.y);
-        ctx.lineTo(pos.x, pos.y-this.width);
-        ctx.lineTo(pos.x + this.width, pos.y);
-        ctx.lineTo(pos.x, pos.y+this.width);
+        ctx.moveTo(pos.x - width, pos.y);
+        ctx.lineTo(pos.x, pos.y - width);
+        ctx.lineTo(pos.x + width, pos.y);
+        ctx.lineTo(pos.x, pos.y + width);
         ctx.fill();
     }
 }
@@ -952,7 +966,13 @@ class EditorGrid {
     }
 
     setSnapValue(val: number) {
+        console.log(val);
         this.snapValue = val;
+        const distance = this.distanceBetweenBpmLines();
+
+        this.bpmLines.forEach(line => {
+            line.setSnapLines(val, distance);
+        });
     }
 
     setBpmValue(event) {            
@@ -1112,14 +1132,24 @@ class TimestepLine extends GridLine {
     }
 }
 
-class BPMSnapLine extends GridLine {
-    draw(view: Viewport, canvas: HTMLCanvasElement) {
-        throw new Error("Method not implemented.");
-    }
-}
+// class BPMSnapLine extends GridLine {
+//     draw(view: Viewport, canvas: HTMLCanvasElement) {
+//         if (!this.isActive)
+//             return;
+        
+//         const ctx = canvas.getContext('2d');
+//         ctx.strokeStyle = this.color.value();
+//         ctx.beginPath();
+//         ctx.moveTo(this.transform.position.x+view.position.x, 0);
+//         ctx.lineTo(this.transform.position.x+view.position.x, canvas.height);
+//         ctx.stroke();
+//     }
+// }
 
 class BPMLine extends GridLine {
     
+    snapLines = new Array<BPMLine>();
+
     constructor(x : number, parent : Transform, rgbaColor: RgbaColor) {
         super(parent, rgbaColor)
         this.transform.localPosition = new Vec2(x, 0);
@@ -1135,6 +1165,18 @@ class BPMLine extends GridLine {
         ctx.moveTo(this.transform.position.x+view.position.x, 0);
         ctx.lineTo(this.transform.position.x+view.position.x, canvas.height);
         ctx.stroke();
+
+        this.snapLines.forEach(line => { line.draw(view, canvas); });
+    }
+
+    setSnapLines(snapValue: number, distanceBetweenBpmLines) : void {
+        this.snapLines = new Array<BPMLine>();
+        
+        const distance = distanceBetweenBpmLines/snapValue;
+
+        for (var i = 0; i<snapValue-1; i++) {
+            this.snapLines.push(new BPMLine((i+1)*distance, this.transform, appSettings.snapBpmLineColor));
+        }
     }
 }
 
