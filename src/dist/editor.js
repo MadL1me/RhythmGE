@@ -109,14 +109,10 @@ var InputsController = /** @class */ (function () {
         var editorCanvas = document.getElementById("editor-canvas");
         editorCanvas.addEventListener('wheel', function (event) { _this.onCanvasWheel(event); });
         editorCanvas.addEventListener('click', function (event) { editor.canvasClickHandle(event); });
+        editorCanvas.addEventListener('mousemove', function (event) { editor.canvasHoverHandle(event); });
         var playBtn = document.getElementById("play-button");
         playBtn.onclick = function () {
-            var paused = playBtn.classList.contains("paused");
-            if (!paused)
-                playBtn.classList.add("paused");
-            else
-                playBtn.classList.remove("paused");
-            _this.playButtonClick();
+            _this.playButtonClick(playBtn);
         };
         document.getElementById("follow-line").onchange = function (event) { _this.onFollowLineChange(event); };
         document.getElementById("use-claps").onchange = function (event) { _this.onUseClapsValueChange(event); };
@@ -153,18 +149,19 @@ var InputsController = /** @class */ (function () {
         document.getElementById("playback-rate-text").innerText = "Playback rate " + val.toString() + "x";
         this.editor.audioPlayer.setPlaybackRate(val);
     };
-    InputsController.prototype.playButtonClick = function () {
-        this.editor.onPlay();
+    InputsController.prototype.playButtonClick = function (btn) {
+        this.editor.onPlayButtonClick(btn);
     };
     InputsController.prototype.onCanvasKeyDown = function (event) {
         this.keysPressed[event.key] = true;
         if (event.code == "Space")
             this.editor.createCustomBpmLine();
-        console.log("Key pressed!" + event.key);
+        //console.log("Key pressed!" + event.key);
     };
     InputsController.prototype.onCanvasKeyUp = function (event) {
         delete this.keysPressed[event.key];
-        console.log("Key removed" + event.key);
+        //console.log("Key removed" + event.key);
+        this.editor.drawEditor();
     };
     InputsController.prototype.onCanvasWheel = function (event) {
         if (this.keysPressed['Control'])
@@ -206,15 +203,32 @@ var InputsController = /** @class */ (function () {
 }());
 var Viewport = /** @class */ (function () {
     function Viewport() {
-        this.maxDeviation = new Vec2(100, 100);
+        this.transform = new Transform();
+        this.maxDeviation = new Vec2(10, 100);
     }
+    Object.defineProperty(Viewport.prototype, "position", {
+        get: function () {
+            return this.transform.position;
+        },
+        set: function (value) {
+            console.log(value);
+            this.transform.position = value;
+            console.log(this.transform.position);
+        },
+        enumerable: false,
+        configurable: true
+    });
     Viewport.prototype.worldToCanvas = function (worldCoords) {
         var pos = this.position;
-        return new Vec2(worldCoords.x - pos.x, worldCoords.y - pos.y);
+        return new Vec2(pos.x - worldCoords.x / this.gridTransform.scale.x, pos.y - worldCoords.y / this.gridTransform.scale.y);
     };
     Viewport.prototype.canvasToWorld = function (canvasCoords) {
         var pos = this.position;
-        return new Vec2(100, 0);
+        return new Vec2((pos.x - canvasCoords.x) / this.gridTransform.scale.x, (pos.y - canvasCoords.y) / this.gridTransform.scale.y);
+    };
+    Viewport.prototype.canvasToWorld2 = function (canvasCoords) {
+        var pos = this.position;
+        return new Vec2((pos.x - canvasCoords.x), (pos.y - canvasCoords.y));
     };
     Viewport.prototype.canvasToSongTime = function (canvasCoords) {
         var pos = this.position;
@@ -253,7 +267,7 @@ var Transform = /** @class */ (function () {
                 this.localPosition = value;
                 return;
             }
-            var pos = Vec2.Substract(value, this.position);
+            var pos = Vec2.Substract(this.parent.position, value);
             this.localPosition = Vec2.Divide(Vec2.Sum(this.localPosition, pos), this._parent.scale);
         },
         enumerable: false,
@@ -298,6 +312,7 @@ var Transform = /** @class */ (function () {
             }
             this._parent = parent;
             (_a = this._parent) === null || _a === void 0 ? void 0 : _a.addChild(this);
+            this.position = this.localPosition;
         },
         enumerable: false,
         configurable: true
@@ -324,12 +339,15 @@ var Editor = /** @class */ (function () {
         this.resizingSpeed = 0.01;
         this.fastScrollingSpeed = 5;
         this.offset = 0;
-        this.creatableLines = new Array();
+        this.creatableLines = {};
         this.timestamps = Array(5).fill(null).map(function () { return Array(5); });
         this.transform = new Transform();
         this.viewport = new Viewport();
         this.viewport.gridTransform = this.transform;
-        this.viewport.position = new Vec2(100, 0);
+        // WARNING
+        this.viewport.transform.parent = this.transform;
+        this.viewport.transform.position = new Vec2(-10, 0);
+        // WARNING
         this.transform.position = new Vec2(0, 0);
         this.transform.scale = new Vec2(10, 1);
         this.canvas = document.getElementById("editor-canvas");
@@ -375,10 +393,15 @@ var Editor = /** @class */ (function () {
             _this.drawEditor();
         });
     };
-    Editor.prototype.onPlay = function () {
-        if (this.audioPlayer.isPlaying() == true)
-            return;
-        this.audioPlayer.play();
+    Editor.prototype.onPlayButtonClick = function (playBtn) {
+        playBtn.classList.add("paused");
+        if (this.audioPlayer.isPlaying() == true) {
+            playBtn.classList.remove("paused");
+            this.audioPlayer.pause();
+        }
+        else {
+            this.audioPlayer.play();
+        }
     };
     Editor.prototype.onPause = function () {
         if (this.audioPlayer.isPlaying() == false)
@@ -388,13 +411,13 @@ var Editor = /** @class */ (function () {
     Editor.prototype.onCanvasScroll = function (mouseDelta, isSpeededUp) {
         if (this.followingLine)
             return;
-        var resultedDelta = mouseDelta * this.scrollingSpeed;
+        var resultedDelta = mouseDelta * this.scrollingSpeed / this.transform.scale.x;
         if (isSpeededUp)
             resultedDelta *= this.fastScrollingSpeed;
-        this.viewport.position = new Vec2(this.viewport.position.x + resultedDelta, this.viewport.position.y);
-        if (this.viewport.position.x > this.viewport.maxDeviation.x)
-            this.viewport.position = new Vec2(this.viewport.maxDeviation.x, this.viewport.position.y);
-        //console.log(this.viewport.position.x);
+        this.viewport.transform.localPosition = new Vec2(this.viewport.transform.localPosition.x + resultedDelta, this.viewport.position.y);
+        if (this.viewport.transform.localPosition.x > this.viewport.maxDeviation.x)
+            this.viewport.transform.localPosition = new Vec2(this.viewport.maxDeviation.x, this.viewport.position.y);
+        console.log(this.viewport.position);
         this.drawEditor();
     };
     Editor.prototype.onWindowResize = function (event) {
@@ -412,8 +435,13 @@ var Editor = /** @class */ (function () {
     };
     Editor.prototype.onCanvasResize = function (mouseDelta) {
         var resultedDelta = mouseDelta * this.resizingSpeed;
-        //console.log("resized!!");
         var oldScale = this.transform.scale.x;
+        var canvCenter = this.viewport.canvasToSongTime(new Vec2(this.canvas.width / 2, 0));
+        console.log(canvCenter);
+        // if (resultedDelta < 0)
+        //     this.viewport.position = Vec2.Sum(this.viewport.position, canvCenter);
+        // else
+        //     this.viewport.position = Vec2.Substract(this.viewport.position, canvCenter);
         this.transform.scale = new Vec2(this.transform.scale.x - resultedDelta, this.transform.scale.y);
         var scaleIsChanged = true;
         if (this.transform.scale.x <= this.transform.minScale.x) {
@@ -424,7 +452,16 @@ var Editor = /** @class */ (function () {
             this.transform.scale = new Vec2(this.transform.maxScale.x, this.transform.scale.y);
             scaleIsChanged = false;
         }
-        this.viewport.position = this.viewport.canvasToWorld(new Vec2(this.canvas.width / 2, 0));
+        var newCanvCenter = this.viewport.canvasToSongTime(new Vec2(this.canvas.width / 2, 0));
+        //this.viewport.position = Vec2.Sum(this.viewport.position, Vec2.Substract(newCanvCenter, canvCenter));
+        this.viewport.position = Vec2.Substract(new Vec2(this.canvas.width / 2, 0), canvCenter);
+        console.log("timstep");
+        // if (resultedDelta < 0)
+        //     this.viewport.position = Vec2.Sum(this.viewport.position, this.viewport.canvasToWorld(new Vec2(this.canvas.width/2,0)));
+        // else
+        //     this.viewport.position = Vec2.Substract(this.viewport.position, this.viewport.canvasToWorld(new Vec2(this.canvas.width/2,0)));
+        // const canvasCenter = this.viewport.canvasToWorld(new Vec2(this.canvas.width/2,0));
+        // this.viewport.position = new Vec2(canvasCenter.x/scaleDiff, 1); 
         this.drawEditor();
     };
     Editor.prototype.canvasMouseDownHandle = function (event) {
@@ -436,40 +473,40 @@ var Editor = /** @class */ (function () {
         var clickX = event.clientX - rect.left;
         var clickY = event.clientY - rect.top;
         var click = new Vec2(clickX, clickY);
-        console.log(clickY);
+        console.log(click);
         if (clickY <= this.topScale.width) {
-            //console.log("Set Music!!!");
             this.audioPlayer.setMusicFromCanvasPosition(click, this);
         }
-        var columnNum = Math.round((clickX) / (this.editorGrid.distanceBetweenBeatLines()) - 1);
-        var rowNum = Math.round((clickY) / (this.editorGrid.distanceBetweenBpmLines()) - 1);
-        if (columnNum < -0.6 || rowNum < -0.6) {
-            return;
+        console.log(Vec2.Divide(this.viewport.canvasToWorld(click), this.editorGrid.transform.scale));
+        console.log(this.viewport.canvasToSongTime(click));
+        var closestBeatline = this.findClosestBeatLine(click);
+    };
+    Editor.prototype.canvasHoverHandle = function (event) {
+        var rect = this.canvas.getBoundingClientRect();
+        var clickX = event.clientX - rect.left;
+        var clickY = event.clientY - rect.top;
+        var click = new Vec2(clickX, clickY);
+        var closestBeatline = this.findClosestBeatLine(click);
+        if (this.inputController.keysPressed["Alt"]) {
+            var phantomTimestamp = new Timestamp(new RgbaColor(158, 23, 240, 0.7), click.x / this.editorGrid.transform.scale.x, closestBeatline.transform.position.y, 10, this.editorGrid.transform);
+            this.phantomTimestamp = phantomTimestamp;
+            this.drawEditor();
         }
-        //console.log(columnNum);
-        //console.log(rowNum);
-        var x = this.editorGrid.bpmLines[columnNum].transform.position.x + this.transform.position.x - this.transform.position.x;
-        var y = this.editorGrid.beatLines[rowNum].transform.position.y + this.transform.position.y - this.transform.position.y;
-        //console.log(columnNum+":"+rowNum);
-        // console.log(Math.abs(x - clickX) + ":" + Math.abs(y - clickY))
-        if (Math.abs(y - clickY) <= 20 && Math.abs(x - clickX) <= 20) {
-            if (this.timestamps[columnNum][rowNum] != undefined && this.timestamps[columnNum][rowNum] != null) {
-                console.log("remove timestamp");
-                this.timestamps[columnNum][rowNum] = null;
-                this.drawEditor();
-            }
-            else {
-                console.log("add timestamp");
-                var note = new Timestamp(x, y, 1, this.transform);
-                note.transform.parent = this.transform;
-                this.timestamps[columnNum][rowNum] = note;
-                note.draw(this.canvas);
-            }
+        else {
+            this.phantomTimestamp = null;
+            this.drawEditor();
         }
     };
     Editor.prototype.findClosestCreatableLine = function () {
     };
-    Editor.prototype.findClosestBeatLine = function () {
+    Editor.prototype.findClosestBeatLine = function (canvasCoords) {
+        var beatlinesCanvasDistance = this.editorGrid.distanceBetweenBeatLines();
+        var beatlineIndex = Math.round(canvasCoords.y / beatlinesCanvasDistance) - 1;
+        if (beatlineIndex < 0)
+            beatlineIndex = 0;
+        if (beatlineIndex > this.editorGrid.beatLinesCount - 1)
+            beatlineIndex = this.editorGrid.beatLinesCount - 1;
+        return this.editorGrid.beatLines[beatlineIndex];
     };
     Editor.prototype.findClosestBpmLine = function () {
     };
@@ -477,10 +514,11 @@ var Editor = /** @class */ (function () {
         console.log("Custom bpm line created");
         var xPos = this.timestepLine.transform.position.x;
         var line = new CreatableTimestampLine(xPos, this.transform, appSettings.creatableTimestampLineColor);
-        this.creatableLines.push(line);
+        this.creatableLines[line.transform.position.x] = line;
     };
     Editor.prototype.drawEditor = function () {
         var _this = this;
+        var _a;
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -491,9 +529,10 @@ var Editor = /** @class */ (function () {
         //this.bottomScale.draw(this.canvas);
         //this.leftScale.draw(this.canvas);
         if (!this.hideCreatableLines) {
-            this.creatableLines.forEach(function (line) {
-                line.draw(_this.viewport, _this.canvas);
-            });
+            for (var _i = 0, _b = Object.entries(this.creatableLines); _i < _b.length; _i++) {
+                var _c = _b[_i], key = _c[0], value = _c[1];
+                value.draw(this.viewport, this.canvas);
+            }
         }
         this.timestamps.forEach(function (timestamps) {
             timestamps.forEach(function (note) {
@@ -507,9 +546,13 @@ var Editor = /** @class */ (function () {
         if (this.audioPlayer.isPlaying()) {
             this.timestepLine.transform.localPosition = new Vec2(this.audioPlayer.sound.seek(), 0);
         }
+        if (this.followingLine) {
+            var result = new Vec2(this.timestepLine.transform.position.x - this.canvas.width / 2, 1);
+            this.viewport.transform.position = result;
+            console.log(this.viewport.transform.position.x);
+        }
         this.timestepLine.draw(this.viewport, this.canvas);
-        if (this.followingLine)
-            this.viewport.position = new Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 0);
+        (_a = this.phantomTimestamp) === null || _a === void 0 ? void 0 : _a.draw(this.canvas);
     };
     return Editor;
 }());
@@ -628,6 +671,7 @@ var AudioPlayer = /** @class */ (function () {
         this.soundId = this.sound.play();
     };
     AudioPlayer.prototype.pause = function () {
+        this.sound.pause();
     };
     AudioPlayer.prototype.playClapSound = function () {
     };
@@ -649,7 +693,7 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
     function AudioAmplitudeCanvas(editor) {
         this.amplitudeData = new Array();
         this.sampleRate = 48000;
-        this.samplesPerArrayValue = this.sampleRate / 10;
+        this.samplesPerArrayValue = this.sampleRate / 100;
         this.editor = editor;
         this.audio = editor.audioPlayer;
         this.canvas = document.getElementById("audio-amplitude-canvas");
@@ -678,8 +722,8 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
         //console.log("DRAWING CANVAS!!!");
         for (var i = 0; i < this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i] * this.canvas.height;
-            var position = this.editor.viewport.position.x + i * this.editor.editorGrid.transform.scale.x / 10;
-            var width = this.editor.editorGrid.transform.scale.x / 10;
+            var position = this.editor.viewport.position.x + i * this.editor.editorGrid.transform.scale.x / 100;
+            var width = this.editor.editorGrid.transform.scale.x / 100;
             var gap = Math.floor(width / 3);
             this.ctx.fillStyle = appSettings.loudnessBarColor.value();
             this.ctx.fillRect(position + gap, 0, width - gap, interpolated);
@@ -717,17 +761,18 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
     return AudioAmplitudeCanvas;
 }());
 var Timestamp = /** @class */ (function () {
-    function Timestamp(x, y, width, parent) {
+    function Timestamp(color, x, y, width, parent) {
         this.transform = new Transform();
         this.transform.position = new Vec2(x, y);
         this.width = width;
         this.transform.parent = parent;
+        this.color = color;
     }
     Timestamp.prototype.draw = function (canvas) {
         var ctx = canvas.getContext('2d');
         var pos = new Vec2(this.transform.position.x, this.transform.position.y);
         var width = this.width * this.transform.parent.localScale.x;
-        ctx.fillStyle = "green";
+        ctx.fillStyle = this.color.value();
         ctx.beginPath();
         ctx.moveTo(pos.x - width, pos.y);
         ctx.lineTo(pos.x, pos.y - width);
@@ -791,10 +836,11 @@ var EditorGrid = /** @class */ (function () {
     EditorGrid.prototype.initGrid = function () {
         for (var i = 0; i < this.beatLinesCount; i++) {
             if (i + 1 > this.beatLines.length) {
+                console.log("distance between lines is " + this.distanceBetweenBeatLines());
                 var beatLine = new BeatLine((i + 1) * this.distanceBetweenBeatLines(), this.transform, appSettings.beatLineColor);
                 this.beatLines.push(beatLine);
             }
-            this.beatLines[i].transform.position = new Vec2(0, (i + 1) * this.distanceBetweenBeatLines());
+            this.beatLines[i].transform.localPosition = new Vec2(0, (i + 1) * this.distanceBetweenBeatLines());
             this.beatLines[i].activate();
         }
         for (var i = this.beatLinesCount; i < this.beatLines.length; i++) {
@@ -943,7 +989,8 @@ var BeatLine = /** @class */ (function (_super) {
     __extends(BeatLine, _super);
     function BeatLine(y, parent, rgbaColor) {
         var _this = _super.call(this, parent, rgbaColor) || this;
-        _this.transform.position = new Vec2(0, y);
+        _this.transform.localPosition = new Vec2(0, y);
+        console.log(_this.transform.localPosition.y);
         return _this;
     }
     BeatLine.prototype.draw = function (view, canvas) {
@@ -952,6 +999,7 @@ var BeatLine = /** @class */ (function (_super) {
         ctx.beginPath();
         ctx.moveTo(0, this.transform.position.y);
         ctx.lineTo(canvas.width, this.transform.position.y);
+        console.log(this.transform.localPosition.y);
         ctx.stroke();
     };
     return BeatLine;
@@ -1000,5 +1048,6 @@ var LeftScale = /** @class */ (function (_super) {
 }(Scale));
 var editor = new Editor();
 var inputController = new InputsController(editor);
+editor.inputController = inputController;
 module.exports = editor;
 //# sourceMappingURL=editor.js.map
