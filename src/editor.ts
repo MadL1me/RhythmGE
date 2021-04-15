@@ -1,7 +1,10 @@
-import { throws } from "node:assert";
-import { format } from "node:path";
-import { off } from "node:process";
+/// <reference path ='../node_modules/@types/jquery/jquery.d.ts'/>
+
+import { throws } from 'node:assert';
+import { format } from 'node:path';
+import { off } from 'node:process';
 const { Howl, Howler } = require('howler');
+import $ from 'jquery';
 
 class Vec2 {
     
@@ -93,58 +96,47 @@ class SelectController {
     }
 }
 
-class InputsController {
+class Input {
     
     editor: Editor;
-    onKeyUp = new Event;
-    onKeyDown = new Event;
 
-    private snapSlider = new Slider("snap-lines");
-    private playbackSlider = new Slider("playback-rate");
-    private volumeSlider = new Slider("volume-slider");
+    private snapSlider = new Slider('snap-lines');
+    private volumeSlider = new Slider('volume-slider');
+    private playbackSlider = new Slider('playback-rate');
+
+    canvMousePosition = new Vec2(0,0);
     keysPressed = [];
 
     constructor(editor: Editor) {
         this.editor = editor;
 
-        document.getElementById('files').onchange = (event) => {
-            this.onAudioLoad(event); 
-        };
+        $('#files').on('change', (event) => { this.onAudioLoad(event); });
 
-        window.onresize = (event: UIEvent) => {
-            this.editor.onWindowResize(event);
-        }
+        $(window).on('resize', (event) => { this.editor.onWindowResize(event); });
+        $(window).on('keydown', (event) => { this.onCanvasKeyDown(event);});
+        $(window).on('keyup', (event) => { this.onCanvasKeyUp(event);});
 
-        window.addEventListener('keydown', (event) => {this.onCanvasKeyDown(event);});
-        window.addEventListener('keyup', (event) => { this.onCanvasKeyUp(event);});
-
-        var editorCanvas = document.getElementById("editor-canvas");
-        editorCanvas.addEventListener('wheel', (event) => { this.onCanvasWheel(event); });
-        editorCanvas.addEventListener('click', (event) => { editor.canvasClickHandle(event); });
-        editorCanvas.addEventListener('mousemove', (event) => { editor.canvasHoverHandle(event);});
-
-        var playBtn = document.getElementById("play-button");
+        $('#editor-canvas').on('wheel', (event) => { this.onCanvasWheel(event.originalEvent);})
+        .on('click', (event) => { editor.canvasClickHandle(event);})
+        .on('mousemove', (event) => { this.onCanvasHover(event); editor.canvasPlaceElementHandler(event);});
         
-        playBtn.onclick = () => {
-            this.playButtonClick(playBtn);
-        };
+        $('#play-button').on('click', (event) => {this.playButtonClick(event.target)})
 
-        document.getElementById("follow-line").onchange = (event) => { this.onFollowLineChange(event); }
-        document.getElementById("use-claps").onchange = (event) => { this.onUseClapsValueChange(event); }
-        document.getElementById("hide-bpm").onchange = (event) => { this.onHideBpmLinesChange(event); }
-        document.getElementById("hide-creatable").onchange = (event) => { this.onHideCreatableLinesChange(event); }
-        
-        document.getElementById("beat-lines").onchange = (event) => { this.onBeatLinesValueChange(event); }
-        document.getElementById("bpm").onchange = (event) => { this.onBpmValueChange(event); }
-        document.getElementById("offset").onchange = (event) => { this.onOffsetValueChange(event); }
-    
+        $('#follow-line').on('change', (event) => { this.onFollowLineChange(event); })
+        $('#use-claps').on('change', (event) => { this.onUseClapsValueChange(event); })
+        $('#hide-bpm').on('change', (event) => { this.onHideBpmLinesChange(event); })
+        $('#hide-creatable').on('change', (event) => { this.onHideCreatableLinesChange(event); })
+        $('#beat-lines').on('change', (event) => { this.onBeatLinesValueChange(event); })
+        $('#bpm').on('change', (event) => { this.onBpmValueChange(event); })
+        $('#offset').on('change', (event) => { this.onOffsetValueChange(event); })
+
         this.volumeSlider.setValue(0.5);
-        this.snapSlider.setValue(1);
         this.playbackSlider.setValue(1);
+        this.snapSlider.setValue(1);
         
         this.volumeSlider.onValueChange.addListener((value) => {this.onVolumeSliderValueChange(value); });
-        this.snapSlider.onValueChange.addListener((value) => { this.onSnapSliderValueChange(value); });
         this.playbackSlider.onValueChange.addListener((value) => { this.onPlaybackRateValueChange(value); });
+        this.snapSlider.onValueChange.addListener((value) => { this.onSnapSliderValueChange(value); });
     }
 
     onAudioLoad(event) {
@@ -162,13 +154,17 @@ class InputsController {
     onSnapSliderValueChange(value: string) {
         var val = parseInt(value);
         val = Math.pow(2, val);
-        document.getElementById("snap-lines-text").innerText = "Snap lines 1/" + val.toString();
+        $('#snap-lines-text')[0].innerText = 'Snap lines 1/' + val.toString();
         this.editor.editorGrid.setSnapValue(val);
+    }
+
+    onCanvasHover(event) {
+        
     }
 
     onPlaybackRateValueChange(value: string) {
         var val = parseFloat(value);
-        document.getElementById("playback-rate-text").innerText = "Playback rate " + val.toString() + "x";
+        $('#playback-rate-text')[0].innerText =  'Playback rate ' + val.toString() + 'x';
         this.editor.audioPlayer.setPlaybackRate(val);
     }
 
@@ -178,14 +174,18 @@ class InputsController {
 
     onCanvasKeyDown(event) {
         this.keysPressed[event.key] = true;
-        if (event.code == "Space")
+        if (event.code == 'Space')
             this.editor.createCustomBpmLine();
-        //console.log("Key pressed!" + event.key);
+        if (event.code == 'Alt')
+            this.editor.canvasPlaceElementHandler(event);
+        console.log('Key pressed!' + event.key);
     }
 
     onCanvasKeyUp(event) {
         delete this.keysPressed[event.key];
-        //console.log("Key removed" + event.key);
+        if (event.code == 'Alt')
+            this.editor.canvasPlaceElementHandler(null);
+        console.log('Key removed' + event.key);
         this.editor.drawEditor();
     }
 
@@ -308,8 +308,8 @@ class Transform {
             return;
         }
         
-        var pos = Vec2.Substract(this.parent.position, value);
-        this.localPosition = Vec2.Divide(Vec2.Sum(this.localPosition, pos), this._parent.scale);
+        var pos = Vec2.Substract(value, this.parent.position);
+        this.localPosition = Vec2.Divide(pos, this._parent.scale);
     } 
 
     get scale() {
@@ -366,6 +366,22 @@ class Transform {
     }
 }
 
+// var parent = new Transform();
+// parent.position = new Vec2(0,0);
+// parent.scale = new Vec2(10, 1);
+
+// var child1 = new Transform();
+// child1.position = new Vec2(10,1);
+
+// var child2 = new Transform();
+// child2.position = new Vec2(20,1);
+
+// child1.parent = parent;
+// child2.parent = parent;
+
+// console.log(child1.position)
+// console.log(child2.localPosition);
+
 class Editor {
 
     usingClaps: boolean = false;
@@ -393,7 +409,7 @@ class Editor {
     audioCanvas: AudioAmplitudeCanvas;    
     audioPlayer: AudioPlayer; 
     timestepLine: TimestepLine;
-    inputController: InputsController;
+    inputController: Input;
 
     constructor() {        
         this.timestamps = Array(5).fill(null).map(() => Array(5));
@@ -409,8 +425,8 @@ class Editor {
 
         this.transform.position = new Vec2(0,0);
         this.transform.scale = new Vec2(10,1);
-        this.canvas = document.getElementById("editor-canvas") as HTMLCanvasElement;
-        this.ctx = this.canvas.getContext("2d");
+        this.canvas = $('#editor-canvas')[0] as HTMLCanvasElement;
+        this.ctx = this.canvas.getContext('2d');
         //this.ctx.translate(0.5,0.5);
         
         this.audioPlayer = new AudioPlayer(this);
@@ -434,7 +450,6 @@ class Editor {
     }
 
     changeOffset(offset) {
-        console.log(offset.target.value);
         this.offset = parseInt(offset.target.value);
         this.editorGrid.transform.localPosition = new Vec2(this.offset/100, 0);
     }
@@ -451,7 +466,7 @@ class Editor {
         this.audioPlayer.onSoundLoad(fileName, audioPath);
         this.timestepLine.transform.parent = this.transform;
         
-        this.audioPlayer.sound.on("load", () => 
+        this.audioPlayer.sound.on('load', () => 
         { 
             this.audioLoaded = true;
             var gridSize = this.editorGrid.getGridSize();
@@ -462,10 +477,10 @@ class Editor {
     }
 
     onPlayButtonClick(playBtn) {
-        playBtn.classList.add("paused");
+        playBtn.classList.add('paused');
         
         if (this.audioPlayer.isPlaying() == true) {
-            playBtn.classList.remove("paused");
+            playBtn.classList.remove('paused');
             this.audioPlayer.pause();
         }
         else {
@@ -493,17 +508,15 @@ class Editor {
         if (this.viewport.transform.localPosition.x > this.viewport.maxDeviation.x)
             this.viewport.transform.localPosition = new Vec2(this.viewport.maxDeviation.x, this.viewport.position.y);
 
-        console.log(this.viewport.position);
         this.drawEditor();
     }
 
-    onWindowResize(event: UIEvent) {
-        console.log(event);
+    onWindowResize(event) {
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
 
         var div = this.canvas.parentElement;
-        div.setAttribute("style", "height:" + (h*0.6).toString() + "px");
+        div.setAttribute('style', 'height:' + (h*0.6).toString() + 'px');
         var info = this.canvas.parentElement.getBoundingClientRect();
         
         this.canvas.setAttribute('width', (info.width).toString());
@@ -520,8 +533,6 @@ class Editor {
         var oldScale = this.transform.scale.x;
         
         const canvCenter = this.viewport.canvasToSongTime(new Vec2(this.canvas.width/2,0));
-
-        console.log(canvCenter);
 
         // if (resultedDelta < 0)
         //     this.viewport.position = Vec2.Sum(this.viewport.position, canvCenter);
@@ -543,7 +554,6 @@ class Editor {
         const newCanvCenter =  this.viewport.canvasToSongTime(new Vec2(this.canvas.width/2,0));
         //this.viewport.position = Vec2.Sum(this.viewport.position, Vec2.Substract(newCanvCenter, canvCenter));
         this.viewport.position = Vec2.Substract(new Vec2(this.canvas.width/2, 0), canvCenter);
-        console.log("timstep")
 
         // if (resultedDelta < 0)
         //     this.viewport.position = Vec2.Sum(this.viewport.position, this.viewport.canvasToWorld(new Vec2(this.canvas.width/2,0)));
@@ -572,18 +582,19 @@ class Editor {
         const clickY = event.clientY - rect.top;
         const click = new Vec2(clickX, clickY);
 
-        console.log(click);
-
         if (clickY <= this.topScale.width) {
             this.audioPlayer.setMusicFromCanvasPosition(click, this);
         }
 
-        console.log(Vec2.Divide(this.viewport.canvasToWorld(click), this.editorGrid.transform.scale));
-        console.log(this.viewport.canvasToSongTime(click));
         var closestBeatline = this.findClosestBeatLine(click);
     }
 
-    canvasHoverHandle(event) {
+    canvasPlaceElementHandler(event) {
+        if (event == null) {
+            this.phantomTimestamp = null;
+            return;
+        }
+        
         const rect = this.canvas.getBoundingClientRect();
         const clickX = event.clientX - rect.left;
         const clickY = event.clientY - rect.top;
@@ -591,7 +602,7 @@ class Editor {
         
         var closestBeatline = this.findClosestBeatLine(click);
 
-        if (this.inputController.keysPressed["Alt"]) {
+        if (this.inputController.keysPressed['Alt']) {
             var phantomTimestamp = new Timestamp(new RgbaColor(158,23,240, 0.7), click.x / this.editorGrid.transform.scale.x, closestBeatline.transform.position.y, 10, this.editorGrid.transform);
             this.phantomTimestamp = phantomTimestamp;
             this.drawEditor();
@@ -622,7 +633,7 @@ class Editor {
     }
 
     createCustomBpmLine() {
-        console.log("Custom bpm line created");
+        console.log('Custom bpm line created');
         var xPos = this.timestepLine.transform.position.x;
         var line = new CreatableTimestampLine(xPos, this.transform, appSettings.creatableTimestampLineColor);
         this.creatableLines[line.transform.position.x] = line;
@@ -636,7 +647,7 @@ class Editor {
         this.editorGrid.draw(this.audioPlayer != null 
             && this.audioPlayer.sound != undefined 
             && this.audioPlayer.sound != null 
-            && this.audioPlayer.sound.state()=="loaded" && !this.hideBpmLines, 
+            && this.audioPlayer.sound.state()=='loaded' && !this.hideBpmLines, 
             this);
         
         //this.bottomScale.draw(this.canvas);
@@ -660,9 +671,8 @@ class Editor {
         }
 
         if (this.followingLine) {
-            const result = new Vec2(this.timestepLine.transform.position.x-this.canvas.width/2, 1);
+            const result = new Vec2(-this.timestepLine.transform.position.x+this.canvas.width/2, 1);
             this.viewport.transform.position = result;
-            console.log(this.viewport.transform.position.x);
         }
 
         this.timestepLine.draw(this.viewport, this.canvas);
@@ -679,8 +689,8 @@ class Slider {
     onValueChange = new Event();
 
     constructor(sliderId: string) {
-        this.sliderInput = document.getElementById(sliderId) as HTMLInputElement;
-        this.sliderInput.value = "0";
+        this.sliderInput = $('#' + sliderId)[0] as HTMLInputElement;
+        this.sliderInput.value = '0';
         this.sliderInput.oninput = (event : any) => {
             this.setValue(event.target.value);
         };
@@ -712,45 +722,47 @@ enum TimeAccuracy {
 
 class AudioPlayerView {
     
-    playButton: HTMLButtonElement;
-    audioFileName: HTMLParagraphElement;
-    audioCurrentTime: HTMLParagraphElement;
-    audioDuration: HTMLParagraphElement;
-    slider: Slider;
+    private playButton: HTMLButtonElement;
+    private audioFileName: HTMLParagraphElement;
+    private audioCurrentTime: HTMLParagraphElement;
+    private audioDuration: HTMLParagraphElement;
     
+    private songTimeSlider: Slider;
+    private snapSlider = new Slider('snap-lines');
+    private volumeSlider = new Slider('volume-slider');
+
     constructor() {
-        this.audioFileName = document.getElementById("file-name") as HTMLParagraphElement;
-        this.audioCurrentTime = document.getElementById("current-audio-time") as  HTMLParagraphElement;
-        this.audioDuration = document.getElementById("audio-duration") as HTMLParagraphElement;
-        this.slider = new Slider("audio-slider");
+        this.audioFileName = $('#file-name')[0] as HTMLParagraphElement;
+        this.audioCurrentTime = $('#current-audio-time')[0] as  HTMLParagraphElement;
+        this.audioDuration = $('#audio-duration')[0] as HTMLParagraphElement;
+
+        this.songTimeSlider = new Slider('audio-slider');
     }
 
     onAudioLoad(fileName: string, duration: number) {
         this.audioFileName.innerHTML = fileName;
-        this.audioCurrentTime.innerHTML = "0:00";
+        this.audioCurrentTime.innerHTML = '0:00';
         this.audioDuration.innerHTML = this.formatTime(duration, TimeAccuracy.seconds);
-        this.slider.setMaxValue(duration*100);
+        this.songTimeSlider.setMaxValue(duration*100);
     }
 
     update(currentTime: number) {
         this.audioCurrentTime.innerHTML = this.formatTime(currentTime, TimeAccuracy.seconds);
-        this.slider.setValue(currentTime*100);
+        this.songTimeSlider.setValue(currentTime*100);
     }
     
     private formatTime(time: number, accuracy: TimeAccuracy) : string {
-        //console.log("Format time time is: " + time);
-        
         var minutes = Math.floor(time/60);
         var seconds = Math.floor(time - minutes*60) as any;
         var milliseconds = time % 1;
         
         if (seconds < 10)
-            seconds = "0" + seconds.toString();
+            seconds = '0' + seconds.toString();
 
         if (accuracy == TimeAccuracy.milliseconds)
-            return minutes + ":" + seconds + ":" + milliseconds;
+            return minutes + ':' + seconds + ':' + milliseconds;
         else 
-            return minutes + ":" + seconds;
+            return minutes + ':' + seconds;
     }
 }
 
@@ -765,6 +777,7 @@ class AudioPlayer {
     view = new AudioPlayerView();
     songPos: number;
 
+    
     constructor(editor: Editor) {
         this.editor = editor;
     }
@@ -775,21 +788,21 @@ class AudioPlayer {
         this.analyser = Howler.ctx.createAnalyser();
         this.analyser.fftSize = 256;
 
-        this.sound.on("load", () => {
+        this.sound.on('load', () => {
             //this.soundId = this.sound.play();
             //this.sound.stop();
             this.view.onAudioLoad(fileName, this.sound.duration());
         })
 
-        this.sound.on("play", () => {
+        this.sound.on('play', () => {
             this.setupEditor();
         });
 
-        this.sound.on("seek", () => {
+        this.sound.on('seek', () => {
             this.setupEditor();
         });
 
-        this.sound.on("stop", () => {
+        this.sound.on('stop', () => {
             //setupEditor();
         });
 
@@ -804,7 +817,6 @@ class AudioPlayer {
     }
 
     setPlaybackRate(value: number) {
-        //this.bufferSource.playbackRate.value = value;
         console.log(value);
         this.sound.rate([value]);
     }
@@ -835,7 +847,6 @@ class AudioPlayer {
     }
 
     setMusicFromCanvasPosition(position : Vec2, editor : Editor) : void {
-        //console.log(position);
         var second = editor.viewport.canvasToSongTime(position).x/editor.transform.scale.x;
         this.sound.seek([second]);
     }
@@ -867,8 +878,8 @@ class AudioAmplitudeCanvas {
     constructor(editor: Editor) {
         this.editor = editor;
         this.audio = editor.audioPlayer;
-        this.canvas = document.getElementById("audio-amplitude-canvas") as HTMLCanvasElement;
-        this.ctx = this.canvas.getContext("2d");
+        this.canvas = $('#audio-amplitude-canvas')[0] as HTMLCanvasElement;
+        this.ctx = this.canvas.getContext('2d');
     }
 
     onWindowResize(event: UIEvent) : void {
@@ -888,7 +899,6 @@ class AudioAmplitudeCanvas {
 
     draw() : void {
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
-        //console.log(appSettings.editorBackgroundColor.value());
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
 
@@ -897,8 +907,6 @@ class AudioAmplitudeCanvas {
 
         if (this.amplitudeData == undefined || this.amplitudeData == null)
             return;
-
-        //console.log("DRAWING CANVAS!!!");
 
         for (var i = 0; i<this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i]*this.canvas.height;
@@ -919,7 +927,6 @@ class AudioAmplitudeCanvas {
             var value = this.getAvarageAtRange(i, i+this.samplesPerArrayValue);
             this.amplitudeData.push(value);
         }
-        //console.log(this.amplitudeData);
     }
 
     private getAmplitudeBarWitdh() : number {
@@ -957,9 +964,9 @@ class Timestamp {
     color: RgbaColor;
 
     constructor(color: RgbaColor, x : number, y : number, width : number, parent: Transform) {
-        this.transform.position = new Vec2(x,y);
         this.width = width;
         this.transform.parent = parent;
+        this.transform.localPosition = new Vec2(x,y);
         this.color = color;
     }
 
@@ -1188,20 +1195,6 @@ class TimestepLine extends GridLine {
     }
 }
 
-// class BPMSnapLine extends GridLine {
-//     draw(view: Viewport, canvas: HTMLCanvasElement) {
-//         if (!this.isActive)
-//             return;
-        
-//         const ctx = canvas.getContext('2d');
-//         ctx.strokeStyle = this.color.value();
-//         ctx.beginPath();
-//         ctx.moveTo(this.transform.position.x+view.position.x, 0);
-//         ctx.lineTo(this.transform.position.x+view.position.x, canvas.height);
-//         ctx.stroke();
-//     }
-// }
-
 class BPMLine extends GridLine {
     
     snapLines = new Array<BPMLine>();
@@ -1241,7 +1234,6 @@ class BeatLine extends GridLine {
     constructor(y:number, parent: Transform, rgbaColor: RgbaColor) {
         super(parent, rgbaColor)
         this.transform.localPosition = new Vec2(0,y)
-        console.log(this.transform.localPosition.y);
     }
 
     draw(view: Viewport, canvas : HTMLCanvasElement) {
@@ -1250,7 +1242,6 @@ class BeatLine extends GridLine {
         ctx.beginPath();
         ctx.moveTo(0, this.transform.position.y);
         ctx.lineTo(canvas.width, this.transform.position.y);
-        console.log(this.transform.localPosition.y);
         ctx.stroke();
     }
 }
@@ -1290,6 +1281,6 @@ class LeftScale extends Scale {
 }
 
 const editor = new Editor();
-const inputController = new InputsController(editor);
+const inputController = new Input(editor);
 editor.inputController = inputController;
 module.exports = editor;

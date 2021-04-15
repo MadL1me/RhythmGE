@@ -1,4 +1,5 @@
 "use strict";
+/// <reference path ="../node_modules/@types/jquery/jquery.d.ts"/>
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -14,8 +15,12 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var _a = require('howler'), Howl = _a.Howl, Howler = _a.Howler;
+var jquery_1 = __importDefault(require("jquery"));
 var Vec2 = /** @class */ (function () {
     function Vec2(x, y) {
         this.x = x;
@@ -88,32 +93,35 @@ var SelectController = /** @class */ (function () {
     };
     return SelectController;
 }());
-var InputsController = /** @class */ (function () {
-    function InputsController(editor) {
+var Input = /** @class */ (function () {
+    function Input(editor) {
         var _this = this;
-        this.onKeyUp = new Event;
-        this.onKeyDown = new Event;
         this.snapSlider = new Slider("snap-lines");
         this.playbackSlider = new Slider("playback-rate");
         this.volumeSlider = new Slider("volume-slider");
+        this.canvMousePosition = new Vec2(0, 0);
         this.keysPressed = [];
         this.editor = editor;
-        document.getElementById('files').onchange = function (event) {
+        jquery_1.default("#files").on("change", function (event) {
             _this.onAudioLoad(event);
-        };
-        window.onresize = function (event) {
+        });
+        jquery_1.default(window).on("resize", function (event) {
             _this.editor.onWindowResize(event);
-        };
-        window.addEventListener('keydown', function (event) { _this.onCanvasKeyDown(event); });
-        window.addEventListener('keyup', function (event) { _this.onCanvasKeyUp(event); });
-        var editorCanvas = document.getElementById("editor-canvas");
-        editorCanvas.addEventListener('wheel', function (event) { _this.onCanvasWheel(event); });
-        editorCanvas.addEventListener('click', function (event) { editor.canvasClickHandle(event); });
-        editorCanvas.addEventListener('mousemove', function (event) { editor.canvasHoverHandle(event); });
-        var playBtn = document.getElementById("play-button");
-        playBtn.onclick = function () {
-            _this.playButtonClick(playBtn);
-        };
+        });
+        jquery_1.default(window).on("keydown", function (event) { _this.onCanvasKeyDown(event); });
+        jquery_1.default(window).on("keyup", function (event) { _this.onCanvasKeyUp(event); });
+        jquery_1.default("#editor-canvas").on('wheel', function (event) { console.log(event); _this.onCanvasWheel(event.originalEvent); })
+            .on('click', function (event) { editor.canvasClickHandle(event); })
+            .on('mousemove', function (event) { _this.onCanvasHover(event); editor.canvasPlaceElementHandler(event); });
+        //var editorCanvas = document.getElementById("editor-canvas");
+        //editorCanvas.addEventListener('wheel', (event) => { this.onCanvasWheel(event); });
+        //editorCanvas.addEventListener('click', (event) => { editor.canvasClickHandle(event); });
+        //editorCanvas.addEventListener('mousemove', (event) => { this.onCanvasHover(event); editor.canvasPlaceElementHandler(event);});
+        jquery_1.default("#play-button").on("click", function (event) { _this.playButtonClick(event.target); });
+        // var playBtn = document.getElementById("play-button");
+        // playBtn.onclick = () => {
+        //     this.playButtonClick(playBtn);
+        // };
         document.getElementById("follow-line").onchange = function (event) { _this.onFollowLineChange(event); };
         document.getElementById("use-claps").onchange = function (event) { _this.onUseClapsValueChange(event); };
         document.getElementById("hide-bpm").onchange = function (event) { _this.onHideBpmLinesChange(event); };
@@ -128,42 +136,48 @@ var InputsController = /** @class */ (function () {
         this.snapSlider.onValueChange.addListener(function (value) { _this.onSnapSliderValueChange(value); });
         this.playbackSlider.onValueChange.addListener(function (value) { _this.onPlaybackRateValueChange(value); });
     }
-    InputsController.prototype.onAudioLoad = function (event) {
+    Input.prototype.onAudioLoad = function (event) {
         var files = event.target.files;
         var file = files[0];
         this.editor.onAudioLoad(file.name, file.path);
         console.log(files[0]);
     };
-    InputsController.prototype.onVolumeSliderValueChange = function (value) {
+    Input.prototype.onVolumeSliderValueChange = function (value) {
         var val = parseFloat(value);
         this.editor.audioPlayer.setVolume(val);
     };
-    InputsController.prototype.onSnapSliderValueChange = function (value) {
+    Input.prototype.onSnapSliderValueChange = function (value) {
         var val = parseInt(value);
         val = Math.pow(2, val);
         document.getElementById("snap-lines-text").innerText = "Snap lines 1/" + val.toString();
         this.editor.editorGrid.setSnapValue(val);
     };
-    InputsController.prototype.onPlaybackRateValueChange = function (value) {
+    Input.prototype.onCanvasHover = function (event) {
+    };
+    Input.prototype.onPlaybackRateValueChange = function (value) {
         var val = parseFloat(value);
         document.getElementById("playback-rate-text").innerText = "Playback rate " + val.toString() + "x";
         this.editor.audioPlayer.setPlaybackRate(val);
     };
-    InputsController.prototype.playButtonClick = function (btn) {
+    Input.prototype.playButtonClick = function (btn) {
         this.editor.onPlayButtonClick(btn);
     };
-    InputsController.prototype.onCanvasKeyDown = function (event) {
+    Input.prototype.onCanvasKeyDown = function (event) {
         this.keysPressed[event.key] = true;
         if (event.code == "Space")
             this.editor.createCustomBpmLine();
-        //console.log("Key pressed!" + event.key);
+        if (event.code == "Alt")
+            this.editor.canvasPlaceElementHandler(event);
+        console.log("Key pressed!" + event.key);
     };
-    InputsController.prototype.onCanvasKeyUp = function (event) {
+    Input.prototype.onCanvasKeyUp = function (event) {
         delete this.keysPressed[event.key];
-        //console.log("Key removed" + event.key);
+        if (event.code == "Alt")
+            this.editor.canvasPlaceElementHandler(null);
+        console.log("Key removed" + event.key);
         this.editor.drawEditor();
     };
-    InputsController.prototype.onCanvasWheel = function (event) {
+    Input.prototype.onCanvasWheel = function (event) {
         if (this.keysPressed['Control'])
             this.editor.onCanvasResize(parseInt(event.deltaY));
         else if (this.keysPressed['Shift'])
@@ -171,35 +185,35 @@ var InputsController = /** @class */ (function () {
         else
             this.editor.onCanvasScroll(parseInt(event.deltaY), false);
     };
-    InputsController.prototype.onBeatLinesValueChange = function (event) {
+    Input.prototype.onBeatLinesValueChange = function (event) {
         console.log(event);
         this.editor.changeBeatlinesCount(event);
     };
-    InputsController.prototype.onBpmValueChange = function (event) {
+    Input.prototype.onBpmValueChange = function (event) {
         console.log(event);
         this.editor.changeBpmValue(event);
     };
-    InputsController.prototype.onOffsetValueChange = function (event) {
+    Input.prototype.onOffsetValueChange = function (event) {
         console.log(event);
         this.editor.changeOffset(event);
     };
-    InputsController.prototype.onUseClapsValueChange = function (event) {
+    Input.prototype.onUseClapsValueChange = function (event) {
         console.log(event);
         this.editor.usingClaps = true;
     };
-    InputsController.prototype.onHideBpmLinesChange = function (event) {
+    Input.prototype.onHideBpmLinesChange = function (event) {
         this.editor.hideBpmLines = event.target.checked;
         console.log(event);
     };
-    InputsController.prototype.onFollowLineChange = function (event) {
+    Input.prototype.onFollowLineChange = function (event) {
         this.editor.followingLine = event.target.checked;
         console.log(event);
     };
-    InputsController.prototype.onHideCreatableLinesChange = function (event) {
+    Input.prototype.onHideCreatableLinesChange = function (event) {
         this.editor.hideCreatableLines = event.target.checked;
         console.log(event);
     };
-    return InputsController;
+    return Input;
 }());
 var Viewport = /** @class */ (function () {
     function Viewport() {
@@ -267,8 +281,8 @@ var Transform = /** @class */ (function () {
                 this.localPosition = value;
                 return;
             }
-            var pos = Vec2.Substract(this.parent.position, value);
-            this.localPosition = Vec2.Divide(Vec2.Sum(this.localPosition, pos), this._parent.scale);
+            var pos = Vec2.Substract(value, this.parent.position);
+            this.localPosition = Vec2.Divide(pos, this._parent.scale);
         },
         enumerable: false,
         configurable: true
@@ -328,6 +342,17 @@ var Transform = /** @class */ (function () {
     };
     return Transform;
 }());
+var parent = new Transform();
+parent.position = new Vec2(0, 0);
+parent.scale = new Vec2(10, 1);
+var child1 = new Transform();
+child1.position = new Vec2(10, 1);
+var child2 = new Transform();
+child2.position = new Vec2(20, 1);
+child1.parent = parent;
+child2.parent = parent;
+console.log(child1.position);
+console.log(child2.localPosition);
 var Editor = /** @class */ (function () {
     function Editor() {
         this.usingClaps = false;
@@ -371,7 +396,6 @@ var Editor = /** @class */ (function () {
         this.drawEditor();
     };
     Editor.prototype.changeOffset = function (offset) {
-        console.log(offset.target.value);
         this.offset = parseInt(offset.target.value);
         this.editorGrid.transform.localPosition = new Vec2(this.offset / 100, 0);
     };
@@ -417,11 +441,9 @@ var Editor = /** @class */ (function () {
         this.viewport.transform.localPosition = new Vec2(this.viewport.transform.localPosition.x + resultedDelta, this.viewport.position.y);
         if (this.viewport.transform.localPosition.x > this.viewport.maxDeviation.x)
             this.viewport.transform.localPosition = new Vec2(this.viewport.maxDeviation.x, this.viewport.position.y);
-        console.log(this.viewport.position);
         this.drawEditor();
     };
     Editor.prototype.onWindowResize = function (event) {
-        console.log(event);
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
         var div = this.canvas.parentElement;
@@ -437,7 +459,6 @@ var Editor = /** @class */ (function () {
         var resultedDelta = mouseDelta * this.resizingSpeed;
         var oldScale = this.transform.scale.x;
         var canvCenter = this.viewport.canvasToSongTime(new Vec2(this.canvas.width / 2, 0));
-        console.log(canvCenter);
         // if (resultedDelta < 0)
         //     this.viewport.position = Vec2.Sum(this.viewport.position, canvCenter);
         // else
@@ -455,7 +476,6 @@ var Editor = /** @class */ (function () {
         var newCanvCenter = this.viewport.canvasToSongTime(new Vec2(this.canvas.width / 2, 0));
         //this.viewport.position = Vec2.Sum(this.viewport.position, Vec2.Substract(newCanvCenter, canvCenter));
         this.viewport.position = Vec2.Substract(new Vec2(this.canvas.width / 2, 0), canvCenter);
-        console.log("timstep");
         // if (resultedDelta < 0)
         //     this.viewport.position = Vec2.Sum(this.viewport.position, this.viewport.canvasToWorld(new Vec2(this.canvas.width/2,0)));
         // else
@@ -473,15 +493,16 @@ var Editor = /** @class */ (function () {
         var clickX = event.clientX - rect.left;
         var clickY = event.clientY - rect.top;
         var click = new Vec2(clickX, clickY);
-        console.log(click);
         if (clickY <= this.topScale.width) {
             this.audioPlayer.setMusicFromCanvasPosition(click, this);
         }
-        console.log(Vec2.Divide(this.viewport.canvasToWorld(click), this.editorGrid.transform.scale));
-        console.log(this.viewport.canvasToSongTime(click));
         var closestBeatline = this.findClosestBeatLine(click);
     };
-    Editor.prototype.canvasHoverHandle = function (event) {
+    Editor.prototype.canvasPlaceElementHandler = function (event) {
+        if (event == null) {
+            this.phantomTimestamp = null;
+            return;
+        }
         var rect = this.canvas.getBoundingClientRect();
         var clickX = event.clientX - rect.left;
         var clickY = event.clientY - rect.top;
@@ -547,9 +568,8 @@ var Editor = /** @class */ (function () {
             this.timestepLine.transform.localPosition = new Vec2(this.audioPlayer.sound.seek(), 0);
         }
         if (this.followingLine) {
-            var result = new Vec2(this.timestepLine.transform.position.x - this.canvas.width / 2, 1);
+            var result = new Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 1);
             this.viewport.transform.position = result;
-            console.log(this.viewport.transform.position.x);
         }
         this.timestepLine.draw(this.viewport, this.canvas);
         (_a = this.phantomTimestamp) === null || _a === void 0 ? void 0 : _a.draw(this.canvas);
@@ -607,7 +627,6 @@ var AudioPlayerView = /** @class */ (function () {
         this.slider.setValue(currentTime * 100);
     };
     AudioPlayerView.prototype.formatTime = function (time, accuracy) {
-        //console.log("Format time time is: " + time);
         var minutes = Math.floor(time / 60);
         var seconds = Math.floor(time - minutes * 60);
         var milliseconds = time % 1;
@@ -652,7 +671,6 @@ var AudioPlayer = /** @class */ (function () {
         this.view.update(this.sound.seek());
     };
     AudioPlayer.prototype.setPlaybackRate = function (value) {
-        //this.bufferSource.playbackRate.value = value;
         console.log(value);
         this.sound.rate([value]);
     };
@@ -676,7 +694,6 @@ var AudioPlayer = /** @class */ (function () {
     AudioPlayer.prototype.playClapSound = function () {
     };
     AudioPlayer.prototype.setMusicFromCanvasPosition = function (position, editor) {
-        //console.log(position);
         var second = editor.viewport.canvasToSongTime(position).x / editor.transform.scale.x;
         this.sound.seek([second]);
     };
@@ -712,14 +729,12 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
     };
     AudioAmplitudeCanvas.prototype.draw = function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        //console.log(appSettings.editorBackgroundColor.value());
         this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         if (this.data == undefined || this.data == null)
             return;
         if (this.amplitudeData == undefined || this.amplitudeData == null)
             return;
-        //console.log("DRAWING CANVAS!!!");
         for (var i = 0; i < this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i] * this.canvas.height;
             var position = this.editor.viewport.position.x + i * this.editor.editorGrid.transform.scale.x / 100;
@@ -736,7 +751,6 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
             var value = this.getAvarageAtRange(i, i + this.samplesPerArrayValue);
             this.amplitudeData.push(value);
         }
-        //console.log(this.amplitudeData);
     };
     AudioAmplitudeCanvas.prototype.getAmplitudeBarWitdh = function () {
         return this.editor.transform.scale.x * this.samplesPerArrayValue / this.sampleRate;
@@ -763,9 +777,9 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
 var Timestamp = /** @class */ (function () {
     function Timestamp(color, x, y, width, parent) {
         this.transform = new Transform();
-        this.transform.position = new Vec2(x, y);
         this.width = width;
         this.transform.parent = parent;
+        this.transform.localPosition = new Vec2(x, y);
         this.color = color;
     }
     Timestamp.prototype.draw = function (canvas) {
@@ -945,18 +959,6 @@ var TimestepLine = /** @class */ (function (_super) {
     };
     return TimestepLine;
 }(GridLine));
-// class BPMSnapLine extends GridLine {
-//     draw(view: Viewport, canvas: HTMLCanvasElement) {
-//         if (!this.isActive)
-//             return;
-//         const ctx = canvas.getContext('2d');
-//         ctx.strokeStyle = this.color.value();
-//         ctx.beginPath();
-//         ctx.moveTo(this.transform.position.x+view.position.x, 0);
-//         ctx.lineTo(this.transform.position.x+view.position.x, canvas.height);
-//         ctx.stroke();
-//     }
-// }
 var BPMLine = /** @class */ (function (_super) {
     __extends(BPMLine, _super);
     function BPMLine(x, parent, rgbaColor) {
@@ -990,7 +992,6 @@ var BeatLine = /** @class */ (function (_super) {
     function BeatLine(y, parent, rgbaColor) {
         var _this = _super.call(this, parent, rgbaColor) || this;
         _this.transform.localPosition = new Vec2(0, y);
-        console.log(_this.transform.localPosition.y);
         return _this;
     }
     BeatLine.prototype.draw = function (view, canvas) {
@@ -999,7 +1000,6 @@ var BeatLine = /** @class */ (function (_super) {
         ctx.beginPath();
         ctx.moveTo(0, this.transform.position.y);
         ctx.lineTo(canvas.width, this.transform.position.y);
-        console.log(this.transform.localPosition.y);
         ctx.stroke();
     };
     return BeatLine;
@@ -1047,7 +1047,7 @@ var LeftScale = /** @class */ (function (_super) {
     return LeftScale;
 }(Scale));
 var editor = new Editor();
-var inputController = new InputsController(editor);
+var inputController = new Input(editor);
 editor.inputController = inputController;
 module.exports = editor;
 //# sourceMappingURL=editor.js.map
