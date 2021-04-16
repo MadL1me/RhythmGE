@@ -1,6 +1,8 @@
 import {Transform} from "./Transform";
 import {Vec2} from "./Vec2";
 
+import $ from 'jquery';
+
 export class Viewport {
     
     transform = new Transform(); 

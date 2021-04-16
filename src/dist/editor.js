@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var _a = require('howler'), Howl = _a.Howl, Howler = _a.Howler;
+exports.Editor = void 0;
 var jquery_1 = __importDefault(require("jquery"));
 var RgbaColor_1 = require("./RgbaColor");
 var Vec2_1 = require("./Vec2");
@@ -14,141 +14,8 @@ var Scale_1 = require("./Scale");
 var GridElements_1 = require("./GridElements");
 var Viewport_1 = require("./Viewport");
 var AppSettings_1 = require("./AppSettings");
-var Event = /** @class */ (function () {
-    function Event() {
-        this.listeners = [];
-    }
-    Event.prototype.addListener = function (listener) {
-        this.listeners.push(listener);
-    };
-    Event.prototype.removeListener = function (listener) {
-        var index = this.listeners.findIndex(listener);
-        this.listeners.slice(index, index);
-    };
-    Event.prototype.invoke = function (data) {
-        this.listeners.forEach(function (listener) {
-            listener(data);
-        });
-    };
-    return Event;
-}());
-var SelectController = /** @class */ (function () {
-    function SelectController() {
-    }
-    SelectController.prototype.drawSelectZone = function (from, to) {
-    };
-    return SelectController;
-}());
-var Input = /** @class */ (function () {
-    function Input(editor) {
-        var _this = this;
-        this.snapSlider = new Slider('snap-lines');
-        this.volumeSlider = new Slider('volume-slider');
-        this.playbackSlider = new Slider('playback-rate');
-        this.canvMousePosition = new Vec2_1.Vec2(0, 0);
-        this.keysPressed = [];
-        this.editor = editor;
-        jquery_1.default('#files').on('change', function (event) { _this.onAudioLoad(event); });
-        jquery_1.default(window).on('resize', function (event) { _this.editor.onWindowResize(event); });
-        jquery_1.default(window).on('keydown', function (event) { _this.onCanvasKeyDown(event); });
-        jquery_1.default(window).on('keyup', function (event) { _this.onCanvasKeyUp(event); });
-        jquery_1.default('#editor-canvas').on('wheel', function (event) { _this.onCanvasWheel(event.originalEvent); })
-            .on('click', function (event) { editor.canvasClickHandle(event); })
-            .on('mousemove', function (event) { _this.onCanvasHover(event); editor.canvasPlaceElementHandler(event); });
-        jquery_1.default('#play-button').on('click', function (event) { _this.playButtonClick(event.target); });
-        jquery_1.default('#follow-line').on('change', function (event) { _this.onFollowLineChange(event); });
-        jquery_1.default('#use-claps').on('change', function (event) { _this.onUseClapsValueChange(event); });
-        jquery_1.default('#hide-bpm').on('change', function (event) { _this.onHideBpmLinesChange(event); });
-        jquery_1.default('#hide-creatable').on('change', function (event) { _this.onHideCreatableLinesChange(event); });
-        jquery_1.default('#beat-lines').on('change', function (event) { _this.onBeatLinesValueChange(event); });
-        jquery_1.default('#bpm').on('change', function (event) { _this.onBpmValueChange(event); });
-        jquery_1.default('#offset').on('change', function (event) { _this.onOffsetValueChange(event); });
-        this.volumeSlider.setValue(0.5);
-        this.playbackSlider.setValue(1);
-        this.snapSlider.setValue(1);
-        this.volumeSlider.onValueChange.addListener(function (value) { _this.onVolumeSliderValueChange(value); });
-        this.playbackSlider.onValueChange.addListener(function (value) { _this.onPlaybackRateValueChange(value); });
-        this.snapSlider.onValueChange.addListener(function (value) { _this.onSnapSliderValueChange(value); });
-    }
-    Input.prototype.onAudioLoad = function (event) {
-        var files = event.target.files;
-        var file = files[0];
-        this.editor.onAudioLoad(file.name, file.path);
-        console.log(files[0]);
-    };
-    Input.prototype.onVolumeSliderValueChange = function (value) {
-        var val = parseFloat(value);
-        this.editor.audioPlayer.setVolume(val);
-    };
-    Input.prototype.onSnapSliderValueChange = function (value) {
-        var val = parseInt(value);
-        val = Math.pow(2, val);
-        jquery_1.default('#snap-lines-text')[0].innerText = 'Snap lines 1/' + val.toString();
-        this.editor.editorGrid.setSnapValue(val);
-    };
-    Input.prototype.onCanvasHover = function (event) {
-    };
-    Input.prototype.onPlaybackRateValueChange = function (value) {
-        var val = parseFloat(value);
-        jquery_1.default('#playback-rate-text')[0].innerText = 'Playback rate ' + val.toString() + 'x';
-        this.editor.audioPlayer.setPlaybackRate(val);
-    };
-    Input.prototype.playButtonClick = function (btn) {
-        this.editor.onPlayButtonClick(btn);
-    };
-    Input.prototype.onCanvasKeyDown = function (event) {
-        this.keysPressed[event.key] = true;
-        if (event.code == 'Space')
-            this.editor.createCustomBpmLine();
-        if (event.code == 'Alt')
-            this.editor.canvasPlaceElementHandler(event);
-        console.log('Key pressed!' + event.key);
-    };
-    Input.prototype.onCanvasKeyUp = function (event) {
-        delete this.keysPressed[event.key];
-        if (event.code == 'Alt')
-            this.editor.canvasPlaceElementHandler(null);
-        console.log('Key removed' + event.key);
-        this.editor.drawEditor();
-    };
-    Input.prototype.onCanvasWheel = function (event) {
-        if (this.keysPressed['Control'])
-            this.editor.onCanvasResize(parseInt(event.deltaY));
-        else if (this.keysPressed['Shift'])
-            this.editor.onCanvasScroll(parseInt(event.deltaY), true);
-        else
-            this.editor.onCanvasScroll(parseInt(event.deltaY), false);
-    };
-    Input.prototype.onBeatLinesValueChange = function (event) {
-        console.log(event);
-        this.editor.changeBeatlinesCount(event);
-    };
-    Input.prototype.onBpmValueChange = function (event) {
-        console.log(event);
-        this.editor.changeBpmValue(event);
-    };
-    Input.prototype.onOffsetValueChange = function (event) {
-        console.log(event);
-        this.editor.changeOffset(event);
-    };
-    Input.prototype.onUseClapsValueChange = function (event) {
-        console.log(event);
-        this.editor.usingClaps = true;
-    };
-    Input.prototype.onHideBpmLinesChange = function (event) {
-        this.editor.hideBpmLines = event.target.checked;
-        console.log(event);
-    };
-    Input.prototype.onFollowLineChange = function (event) {
-        this.editor.followingLine = event.target.checked;
-        console.log(event);
-    };
-    Input.prototype.onHideCreatableLinesChange = function (event) {
-        this.editor.hideCreatableLines = event.target.checked;
-        console.log(event);
-    };
-    return Input;
-}());
+var Input_1 = require("./Input");
+var Audio_1 = require("./Audio");
 var Editor = /** @class */ (function () {
     function Editor() {
         this.usingClaps = false;
@@ -174,12 +41,12 @@ var Editor = /** @class */ (function () {
         this.canvas = jquery_1.default('#editor-canvas')[0];
         this.ctx = this.canvas.getContext('2d');
         //this.ctx.translate(0.5,0.5);
-        this.audioPlayer = new AudioPlayer(this);
+        this.audioPlayer = new Audio_1.AudioPlayer(this);
         this.topScale = new Scale_1.TopScale(10);
         this.leftScale = new Scale_1.LeftScale(10);
         this.bottomScale = new Scale_1.BottomScale(10);
         this.editorGrid = new EditorGrid(this, this.canvas);
-        this.audioCanvas = new AudioAmplitudeCanvas(this);
+        this.audioCanvas = new Audio_1.AudioAmplitudeCanvas(this);
         this.timestepLine = new GridElements_1.TimestepLine(this.transform, AppSettings_1.appSettings.timestepLineColor);
         this.drawEditor();
     }
@@ -372,207 +239,7 @@ var Editor = /** @class */ (function () {
     };
     return Editor;
 }());
-var Slider = /** @class */ (function () {
-    function Slider(sliderId) {
-        var _this = this;
-        this.maxValue = 100;
-        this.minValue = 0;
-        this.onValueChange = new Event();
-        this.sliderInput = jquery_1.default('#' + sliderId)[0];
-        this.sliderInput.value = '0';
-        this.sliderInput.oninput = function (event) {
-            _this.setValue(event.target.value);
-        };
-        this.value = 0;
-    }
-    Slider.prototype.setMaxValue = function (value) {
-        this.maxValue = value;
-        this.sliderInput.max = value.toString();
-    };
-    Slider.prototype.setMinValue = function (value) {
-        this.minValue = value;
-        this.sliderInput.min = value.toString();
-    };
-    Slider.prototype.setValue = function (value) {
-        this.value = value;
-        this.sliderInput.value = value.toString();
-        this.onValueChange.invoke(value);
-    };
-    return Slider;
-}());
-var TimeAccuracy;
-(function (TimeAccuracy) {
-    TimeAccuracy[TimeAccuracy["seconds"] = 0] = "seconds";
-    TimeAccuracy[TimeAccuracy["milliseconds"] = 1] = "milliseconds";
-})(TimeAccuracy || (TimeAccuracy = {}));
-var AudioPlayerView = /** @class */ (function () {
-    function AudioPlayerView() {
-        this.snapSlider = new Slider('snap-lines');
-        this.volumeSlider = new Slider('volume-slider');
-        this.audioFileName = jquery_1.default('#file-name')[0];
-        this.audioCurrentTime = jquery_1.default('#current-audio-time')[0];
-        this.audioDuration = jquery_1.default('#audio-duration')[0];
-        this.songTimeSlider = new Slider('audio-slider');
-    }
-    AudioPlayerView.prototype.onAudioLoad = function (fileName, duration) {
-        this.audioFileName.innerHTML = fileName;
-        this.audioCurrentTime.innerHTML = '0:00';
-        this.audioDuration.innerHTML = this.formatTime(duration, TimeAccuracy.seconds);
-        this.songTimeSlider.setMaxValue(duration * 100);
-    };
-    AudioPlayerView.prototype.update = function (currentTime) {
-        this.audioCurrentTime.innerHTML = this.formatTime(currentTime, TimeAccuracy.seconds);
-        this.songTimeSlider.setValue(currentTime * 100);
-    };
-    AudioPlayerView.prototype.formatTime = function (time, accuracy) {
-        var minutes = Math.floor(time / 60);
-        var seconds = Math.floor(time - minutes * 60);
-        var milliseconds = time % 1;
-        if (seconds < 10)
-            seconds = '0' + seconds.toString();
-        if (accuracy == TimeAccuracy.milliseconds)
-            return minutes + ':' + seconds + ':' + milliseconds;
-        else
-            return minutes + ':' + seconds;
-    };
-    return AudioPlayerView;
-}());
-var AudioPlayer = /** @class */ (function () {
-    function AudioPlayer(editor) {
-        this.view = new AudioPlayerView();
-        this.editor = editor;
-    }
-    AudioPlayer.prototype.onSoundLoad = function (fileName, soundPath) {
-        var _this = this;
-        this.sound = new Howl({ src: [soundPath] });
-        this.analyser = Howler.ctx.createAnalyser();
-        this.analyser.fftSize = 256;
-        this.sound.on('load', function () {
-            //this.soundId = this.sound.play();
-            //this.sound.stop();
-            _this.view.onAudioLoad(fileName, _this.sound.duration());
-        });
-        this.sound.on('play', function () {
-            _this.setupEditor();
-        });
-        this.sound.on('seek', function () {
-            _this.setupEditor();
-        });
-        this.sound.on('stop', function () {
-            //setupEditor();
-        });
-    };
-    AudioPlayer.prototype.setVolume = function (value) {
-        this.sound.volume([value]);
-    };
-    AudioPlayer.prototype.update = function () {
-        this.view.update(this.sound.seek());
-    };
-    AudioPlayer.prototype.setPlaybackRate = function (value) {
-        console.log(value);
-        this.sound.rate([value]);
-    };
-    AudioPlayer.prototype.setupEditor = function () {
-        this.bufferSource = this.sound._soundById(this.soundId)._node.bufferSource;
-        this.sound._soundById(this.soundId)._node.bufferSource.connect(this.analyser);
-        editor.audioCanvas.onAudioLoad(this);
-        editor.drawEditor();
-    };
-    AudioPlayer.prototype.isPlaying = function () {
-        if (this.sound == undefined || this.sound == null)
-            return false;
-        return this.sound.playing([this.soundId]);
-    };
-    AudioPlayer.prototype.play = function () {
-        this.soundId = this.sound.play();
-    };
-    AudioPlayer.prototype.pause = function () {
-        this.sound.pause();
-    };
-    AudioPlayer.prototype.playClapSound = function () {
-    };
-    AudioPlayer.prototype.setMusicFromCanvasPosition = function (position, editor) {
-        var second = editor.viewport.canvasToSongTime(position).x / editor.transform.scale.x;
-        this.sound.seek([second]);
-    };
-    AudioPlayer.prototype.setMusicFromTimePosition = function () {
-    };
-    AudioPlayer.prototype.getDomainData = function () {
-        var dataArray = new Float32Array(this.analyser.frequencyBinCount);
-        this.analyser.getFloatTimeDomainData(dataArray);
-        return dataArray;
-    };
-    return AudioPlayer;
-}());
-var AudioAmplitudeCanvas = /** @class */ (function () {
-    function AudioAmplitudeCanvas(editor) {
-        this.amplitudeData = new Array();
-        this.sampleRate = 48000;
-        this.divideValue = 10;
-        this.samplesPerArrayValue = this.sampleRate / this.divideValue;
-        this.editor = editor;
-        this.audio = editor.audioPlayer;
-        this.canvas = jquery_1.default('#audio-amplitude-canvas')[0];
-        this.ctx = this.canvas.getContext('2d');
-    }
-    AudioAmplitudeCanvas.prototype.onWindowResize = function (event) {
-        var w = document.documentElement.clientWidth;
-        var h = document.documentElement.clientHeight;
-        var info = this.canvas.parentElement.getBoundingClientRect();
-        this.canvas.setAttribute('width', info.width.toString());
-        this.canvas.setAttribute('height', (info.height / 4).toString());
-    };
-    AudioAmplitudeCanvas.prototype.onAudioLoad = function (audio) {
-        this.data = audio.bufferSource.buffer.getChannelData(0);
-        this.calculateAmplitudeArray();
-    };
-    AudioAmplitudeCanvas.prototype.draw = function () {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = AppSettings_1.appSettings.editorBackgroundColor.value();
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        if (this.data == undefined || this.data == null)
-            return;
-        if (this.amplitudeData == undefined || this.amplitudeData == null)
-            return;
-        for (var i = 0; i < this.amplitudeData.length; i++) {
-            var interpolated = this.amplitudeData[i] * this.canvas.height;
-            var position = this.editor.viewport.position.x + i * this.editor.editorGrid.transform.scale.x / this.divideValue;
-            var width = this.editor.editorGrid.transform.scale.x / this.divideValue;
-            var gap = Math.floor(width / 3);
-            this.ctx.fillStyle = AppSettings_1.appSettings.loudnessBarColor.value();
-            this.ctx.fillRect(position + gap, 0, width - gap, interpolated);
-            this.ctx.fill();
-        }
-    };
-    AudioAmplitudeCanvas.prototype.calculateAmplitudeArray = function () {
-        this.amplitudeData = [];
-        for (var i = 0; i < this.data.length; i += this.samplesPerArrayValue) {
-            var value = this.getAvarageAtRange(i, i + this.samplesPerArrayValue);
-            this.amplitudeData.push(value);
-        }
-    };
-    AudioAmplitudeCanvas.prototype.getAmplitudeBarWitdh = function () {
-        return this.editor.transform.scale.x * this.samplesPerArrayValue / this.sampleRate;
-    };
-    AudioAmplitudeCanvas.prototype.getMaxAtRange = function (from, to) {
-        var max = -10;
-        for (var i = from; i < to && i < this.data.length; i++) {
-            if (Math.abs(this.data[i]) >= max) {
-                max = Math.abs(this.data[i]);
-            }
-        }
-        return max;
-    };
-    AudioAmplitudeCanvas.prototype.getAvarageAtRange = function (from, to) {
-        var result = 0;
-        for (var i = from; i < to && i < this.data.length; i++) {
-            result += Math.abs(this.data[i]);
-        }
-        result = result / (to - from);
-        return result;
-    };
-    return AudioAmplitudeCanvas;
-}());
+exports.Editor = Editor;
 var EditorGrid = /** @class */ (function () {
     function EditorGrid(editor, canvas) {
         this.snapValue = 0;
@@ -673,6 +340,6 @@ var EditorGrid = /** @class */ (function () {
     return EditorGrid;
 }());
 var editor = new Editor();
-var inputController = new Input(editor);
+var inputController = new Input_1.Input(editor);
 editor.inputController = inputController;
 module.exports = editor;

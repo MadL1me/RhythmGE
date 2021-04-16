@@ -1,5 +1,7 @@
 import { Vec2 } from "./Vec2";
 
+import $ from 'jquery';
+
 export class Transform {
 
     private _parent: Transform = null;

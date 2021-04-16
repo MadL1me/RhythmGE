@@ -2,6 +2,8 @@ import { Editor } from "./Editor";
 import { Slider } from "./Utils";
 import { Vec2 } from "./Vec2";
 
+import $ from 'jquery';
+
 export class Input {
     
     editor: Editor;

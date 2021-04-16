@@ -5,8 +5,6 @@ import { throws } from 'node:assert';
 import { format } from 'node:path';
 import { off } from 'node:process';
 
-const { Howl, Howler } = require('howler');
-
 import $ from 'jquery';
 
 import { RgbaColor } from "./RgbaColor";

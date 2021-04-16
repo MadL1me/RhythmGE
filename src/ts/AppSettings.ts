@@ -1,5 +1,7 @@
 import { RgbaColor } from "./RgbaColor";
 
+
+
 export const appSettings = new class AppSettings {
     editorBackgroundColor = new RgbaColor(73, 75, 90);
     beatLineColor = new RgbaColor(130, 130, 130); // (74, 74, 74)

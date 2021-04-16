@@ -1,3 +1,5 @@
+import $ from 'jquery';
+
 export class Vec2 {
     
     readonly x: number;

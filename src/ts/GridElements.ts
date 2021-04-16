@@ -4,6 +4,8 @@ import { Viewport } from "./Viewport";
 import { Vec2 } from "./Vec2";
 import { appSettings } from "./AppSettings";
 
+import $ from 'jquery';
+
 export abstract class GridElement {
     
     transform: Transform = new Transform();

@@ -2,6 +2,9 @@ import { Slider } from "./Utils";
 import { Editor } from "./Editor";
 import { Vec2 } from "./Vec2";
 import { appSettings } from "./AppSettings";
+import $ from 'jquery';
+
+const { Howl, Howler } = require('howler');
 
 export enum TimeAccuracy {
     seconds, 
