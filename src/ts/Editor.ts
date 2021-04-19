@@ -32,7 +32,7 @@ export class Editor {
     offset: number = 0;
 
     creatableLines = {};
-    timestamps: Array<Array<Timestamp>>;
+    timestamps: {};
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
 
@@ -46,6 +46,8 @@ export class Editor {
     audioPlayer: AudioPlayer; 
     timestepLine: TimestepLine;
     inputController: Input;
+
+    phantomTimestamp: Timestamp;
 
     constructor() {        
         this.canvas = $('#editor-canvas')[0] as HTMLCanvasElement;
@@ -93,9 +95,6 @@ export class Editor {
 
 
     updateLoop() {
-        //if (!this.audioPlayer.isPlaying())
-            //return;
-
         this.inputController.update();
         this.canvasPlacePhantomElementHandler();
 
@@ -211,10 +210,8 @@ export class Editor {
         
     }
 
-    phantomTimestamp: Timestamp;
 
-    canvasClickHandle(event) {
-        
+    canvasMouseClickHandle(event) {
         if (!this.audioLoaded)
             return;
 
@@ -225,6 +222,13 @@ export class Editor {
 
         if (clickY <= this.topScale.width) {
             this.audioPlayer.setMusicFromCanvasPosition(click, this);
+        }
+
+        if (this.phantomTimestamp != null) {
+            var timestamp = new Timestamp(new RgbaColor(100,160,0), clickX, clickY, 5, this.transform);
+            
+            
+            //this.timestamps[]
         }
 
         var closestBeatline = this.findClosestBeatLine(click);
@@ -282,18 +286,15 @@ export class Editor {
             && this.audioPlayer.sound.state()=='loaded' && !this.hideBpmLines, 
             this);
         
-        //this.bottomScale.draw(this.canvas);
-        //this.leftScale.draw(this.canvas);
-
         if (!this.hideCreatableLines) {
             for (const [key, value]  of Object.entries(this.creatableLines)) {
                 (value as CreatableTimestampLine).draw(this.viewport, this.canvas);
             }
         }
 
-        this.timestamps.forEach(timestamps => { timestamps.forEach(note => {
-            if (note!=null) { note.draw(this.viewport, this.canvas);
-        }})});
+        for (const [key, value]  of Object.entries(this.timestamps)) {
+            (value as Timestamp).draw(this.viewport, this.canvas);
+        }
         
         this.audioCanvas.draw();
         this.topScale.draw(this.canvas);
