@@ -26,6 +26,11 @@ var GridElement = /** @class */ (function () {
         this.color = rgbaColor;
         this.transform.parent = parent;
     }
+    GridElement.prototype.draw = function (view, canvas) {
+        if (view.outOfCanvasBounds(this.transform.position, canvas)) {
+            return;
+        }
+    };
     GridElement.prototype.activate = function () {
         this.isActive = true;
     };
@@ -35,15 +40,18 @@ var GridElement = /** @class */ (function () {
     return GridElement;
 }());
 exports.GridElement = GridElement;
-var Timestamp = /** @class */ (function () {
+var Timestamp = /** @class */ (function (_super) {
+    __extends(Timestamp, _super);
     function Timestamp(color, x, y, width, parent) {
-        this.transform = new Transform_1.Transform();
-        this.width = width;
-        this.transform.parent = parent;
-        this.transform.localPosition = new Vec2_1.Vec2(x, y);
-        this.color = color;
+        var _this = _super.call(this, parent, color) || this;
+        _this.width = width;
+        _this.transform.parent = parent;
+        _this.transform.localPosition = new Vec2_1.Vec2(x, y);
+        _this.color = color;
+        return _this;
     }
-    Timestamp.prototype.draw = function (canvas) {
+    Timestamp.prototype.draw = function (view, canvas) {
+        _super.prototype.draw.call(this, view, canvas);
         var ctx = canvas.getContext('2d');
         var pos = new Vec2_1.Vec2(this.transform.position.x, this.transform.position.y);
         var width = this.width * this.transform.parent.localScale.x;
@@ -56,7 +64,7 @@ var Timestamp = /** @class */ (function () {
         ctx.fill();
     };
     return Timestamp;
-}());
+}(GridElement));
 exports.Timestamp = Timestamp;
 var CreatableTimestampLine = /** @class */ (function (_super) {
     __extends(CreatableTimestampLine, _super);
@@ -67,6 +75,7 @@ var CreatableTimestampLine = /** @class */ (function (_super) {
         return _this;
     }
     CreatableTimestampLine.prototype.draw = function (view, canvas) {
+        _super.prototype.draw.call(this, view, canvas);
         var x = this.transform.position.x + view.position.x;
         var ctx = canvas.getContext('2d');
         ctx.beginPath();
@@ -89,6 +98,7 @@ var TimestepLine = /** @class */ (function (_super) {
         return _super.call(this, parent, color) || this;
     }
     TimestepLine.prototype.draw = function (view, canvas) {
+        _super.prototype.draw.call(this, view, canvas);
         var x = this.transform.position.x + view.position.x;
         var ctx = canvas.getContext('2d');
         if (x >= canvas.width)
@@ -118,6 +128,7 @@ var BPMLine = /** @class */ (function (_super) {
         return _this;
     }
     BPMLine.prototype.draw = function (view, canvas) {
+        _super.prototype.draw.call(this, view, canvas);
         if (!this.isActive)
             return;
         var ctx = canvas.getContext('2d');
@@ -146,6 +157,7 @@ var BeatLine = /** @class */ (function (_super) {
         return _this;
     }
     BeatLine.prototype.draw = function (view, canvas) {
+        _super.prototype.draw.call(this, view, canvas);
         var ctx = canvas.getContext('2d');
         ctx.strokeStyle = this.color.value();
         ctx.beginPath();

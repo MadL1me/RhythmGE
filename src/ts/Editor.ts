@@ -48,10 +48,13 @@ export class Editor {
     inputController: Input;
 
     constructor() {        
+        this.canvas = $('#editor-canvas')[0] as HTMLCanvasElement;
+        this.ctx = this.canvas.getContext('2d');
+        
         this.timestamps = Array(5).fill(null).map(() => Array(5));
         this.transform = new Transform();
 
-        this.viewport = new Viewport();
+        this.viewport = new Viewport(this.canvas);
         this.viewport.gridTransform = this.transform;
         
         // WARNING
@@ -61,8 +64,6 @@ export class Editor {
 
         this.transform.position = new Vec2(0,0);
         this.transform.scale = new Vec2(10,1);
-        this.canvas = $('#editor-canvas')[0] as HTMLCanvasElement;
-        this.ctx = this.canvas.getContext('2d');
         //this.ctx.translate(0.5,0.5);
         
         this.audioPlayer = new AudioPlayer(this);
@@ -91,8 +92,8 @@ export class Editor {
     }
 
     updateLoop() {
-        if (!this.audioPlayer.isPlaying())
-            return;
+        //if (!this.audioPlayer.isPlaying())
+            //return;
 
         this.audioPlayer.update();
         this.drawEditor();
@@ -225,7 +226,7 @@ export class Editor {
         var closestBeatline = this.findClosestBeatLine(click);
     }
 
-    canvasPlaceElementHandler(event) {
+    canvasPlacePhantomElementHandler(event) {        
         if (event == null) {
             this.phantomTimestamp = null;
             return;
@@ -241,7 +242,7 @@ export class Editor {
         if (this.inputController.keysPressed['Alt']) {
             var phantomTimestamp = new Timestamp(new RgbaColor(158,23,240, 0.7), click.x / this.editorGrid.transform.scale.x, closestBeatline.transform.position.y, 10, this.editorGrid.transform);
             this.phantomTimestamp = phantomTimestamp;
-            this.drawEditor();
+            //this.drawEditor();
         }
         else {
             this.phantomTimestamp = null;
@@ -296,7 +297,7 @@ export class Editor {
         }
 
         this.timestamps.forEach(timestamps => { timestamps.forEach(note => {
-            if (note!=null) { note.draw(this.canvas);
+            if (note!=null) { note.draw(this.viewport, this.canvas);
         }})});
         
         this.audioCanvas.draw();
@@ -312,7 +313,7 @@ export class Editor {
         }
 
         this.timestepLine.draw(this.viewport, this.canvas);
-        this.phantomTimestamp?.draw(this.canvas);
+        this.phantomTimestamp?.draw(this.viewport, this.canvas);
     }
 }
 
@@ -328,7 +329,6 @@ class EditorGrid {
     beatLines: Array<BeatLine>;
     editor: Editor;
     transform: Transform;
-
 
     private beatLinesRange = new Vec2(1,20);
     private bpmRange = new Vec2(1,10000);

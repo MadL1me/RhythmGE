@@ -17,7 +17,11 @@ export abstract class GridElement {
         this.transform.parent = parent;
     }
 
-    abstract draw(view : Viewport, canvas : HTMLCanvasElement);
+    draw(view : Viewport, canvas : HTMLCanvasElement) {
+        if (view.outOfCanvasBounds(this.transform.position, canvas)) {
+            return;
+        }
+    }
 
     activate() {
         this.isActive = true;
@@ -28,21 +32,22 @@ export abstract class GridElement {
     }
 }
 
-export class Timestamp {    
+export class Timestamp extends GridElement {    
     
     id: number;
-    transform: Transform = new Transform();
     width: number;
-    color: RgbaColor;
 
     constructor(color: RgbaColor, x : number, y : number, width : number, parent: Transform) {
+        super(parent, color);
         this.width = width;
         this.transform.parent = parent;
         this.transform.localPosition = new Vec2(x,y);
         this.color = color;
     }
 
-    draw(canvas : HTMLCanvasElement) {
+    draw(view: Viewport, canvas : HTMLCanvasElement) {
+        super.draw(view, canvas)
+        
         const ctx = canvas.getContext('2d');
         const pos = new Vec2(this.transform.position.x, this.transform.position.y);
         const width = this.width*this.transform.parent.localScale.x;
@@ -65,6 +70,8 @@ export class CreatableTimestampLine extends GridElement {
     }
 
     draw(view: Viewport, canvas: HTMLCanvasElement) {
+        super.draw(view, canvas)
+        
         var x = this.transform.position.x + view.position.x;
         const ctx = canvas.getContext('2d');
 
@@ -89,6 +96,8 @@ export class TimestepLine extends GridElement {
     }
 
     draw(view : Viewport, canvas: HTMLCanvasElement) {
+        super.draw(view, canvas)
+        
         var x = this.transform.position.x + view.position.x;
         const ctx = canvas.getContext('2d');
 
@@ -121,6 +130,8 @@ export class BPMLine extends GridElement {
     }
 
     draw(view : Viewport, canvas : HTMLCanvasElement) {
+        super.draw(view, canvas)
+
         if (!this.isActive)
             return;
         
@@ -153,6 +164,8 @@ export class BeatLine extends GridElement {
     }
 
     draw(view: Viewport, canvas : HTMLCanvasElement) {
+        super.draw(view, canvas)
+       
         const ctx = canvas.getContext('2d');
         ctx.strokeStyle = this.color.value();
         ctx.beginPath();

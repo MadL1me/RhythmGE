@@ -163,7 +163,7 @@ export class AudioAmplitudeCanvas {
     amplitudeData = new Array<number>();
     
     readonly sampleRate = 48000;
-    divideValue = 10;
+    divideValue = 20;
     samplesPerArrayValue = this.sampleRate/this.divideValue;
 
     constructor(editor: Editor) {
@@ -204,6 +204,9 @@ export class AudioAmplitudeCanvas {
             var position = this.editor.viewport.position.x + i*this.editor.editorGrid.transform.scale.x/this.divideValue;
             var width = this.editor.editorGrid.transform.scale.x/this.divideValue;
             var gap = Math.floor(width/3);
+
+            if (gap < 4)
+                gap = 0;
 
             this.ctx.fillStyle = appSettings.loudnessBarColor.value();
             this.ctx.fillRect(position + gap, 0, width - gap, interpolated)

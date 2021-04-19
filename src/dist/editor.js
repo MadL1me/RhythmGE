@@ -28,9 +28,11 @@ var Editor = /** @class */ (function () {
         this.fastScrollingSpeed = 5;
         this.offset = 0;
         this.creatableLines = {};
+        this.canvas = jquery_1.default('#editor-canvas')[0];
+        this.ctx = this.canvas.getContext('2d');
         this.timestamps = Array(5).fill(null).map(function () { return Array(5); });
         this.transform = new Transform_1.Transform();
-        this.viewport = new Viewport_1.Viewport();
+        this.viewport = new Viewport_1.Viewport(this.canvas);
         this.viewport.gridTransform = this.transform;
         // WARNING
         this.viewport.transform.parent = this.transform;
@@ -38,8 +40,6 @@ var Editor = /** @class */ (function () {
         // WARNING
         this.transform.position = new Vec2_1.Vec2(0, 0);
         this.transform.scale = new Vec2_1.Vec2(10, 1);
-        this.canvas = jquery_1.default('#editor-canvas')[0];
-        this.ctx = this.canvas.getContext('2d');
         //this.ctx.translate(0.5,0.5);
         this.audioPlayer = new Audio_1.AudioPlayer(this);
         this.topScale = new Scale_1.TopScale(10);
@@ -63,8 +63,8 @@ var Editor = /** @class */ (function () {
         this.editorGrid.transform.localPosition = new Vec2_1.Vec2(this.offset / 100, 0);
     };
     Editor.prototype.updateLoop = function () {
-        if (!this.audioPlayer.isPlaying())
-            return;
+        //if (!this.audioPlayer.isPlaying())
+        //return;
         this.audioPlayer.update();
         this.drawEditor();
     };
@@ -161,7 +161,7 @@ var Editor = /** @class */ (function () {
         }
         var closestBeatline = this.findClosestBeatLine(click);
     };
-    Editor.prototype.canvasPlaceElementHandler = function (event) {
+    Editor.prototype.canvasPlacePhantomElementHandler = function (event) {
         if (event == null) {
             this.phantomTimestamp = null;
             return;
@@ -174,7 +174,7 @@ var Editor = /** @class */ (function () {
         if (this.inputController.keysPressed['Alt']) {
             var phantomTimestamp = new GridElements_1.Timestamp(new RgbaColor_1.RgbaColor(158, 23, 240, 0.7), click.x / this.editorGrid.transform.scale.x, closestBeatline.transform.position.y, 10, this.editorGrid.transform);
             this.phantomTimestamp = phantomTimestamp;
-            this.drawEditor();
+            //this.drawEditor();
         }
         else {
             this.phantomTimestamp = null;
@@ -221,7 +221,7 @@ var Editor = /** @class */ (function () {
         this.timestamps.forEach(function (timestamps) {
             timestamps.forEach(function (note) {
                 if (note != null) {
-                    note.draw(_this.canvas);
+                    note.draw(_this.viewport, _this.canvas);
                 }
             });
         });
@@ -235,7 +235,7 @@ var Editor = /** @class */ (function () {
             this.viewport.transform.position = result;
         }
         this.timestepLine.draw(this.viewport, this.canvas);
-        (_a = this.phantomTimestamp) === null || _a === void 0 ? void 0 : _a.draw(this.canvas);
+        (_a = this.phantomTimestamp) === null || _a === void 0 ? void 0 : _a.draw(this.viewport, this.canvas);
     };
     return Editor;
 }());

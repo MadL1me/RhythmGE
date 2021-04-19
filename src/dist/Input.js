@@ -22,7 +22,7 @@ var Input = /** @class */ (function () {
         jquery_1.default(window).on('keyup', function (event) { _this.onCanvasKeyUp(event); });
         jquery_1.default('#editor-canvas').on('wheel', function (event) { _this.onCanvasWheel(event.originalEvent); })
             .on('click', function (event) { editor.canvasClickHandle(event); })
-            .on('mousemove', function (event) { _this.onCanvasHover(event); editor.canvasPlaceElementHandler(event); });
+            .on('mousemove', function (event) { _this.onCanvasHover(event); });
         jquery_1.default('#play-button').on('click', function (event) { _this.playButtonClick(event.target); });
         jquery_1.default('#follow-line').on('change', function (event) { _this.onFollowLineChange(event); });
         jquery_1.default('#use-claps').on('change', function (event) { _this.onUseClapsValueChange(event); });
@@ -55,6 +55,10 @@ var Input = /** @class */ (function () {
         this.editor.editorGrid.setSnapValue(val);
     };
     Input.prototype.onCanvasHover = function (event) {
+        if (!this.keysPressed['Alt']) {
+            return;
+        }
+        this.editor.canvasPlacePhantomElementHandler(event);
     };
     Input.prototype.onPlaybackRateValueChange = function (value) {
         var val = parseFloat(value);
@@ -69,14 +73,14 @@ var Input = /** @class */ (function () {
         if (event.code == 'Space')
             this.editor.createCustomBpmLine();
         if (event.code == 'Alt')
-            this.editor.canvasPlaceElementHandler(event);
-        console.log('Key pressed!' + event.key);
+            this.editor.canvasPlacePhantomElementHandler(event);
+        //console.log('Key pressed!' + event.key);
     };
     Input.prototype.onCanvasKeyUp = function (event) {
         delete this.keysPressed[event.key];
         if (event.code == 'Alt')
-            this.editor.canvasPlaceElementHandler(null);
-        console.log('Key removed' + event.key);
+            this.editor.canvasPlacePhantomElementHandler(null);
+        //console.log('Key removed' + event.key);
         this.editor.drawEditor();
     };
     Input.prototype.onCanvasWheel = function (event) {

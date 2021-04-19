@@ -4,9 +4,10 @@ exports.Viewport = void 0;
 var Transform_1 = require("./Transform");
 var Vec2_1 = require("./Vec2");
 var Viewport = /** @class */ (function () {
-    function Viewport() {
+    function Viewport(editorCanvas) {
         this.transform = new Transform_1.Transform();
         this.maxDeviation = new Vec2_1.Vec2(10, 100);
+        this.editorCanvas = editorCanvas;
     }
     Object.defineProperty(Viewport.prototype, "position", {
         get: function () {
@@ -28,13 +29,16 @@ var Viewport = /** @class */ (function () {
         var pos = this.position;
         return new Vec2_1.Vec2((pos.x - canvasCoords.x) / this.gridTransform.scale.x, (pos.y - canvasCoords.y) / this.gridTransform.scale.y);
     };
-    Viewport.prototype.canvasToWorld2 = function (canvasCoords) {
-        var pos = this.position;
-        return new Vec2_1.Vec2((pos.x - canvasCoords.x), (pos.y - canvasCoords.y));
-    };
     Viewport.prototype.canvasToSongTime = function (canvasCoords) {
         var pos = this.position;
         return new Vec2_1.Vec2((canvasCoords.x - pos.x), (canvasCoords.y - pos.y));
+    };
+    Viewport.prototype.outOfCanvasBounds = function (position, canvas) {
+        var rightPos = new Vec2_1.Vec2(this.transform.position.x + canvas.width, this.transform.position.y + canvas.height);
+        return position.x < this.transform.position.x
+            || position.y < this.transform.position.y
+            || position.x > rightPos.x
+            || position.y > rightPos.y;
     };
     return Viewport;
 }());

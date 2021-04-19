@@ -8,6 +8,11 @@ export class Viewport {
     transform = new Transform(); 
     maxDeviation: Vec2 = new Vec2(10,100);
     gridTransform: Transform;
+    editorCanvas: HTMLCanvasElement;
+
+    constructor(editorCanvas){
+        this.editorCanvas = editorCanvas;
+    }
 
     get position() {
         return this.transform.position;
@@ -31,16 +36,18 @@ export class Viewport {
             (pos.y - canvasCoords.y) / this.gridTransform.scale.y);
     }
 
-    canvasToWorld2(canvasCoords : Vec2) : Vec2 {
-        const pos = this.position;
-        return new Vec2((pos.x - canvasCoords.x), 
-                        (pos.y - canvasCoords.y));
-    }
-
-
     canvasToSongTime(canvasCoords : Vec2) : Vec2 {
         const pos = this.position;
         return new Vec2((canvasCoords.x - pos.x),
                         (canvasCoords.y - pos.y));
     }  
+
+    outOfCanvasBounds(position: Vec2, canvas: HTMLCanvasElement) : boolean {
+        const rightPos = new Vec2(this.transform.position.x+canvas.width,this.transform.position.y+canvas.height);
+        
+        return position.x < this.transform.position.x 
+        || position.y < this.transform.position.y 
+        || position.x > rightPos.x 
+        || position.y > rightPos.y;
+    }
 }

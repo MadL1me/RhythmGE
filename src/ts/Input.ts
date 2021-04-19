@@ -26,7 +26,7 @@ export class Input {
 
         $('#editor-canvas').on('wheel', (event) => { this.onCanvasWheel(event.originalEvent);})
         .on('click', (event) => { editor.canvasClickHandle(event);})
-        .on('mousemove', (event) => { this.onCanvasHover(event); editor.canvasPlaceElementHandler(event);});
+        .on('mousemove', (event) => { this.onCanvasHover(event);});
         
         $('#play-button').on('click', (event) => {this.playButtonClick(event.target)})
 
@@ -67,7 +67,11 @@ export class Input {
     }
 
     onCanvasHover(event) {
-        
+        if (!this.keysPressed['Alt']) {
+            return;
+        }
+       
+        this.editor.canvasPlacePhantomElementHandler(event);
     }
 
     onPlaybackRateValueChange(value: string) {
@@ -85,15 +89,15 @@ export class Input {
         if (event.code == 'Space')
             this.editor.createCustomBpmLine();
         if (event.code == 'Alt')
-            this.editor.canvasPlaceElementHandler(event);
-        console.log('Key pressed!' + event.key);
+            this.editor.canvasPlacePhantomElementHandler(event);
+        //console.log('Key pressed!' + event.key);
     }
 
     onCanvasKeyUp(event) {
         delete this.keysPressed[event.key];
         if (event.code == 'Alt')
-            this.editor.canvasPlaceElementHandler(null);
-        console.log('Key removed' + event.key);
+            this.editor.canvasPlacePhantomElementHandler(null);
+        //console.log('Key removed' + event.key);
         this.editor.drawEditor();
     }
 

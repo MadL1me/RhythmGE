@@ -118,7 +118,7 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
     function AudioAmplitudeCanvas(editor) {
         this.amplitudeData = new Array();
         this.sampleRate = 48000;
-        this.divideValue = 10;
+        this.divideValue = 20;
         this.samplesPerArrayValue = this.sampleRate / this.divideValue;
         this.editor = editor;
         this.audio = editor.audioPlayer;
@@ -149,6 +149,8 @@ var AudioAmplitudeCanvas = /** @class */ (function () {
             var position = this.editor.viewport.position.x + i * this.editor.editorGrid.transform.scale.x / this.divideValue;
             var width = this.editor.editorGrid.transform.scale.x / this.divideValue;
             var gap = Math.floor(width / 3);
+            if (gap < 4)
+                gap = 0;
             this.ctx.fillStyle = AppSettings_1.appSettings.loudnessBarColor.value();
             this.ctx.fillRect(position + gap, 0, width - gap, interpolated);
             this.ctx.fill();
