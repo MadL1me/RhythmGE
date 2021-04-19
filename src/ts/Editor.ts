@@ -91,9 +91,13 @@ export class Editor {
         this.editorGrid.transform.localPosition = new Vec2(this.offset/100, 0);
     }
 
+
     updateLoop() {
         //if (!this.audioPlayer.isPlaying())
             //return;
+
+        this.inputController.update();
+        this.canvasPlacePhantomElementHandler();
 
         this.audioPlayer.update();
         this.drawEditor();
@@ -226,27 +230,18 @@ export class Editor {
         var closestBeatline = this.findClosestBeatLine(click);
     }
 
-    canvasPlacePhantomElementHandler(event) {        
-        if (event == null) {
-            this.phantomTimestamp = null;
-            return;
-        }
-        
-        const rect = this.canvas.getBoundingClientRect();
-        const clickX = event.clientX - rect.left;
-        const clickY = event.clientY - rect.top;
-        const click = new Vec2(clickX, clickY);
-        
-        var closestBeatline = this.findClosestBeatLine(click);
-
+    canvasPlacePhantomElementHandler() {                
         if (this.inputController.keysPressed['Alt']) {
-            var phantomTimestamp = new Timestamp(new RgbaColor(158,23,240, 0.7), click.x / this.editorGrid.transform.scale.x, closestBeatline.transform.position.y, 10, this.editorGrid.transform);
-            this.phantomTimestamp = phantomTimestamp;
-            //this.drawEditor();
+            const rect = this.canvas.getBoundingClientRect();
+            const clickX = this.inputController.mousePosition.x - rect.left;
+            const clickY = this.inputController.mousePosition.y - rect.top;
+            const click = new Vec2(clickX, clickY);
+            
+            var closestBeatline = this.findClosestBeatLine(click);
+            this.phantomTimestamp = new Timestamp(new RgbaColor(158,23,240, 0.7), click.x / this.editorGrid.transform.scale.x, closestBeatline.transform.position.y, 10, this.editorGrid.transform);
         }
         else {
             this.phantomTimestamp = null;
-            this.drawEditor();
         }
     }
 
@@ -305,13 +300,13 @@ export class Editor {
 
         if (this.audioPlayer.isPlaying()){
             this.timestepLine.transform.localPosition = new Vec2(this.audioPlayer.sound.seek(), 0);
+        
+            if (this.followingLine) {
+                const result = new Vec2(-this.timestepLine.transform.position.x+this.canvas.width/2, 1);
+                this.viewport.transform.position = result;
+            }
         }
-
-        if (this.followingLine) {
-            const result = new Vec2(-this.timestepLine.transform.position.x+this.canvas.width/2, 1);
-            this.viewport.transform.position = result;
-        }
-
+        
         this.timestepLine.draw(this.viewport, this.canvas);
         this.phantomTimestamp?.draw(this.viewport, this.canvas);
     }

@@ -65,6 +65,8 @@ var Editor = /** @class */ (function () {
     Editor.prototype.updateLoop = function () {
         //if (!this.audioPlayer.isPlaying())
         //return;
+        this.inputController.update();
+        this.canvasPlacePhantomElementHandler();
         this.audioPlayer.update();
         this.drawEditor();
     };
@@ -161,24 +163,17 @@ var Editor = /** @class */ (function () {
         }
         var closestBeatline = this.findClosestBeatLine(click);
     };
-    Editor.prototype.canvasPlacePhantomElementHandler = function (event) {
-        if (event == null) {
-            this.phantomTimestamp = null;
-            return;
-        }
-        var rect = this.canvas.getBoundingClientRect();
-        var clickX = event.clientX - rect.left;
-        var clickY = event.clientY - rect.top;
-        var click = new Vec2_1.Vec2(clickX, clickY);
-        var closestBeatline = this.findClosestBeatLine(click);
+    Editor.prototype.canvasPlacePhantomElementHandler = function () {
         if (this.inputController.keysPressed['Alt']) {
-            var phantomTimestamp = new GridElements_1.Timestamp(new RgbaColor_1.RgbaColor(158, 23, 240, 0.7), click.x / this.editorGrid.transform.scale.x, closestBeatline.transform.position.y, 10, this.editorGrid.transform);
-            this.phantomTimestamp = phantomTimestamp;
-            //this.drawEditor();
+            var rect = this.canvas.getBoundingClientRect();
+            var clickX = this.inputController.mousePosition.x - rect.left;
+            var clickY = this.inputController.mousePosition.y - rect.top;
+            var click = new Vec2_1.Vec2(clickX, clickY);
+            var closestBeatline = this.findClosestBeatLine(click);
+            this.phantomTimestamp = new GridElements_1.Timestamp(new RgbaColor_1.RgbaColor(158, 23, 240, 0.7), click.x / this.editorGrid.transform.scale.x, closestBeatline.transform.position.y, 10, this.editorGrid.transform);
         }
         else {
             this.phantomTimestamp = null;
-            this.drawEditor();
         }
     };
     Editor.prototype.findClosestCreatableLine = function () {
@@ -229,10 +224,10 @@ var Editor = /** @class */ (function () {
         this.topScale.draw(this.canvas);
         if (this.audioPlayer.isPlaying()) {
             this.timestepLine.transform.localPosition = new Vec2_1.Vec2(this.audioPlayer.sound.seek(), 0);
-        }
-        if (this.followingLine) {
-            var result = new Vec2_1.Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 1);
-            this.viewport.transform.position = result;
+            if (this.followingLine) {
+                var result = new Vec2_1.Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 1);
+                this.viewport.transform.position = result;
+            }
         }
         this.timestepLine.draw(this.viewport, this.canvas);
         (_a = this.phantomTimestamp) === null || _a === void 0 ? void 0 : _a.draw(this.viewport, this.canvas);

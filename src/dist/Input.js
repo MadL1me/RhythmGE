@@ -13,7 +13,8 @@ var Input = /** @class */ (function () {
         this.snapSlider = new Utils_1.Slider('snap-lines');
         this.volumeSlider = new Utils_1.Slider('volume-slider');
         this.playbackSlider = new Utils_1.Slider('playback-rate');
-        this.canvMousePosition = new Vec2_1.Vec2(0, 0);
+        this.lastMousePosition = new Vec2_1.Vec2(0, 0);
+        this.mousePosition = new Vec2_1.Vec2(0, 0);
         this.keysPressed = [];
         this.editor = editor;
         jquery_1.default('#files').on('change', function (event) { _this.onAudioLoad(event); });
@@ -38,6 +39,12 @@ var Input = /** @class */ (function () {
         this.playbackSlider.onValueChange.addListener(function (value) { _this.onPlaybackRateValueChange(value); });
         this.snapSlider.onValueChange.addListener(function (value) { _this.onSnapSliderValueChange(value); });
     }
+    Input.prototype.isMouseMoved = function () {
+        return this.lastMousePosition == this.mousePosition;
+    };
+    Input.prototype.update = function () {
+        this.lastMousePosition = this.mousePosition;
+    };
     Input.prototype.onAudioLoad = function (event) {
         var files = event.target.files;
         var file = files[0];
@@ -55,10 +62,7 @@ var Input = /** @class */ (function () {
         this.editor.editorGrid.setSnapValue(val);
     };
     Input.prototype.onCanvasHover = function (event) {
-        if (!this.keysPressed['Alt']) {
-            return;
-        }
-        this.editor.canvasPlacePhantomElementHandler(event);
+        this.mousePosition = new Vec2_1.Vec2(event.clientX, event.clientY);
     };
     Input.prototype.onPlaybackRateValueChange = function (value) {
         var val = parseFloat(value);
@@ -69,18 +73,17 @@ var Input = /** @class */ (function () {
         this.editor.onPlayButtonClick(btn);
     };
     Input.prototype.onCanvasKeyDown = function (event) {
+        event.preventDefault();
         this.keysPressed[event.key] = true;
         if (event.code == 'Space')
             this.editor.createCustomBpmLine();
         if (event.code == 'Alt')
-            this.editor.canvasPlacePhantomElementHandler(event);
-        //console.log('Key pressed!' + event.key);
+            this.editor.canvasPlacePhantomElementHandler();
+        console.log('Key pressed!' + event.key);
     };
     Input.prototype.onCanvasKeyUp = function (event) {
         delete this.keysPressed[event.key];
-        if (event.code == 'Alt')
-            this.editor.canvasPlacePhantomElementHandler(null);
-        //console.log('Key removed' + event.key);
+        console.log('Key removed' + event.key);
         this.editor.drawEditor();
     };
     Input.prototype.onCanvasWheel = function (event) {

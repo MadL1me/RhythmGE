@@ -12,9 +12,10 @@ export class Input {
     private volumeSlider = new Slider('volume-slider');
     private playbackSlider = new Slider('playback-rate');
 
-    canvMousePosition = new Vec2(0,0);
+    private lastMousePosition = new Vec2(0,0)
+    mousePosition = new Vec2(0,0);
     keysPressed = [];
-
+    
     constructor(editor: Editor) {
         this.editor = editor;
 
@@ -47,6 +48,14 @@ export class Input {
         this.snapSlider.onValueChange.addListener((value) => { this.onSnapSliderValueChange(value); });
     }
 
+    isMouseMoved() : boolean {
+        return this.lastMousePosition == this.mousePosition;
+    }
+
+    update() {
+        this.lastMousePosition = this.mousePosition;
+    }
+
     onAudioLoad(event) {
         var files = event.target.files;
         var file = files[0];
@@ -67,11 +76,7 @@ export class Input {
     }
 
     onCanvasHover(event) {
-        if (!this.keysPressed['Alt']) {
-            return;
-        }
-       
-        this.editor.canvasPlacePhantomElementHandler(event);
+        this.mousePosition = new Vec2(event.clientX, event.clientY);
     }
 
     onPlaybackRateValueChange(value: string) {
@@ -85,19 +90,18 @@ export class Input {
     }
 
     onCanvasKeyDown(event) {
+        event.preventDefault();
         this.keysPressed[event.key] = true;
         if (event.code == 'Space')
             this.editor.createCustomBpmLine();
         if (event.code == 'Alt')
-            this.editor.canvasPlacePhantomElementHandler(event);
-        //console.log('Key pressed!' + event.key);
+            this.editor.canvasPlacePhantomElementHandler();
+        console.log('Key pressed!' + event.key);
     }
 
     onCanvasKeyUp(event) {
         delete this.keysPressed[event.key];
-        if (event.code == 'Alt')
-            this.editor.canvasPlacePhantomElementHandler(null);
-        //console.log('Key removed' + event.key);
+        console.log('Key removed' + event.key);
         this.editor.drawEditor();
     }
 
