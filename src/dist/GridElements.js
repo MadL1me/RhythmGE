@@ -42,18 +42,18 @@ var GridElement = /** @class */ (function () {
 exports.GridElement = GridElement;
 var Timestamp = /** @class */ (function (_super) {
     __extends(Timestamp, _super);
-    function Timestamp(color, x, y, width, parent) {
+    function Timestamp(color, localPosition, width, parent) {
         var _this = _super.call(this, parent, color) || this;
         _this.width = width;
         _this.transform.parent = parent;
-        _this.transform.localPosition = new Vec2_1.Vec2(x, y);
+        _this.transform.localPosition = localPosition;
         _this.color = color;
         return _this;
     }
     Timestamp.prototype.draw = function (view, canvas) {
         _super.prototype.draw.call(this, view, canvas);
         var ctx = canvas.getContext('2d');
-        var pos = new Vec2_1.Vec2(this.transform.position.x, this.transform.position.y);
+        var pos = new Vec2_1.Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
         var width = this.width * this.transform.parent.localScale.x;
         ctx.fillStyle = this.color.value();
         ctx.beginPath();
