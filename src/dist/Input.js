@@ -22,7 +22,7 @@ var Input = /** @class */ (function () {
         jquery_1.default(window).on('keydown', function (event) { _this.onCanvasKeyDown(event); });
         jquery_1.default(window).on('keyup', function (event) { _this.onCanvasKeyUp(event); });
         jquery_1.default('#editor-canvas').on('wheel', function (event) { _this.onCanvasWheel(event.originalEvent); })
-            .on('click', function (event) { editor.canvasClickHandle(event); })
+            .on('click', function (event) { editor.canvasMouseClickHandle(event); })
             .on('mousemove', function (event) { _this.onCanvasHover(event); });
         jquery_1.default('#play-button').on('click', function (event) { _this.playButtonClick(event.target); });
         jquery_1.default('#follow-line').on('change', function (event) { _this.onFollowLineChange(event); });
@@ -73,12 +73,16 @@ var Input = /** @class */ (function () {
         this.editor.onPlayButtonClick(btn);
     };
     Input.prototype.onCanvasKeyDown = function (event) {
-        event.preventDefault();
+        if (event.key == 'Alt') {
+            console.log("prevent default");
+            event.preventDefault();
+        }
         this.keysPressed[event.key] = true;
         if (event.code == 'Space')
             this.editor.createCustomBpmLine();
-        if (event.code == 'Alt')
+        if (event.key == 'Alt') {
             this.editor.canvasPlacePhantomElementHandler();
+        }
         console.log('Key pressed!' + event.key);
     };
     Input.prototype.onCanvasKeyUp = function (event) {

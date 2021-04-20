@@ -26,7 +26,7 @@ export class Input {
         $(window).on('keyup', (event) => { this.onCanvasKeyUp(event);});
 
         $('#editor-canvas').on('wheel', (event) => { this.onCanvasWheel(event.originalEvent);})
-        .on('click', (event) => { editor.canvasClickHandle(event);})
+        .on('click', (event) => { editor.canvasMouseClickHandle(event);})
         .on('mousemove', (event) => { this.onCanvasHover(event);});
         
         $('#play-button').on('click', (event) => {this.playButtonClick(event.target)})
@@ -90,12 +90,17 @@ export class Input {
     }
 
     onCanvasKeyDown(event) {
-        event.preventDefault();
+        if (event.key == 'Alt') {
+            console.log("prevent default");
+            event.preventDefault();
+        }
+
         this.keysPressed[event.key] = true;
         if (event.code == 'Space')
             this.editor.createCustomBpmLine();
-        if (event.code == 'Alt')
+        if (event.key == 'Alt') {
             this.editor.canvasPlacePhantomElementHandler();
+        }
         console.log('Key pressed!' + event.key);
     }
 
