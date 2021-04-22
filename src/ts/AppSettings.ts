@@ -1,8 +1,6 @@
 import { RgbaColor } from "./RgbaColor";
 
-
-
-export const appSettings = new class AppSettings {
+export const editorColorSettings = new class EditorColorSettings {
     editorBackgroundColor = new RgbaColor(73, 75, 90);
     beatLineColor = new RgbaColor(130, 130, 130); // (74, 74, 74)
     mainBpmLineColorStrong = new RgbaColor(255,255,255);  //(92, 92, 92);

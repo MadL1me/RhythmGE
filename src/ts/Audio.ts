@@ -1,45 +1,65 @@
-import { Slider } from "./Utils";
-import { Editor } from "./Editor";
+import { Slider, Event, Action, EmptyAction } from "./Utils";
+import { Editor, IEditorModule, IEditorCore, EditorData} from "./Editor";
 import { Vec2 } from "./Vec2";
-import { appSettings } from "./AppSettings";
+import { editorColorSettings } from "./AppSettings";
+import { IDrawable } from "./GridElements";
+
 import $ from 'jquery';
+import { ViewportModule } from "./Viewport";
+import { Transform } from "./Transform";
+import { throws } from "node:assert";
 
 const { Howl, Howler } = require('howler');
 
-export enum TimeAccuracy {
+enum TimeAccuracy {
     seconds, 
     milliseconds
 }
 
-export class AudioPlayerView {
+class AudioPlayerView {
     
-    private playButton: HTMLButtonElement;
     private audioFileName: HTMLParagraphElement;
     private audioCurrentTime: HTMLParagraphElement;
     private audioDuration: HTMLParagraphElement;
     
-    private songTimeSlider: Slider;
-    private snapSlider = new Slider('snap-lines');
+    private songTimeSlider = new Slider('audio-slider');
     private volumeSlider = new Slider('volume-slider');
+    private audioController: AudioModule;
+
+    onVolumeSliderChange = new Event<number>();
+    onPlayButtonClick = new Event<boolean>();
 
     constructor() {
         this.audioFileName = $('#file-name')[0] as HTMLParagraphElement;
         this.audioCurrentTime = $('#current-audio-time')[0] as  HTMLParagraphElement;
         this.audioDuration = $('#audio-duration')[0] as HTMLParagraphElement;
 
-        this.songTimeSlider = new Slider('audio-slider');
+        this.volumeSlider.onValueChange.addListener((value) => {this.onVolumeSliderChange.invoke(value)})
+        $('#play-button').on('click', (event) => { this.onPlayClick(event.target)})
     }
 
     onAudioLoad(fileName: string, duration: number) {
         this.audioFileName.innerHTML = fileName;
         this.audioCurrentTime.innerHTML = '0:00';
         this.audioDuration.innerHTML = this.formatTime(duration, TimeAccuracy.seconds);
-        this.songTimeSlider.setMaxValue(duration*100);
+        this.songTimeSlider.maxValue = duration*100;
     }
 
     update(currentTime: number) {
         this.audioCurrentTime.innerHTML = this.formatTime(currentTime, TimeAccuracy.seconds);
-        this.songTimeSlider.setValue(currentTime*100);
+        this.songTimeSlider.value = currentTime*100;
+    }
+
+    private onPlayClick(playBtn) {
+        playBtn.classList.add('paused');
+
+        if (this.audioController.isPlaying() == true) {
+            playBtn.classList.remove('paused');
+            this.audioController.pause();
+        }
+        else {
+            this.audioController.play();
+        }
     }
     
     private formatTime(time: number, accuracy: TimeAccuracy) : string {
@@ -57,123 +77,158 @@ export class AudioPlayerView {
     }
 }
 
-export class AudioPlayer {
 
-    sound : any;
-    soundId : number;
-    clapSoundId: number;
-    analyser : AnalyserNode;
-    editor: Editor;
+export interface IAudioModule extends IEditorModule {
+    onAudioLoaded: Event<[number, string]>;
+    onLoad: Event<number>;
+    onSeek: Event<number>;
+    onPlay: Event<number>;
+    onStop: Event<number>;
     bufferSource: AudioBufferSourceNode;
-    view = new AudioPlayerView();
-    songPos: number;
 
+    loadAudio(fileName: string, soundPath : string);
+    setPlaybackRate(value: number);
+
+    duration(): number;
+    isAudioLoaded() : boolean;
+    isPlaying(): boolean;
+
+    play();
+    pause();
+    seek();
+
+    getDomainData() : Float32Array
+    setMusicFromCanvasPosition(position : Vec2, editor : IEditorCore) 
+}
+
+export class AudioModule implements IAudioModule {
+
+    transform: Transform;
+
+    private _howl : any;
+    private _soundId : number;
+    private _clapSoundId: number;
+    private _analyser : AnalyserNode;
+    private _bufferSource: AudioBufferSourceNode;
+    private _view = new AudioPlayerView();
+    private _editorCore: IEditorCore;
     
-    constructor(editor: Editor) {
-        this.editor = editor;
+    onAudioLoaded = new Event<[number, string]>();
+    onLoad = new Event<number>();
+    onSeek = new Event<number>();
+    onPlay = new Event<number>();
+    onStop = new Event<number>();
+
+    get bufferSource() {
+        return this._bufferSource;
     }
 
-    onSoundLoad(fileName: string, soundPath : string) {
-        this.sound = new Howl({src:[soundPath]});
-        
-        this.analyser = Howler.ctx.createAnalyser();
-        this.analyser.fftSize = 256;
+    duration() : number {
+        return this._howl.duration();
+    }
 
-        this.sound.on('load', () => {
-            //this.soundId = this.sound.play();
-            //this.sound.stop();
-            this.view.onAudioLoad(fileName, this.sound.duration());
+    loadAudio(fileName: string, soundPath : string) {
+        this._howl = new Howl({src:[soundPath]});
+        
+        this._analyser = Howler.ctx.createAnalyser();
+        this._analyser.fftSize = 256;
+
+        this._howl.on('load', () => {
+            this._view.onAudioLoad(fileName, this._howl.duration());
         })
 
-        this.sound.on('play', () => {
-            this.setupEditor();
+        this._howl.on('play', (id) => {
+            this.setupData();
+            this.onPlay.invoke(id);
         });
 
-        this.sound.on('seek', () => {
-            this.setupEditor();
+        this._howl.on('seek', (id) => {
+            this.onSeek.invoke(id);
         });
 
-        this.sound.on('stop', () => {
-            //setupEditor();
+        this._howl.on('stop', (id) => {
+            this.onStop.invoke(id);
         });
 
     }
 
     setVolume(value: number) {
-        this.sound.volume([value]);
+        this._howl.volume([value]);
     }
 
-    update() {
-        this.view.update(this.sound.seek());
+    init(editorCoreModules: IEditorCore) {
+        this._editorCore = editorCoreModules;
+    }
+
+    updateModule() {
+        this._view.update(this._howl.seek());
     }
 
     setPlaybackRate(value: number) {
-        console.log(value);
-        this.sound.rate([value]);
+        this._howl.rate([value]);
     }
 
-    private setupEditor() {
-        this.bufferSource = this.sound._soundById(this.soundId)._node.bufferSource;
-        this.sound._soundById(this.soundId)._node.bufferSource.connect(this.analyser) 
-        editor.audioCanvas.onAudioLoad(this);
-        editor.drawEditor();
+    isAudioLoaded() : boolean {
+        return false;
     }
 
-    isPlaying() : Boolean {
-        if (this.sound == undefined || this.sound == null)
+    isPlaying() : boolean {
+        if (this._howl == undefined || this._howl == null)
             return false;
-        return this.sound.playing([this.soundId]);
+        return this._howl.playing([this._soundId]);
     }
 
-    play() : void {
-        this.soundId = this.sound.play();
+    play() {
+        this._soundId = this._howl.play();
     }
     
-    pause() : void {
-        this.sound.pause();
+    pause() {
+        this._howl.pause();
     }
 
-    playClapSound() : void {
-        
+    seek() {
+
     }
 
-    setMusicFromCanvasPosition(position : Vec2, editor : Editor) : void {
+    setMusicFromCanvasPosition(position : Vec2, editor : IEditorCore) {
         var second = editor.viewport.canvasToSongTime(position).x/editor.transform.scale.x;
-        this.sound.seek([second]);
-    }
-
-    setMusicFromTimePosition() : void {
-
+        this._howl.seek([second]);
     }
 
     getDomainData() : Float32Array {
-        var dataArray = new Float32Array(this.analyser.frequencyBinCount);
-        this.analyser.getFloatTimeDomainData(dataArray);
+        var dataArray = new Float32Array(this._analyser.frequencyBinCount);
+        this._analyser.getFloatTimeDomainData(dataArray);
         return dataArray;
+    }
+
+    private setupData() {
+        this._bufferSource = this._howl._soundById(this._soundId)._node.bufferSource;
+        this._howl._soundById(this._soundId)._node.bufferSource.connect(this._analyser) 
     }
 }
 
-export class AudioAmplitudeCanvas {
+export class AudioAmplitudeViewModule implements IEditorModule {
+   
+    transform = new Transform();
+   
+    private canvas : HTMLCanvasElement;
+    private ctx : CanvasRenderingContext2D;
     
-    canvas : HTMLCanvasElement;
-    ctx : CanvasRenderingContext2D;
-    editor: Editor;
-    audio: AudioPlayer;
-    data: Float32Array;
-    amplitudeData = new Array<number>();
+    private analyserData: Float32Array;
+    private amplitudeData = new Array<number>();
     
-    readonly sampleRate = 48000;
-    divideValue = 20;
-    samplesPerArrayValue = this.sampleRate/this.divideValue;
+    private readonly sampleRate = 48000;
+    private divideValue = 20;
+    private samplesPerArrayValue = this.sampleRate/this.divideValue;
+    private editorCore: IEditorCore;
 
-    constructor(editor: Editor) {
-        this.editor = editor;
-        this.audio = editor.audioPlayer;
+    constructor(parent: Transform) {
+        this.transform.parent = parent;
         this.canvas = $('#audio-amplitude-canvas')[0] as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d');
     }
 
-    onWindowResize(event: UIEvent) : void {
+    onWindowResize(event: UIEvent) {
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
 
@@ -183,17 +238,23 @@ export class AudioAmplitudeCanvas {
         this.canvas.setAttribute('height', (info.height/4).toString());
     }
 
-    onAudioLoad(audio: AudioPlayer) : void {        
-        this.data = audio.bufferSource.buffer.getChannelData(0);
+    onAudioLoad(audio: AudioModule) {        
+        this.analyserData = audio.bufferSource.buffer.getChannelData(0);
         this.calculateAmplitudeArray();
     }
 
-    draw() : void {
+    init(editorCore: IEditorCore){
+        this.editorCore = editorCore;
+    } 
+
+    updateModule() {
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
+        this.ctx.fillStyle = editorColorSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
 
-        if (this.data == undefined || this.data == null)
+        const view = this.editorCore.viewport;
+
+        if (this.analyserData == undefined || this.analyserData == null)
             return;
 
         if (this.amplitudeData == undefined || this.amplitudeData == null)
@@ -201,14 +262,14 @@ export class AudioAmplitudeCanvas {
 
         for (var i = 0; i<this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i]*this.canvas.height;
-            var position = this.editor.viewport.position.x + i*this.editor.editorGrid.transform.scale.x/this.divideValue;
-            var width = this.editor.editorGrid.transform.scale.x/this.divideValue;
+            var position = view.position.x + i*this.transform.scale.x/this.divideValue;
+            var width = this.transform.scale.x/this.divideValue;
             var gap = Math.floor(width/3);
 
             if (gap < 4)
                 gap = 0;
 
-            this.ctx.fillStyle = appSettings.loudnessBarColor.value();
+            this.ctx.fillStyle = editorColorSettings.loudnessBarColor.value();
             this.ctx.fillRect(position + gap, 0, width - gap, interpolated)
             this.ctx.fill();
         }
@@ -217,32 +278,17 @@ export class AudioAmplitudeCanvas {
     private calculateAmplitudeArray() {
         this.amplitudeData = [];
         
-        for (var i = 0; i<this.data.length; i+=this.samplesPerArrayValue) {
+        for (var i = 0; i<this.analyserData.length; i+=this.samplesPerArrayValue) {
             var value = this.getAvarageAtRange(i, i+this.samplesPerArrayValue);
             this.amplitudeData.push(value);
         }
     }
 
-    private getAmplitudeBarWitdh() : number {
-        return this.editor.transform.scale.x * this.samplesPerArrayValue / this.sampleRate;
-    }
-
-    private getMaxAtRange(from: number, to: number) : number {
-        var max = -10;
-        
-        for (var i = from; i<to && i<this.data.length; i++) {
-            if (Math.abs(this.data[i]) >= max) {
-                max = Math.abs(this.data[i]);
-            }
-        }
-        return max;
-    }
-
     private getAvarageAtRange(from: number, to: number) : number {
         var result = 0;
         
-        for (var i = from; i<to && i<this.data.length; i++) {
-            result += Math.abs(this.data[i]);
+        for (var i = from; i<to && i<this.analyserData.length; i++) {
+            result += Math.abs(this.analyserData[i]);
         }
 
         result = result/(to-from);

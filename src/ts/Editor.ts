@@ -1,6 +1,3 @@
-/// <reference path ='../../node_modules/@types/jquery/jquery.d.ts'/>
-/// <reference path='RgbaColor.ts'/>
-
 import { throws } from 'node:assert';
 import { format } from 'node:path';
 import { off } from 'node:process';
@@ -11,168 +8,173 @@ import { RgbaColor } from "./RgbaColor";
 import { Vec2 } from "./Vec2";
 import { Transform } from "./Transform";
 import { TopScale, LeftScale, BottomScale } from "./Scale";
-import { BPMLine, CreatableTimestampLine, Timestamp, TimestepLine, BeatLine, GridElement } from "./GridElements";
-import { Viewport } from "./Viewport";
-import { appSettings } from "./AppSettings";
+import { BPMLine, CreatableTimestampLine, Timestamp, TimestepLine, BeatLine, GridElement, IDrawable } from "./GridElements";
+import { ViewportModule, IViewportModule } from "./Viewport";
+import { editorColorSettings } from "./AppSettings";
 import { Input } from "./Input";
-import { Slider } from "./Utils";
-import { AudioAmplitudeCanvas, AudioPlayer } from "./Audio";
+import { Slider, Utils, Event } from "./Utils";
+import { AudioAmplitudeViewModule, AudioModule, IAudioModule } from "./Audio";
 
-export class Editor {
-
-    usingClaps: boolean = false;
-    followingLine: boolean = false;
-    hideBpmLines: boolean = false;
-    hideCreatableLines: boolean = false;
-
-    audioLoaded: boolean = false;
-    scrollingSpeed: number = 0.2;
-    resizingSpeed: number = 0.01;
-    fastScrollingSpeed: number = 5;
-    offset: number = 0;
-
-    creatableLines = {};
-    timestamps = {};
-    canvas: HTMLCanvasElement;
-    ctx: CanvasRenderingContext2D;
-
-    viewport: Viewport;
+export interface IEditorCore {
     transform: Transform;
-    topScale: TopScale;
-    leftScale: LeftScale;
-    bottomScale: BottomScale;
-    editorGrid: EditorGrid;
-    audioCanvas: AudioAmplitudeCanvas;
-    audioPlayer: AudioPlayer;
-    timestepLine: TimestepLine;
-    inputController: Input;
+    audio : IAudioModule;
+    viewport: IViewportModule;
+    editorData: EditorData;
+}
 
-    phantomTimestamp: Timestamp;
+export interface IEditorModule {
+    transform: Transform;
+    init(editorCoreModules: IEditorCore)
+    updateModule();
+}
+
+class EventVar<T> {
+    private _value: T;
+
+    readonly onValueChange = new Event<T>();
+
+    constructor(initialValue: T) {
+        this._value = initialValue;
+    }
+
+    get value() {
+        return this._value;
+    }
+
+    set value(value: T) {
+        this._value = value;
+        this.onValueChange.invoke(value);
+    }
+}
+
+export class EditorData {
+    private snapSlider = new Slider('snap-lines');
+    private playbackSpeedSlider = new Slider('playback-rate');
+    
+    readonly useClaps = new EventVar<boolean>(false);
+    readonly followLine = new EventVar<boolean>(false);
+    readonly hideBpmLines = new EventVar<boolean>(false);
+    readonly hideCreatableLines = new EventVar<boolean>(false);
+    
+    readonly scrollingSpeed = new EventVar<number>(0.2);
+    readonly resizingSpeed = new EventVar<number>(0.01);
+    readonly fastScrollingSpeed = new EventVar<number>(5);
+    readonly offset = new EventVar<number>(0);
+    readonly bpmValue = new EventVar<number>(60);
+    readonly beatLinesCount = new EventVar<number>(5);
+    readonly snapValue = new EventVar<number>(0);
+    readonly playbackRate = new EventVar<number>(1);
+
+    readonly audioFile = new EventVar<[string, string]>(null);
 
     constructor() {
-        this.canvas = $('#editor-canvas')[0] as HTMLCanvasElement;
-        this.ctx = this.canvas.getContext('2d');
-        this.transform = new Transform();
+        $('#files').on('change', (event) => { this.onAudioLoad(event); });
 
-        this.viewport = new Viewport(this.canvas);
-        this.viewport.gridTransform = this.transform;
+        $('#follow-line').on('change', (event) => { this.followLine.value = (event.target as HTMLInputElement).checked; })
+        $('#use-claps').on('change', (event) => { this.useClaps.value = (event.target as HTMLInputElement).checked; })
+        $('#hide-bpm').on('change', (event) => { this.hideBpmLines.value = (event.target as HTMLInputElement).checked;})
+        $('#hide-creatable').on('change', (event) => { this.hideCreatableLines.value = (event.target as HTMLInputElement).checked;})
+        $('#beat-lines').on('change', (event) => { this.beatLinesCount.value = parseInt((event.target as HTMLInputElement).value);})
+        $('#bpm').on('change', (event) => { this.bpmValue.value = parseInt((event.target as HTMLInputElement).value); })
+        $('#offset').on('change', (event) => { this.offset.value = parseInt((event.target as HTMLInputElement).value);})
+    
+        this.playbackSpeedSlider.value = 1;
+        this.snapSlider.value = 1;
+        
+        this.playbackSpeedSlider.onValueChange.addListener((value) => { this.onPlaybackRateValueChange(value); });
+        this.snapSlider.onValueChange.addListener((value) => { this.onSnapSliderValueChange(value); });
+    }
 
-        // WARNING
-        this.viewport.transform.parent = this.transform;
-        this.viewport.transform.position = new Vec2(-10, 0);
-        // WARNING
+    private onAudioLoad(event) {
+        const files = event.target.files;
+        const  file = files[0];
 
-        this.transform.position = new Vec2(0, 0);
+        this.audioFile.value = [file.name, file.path];
+        console.log(files[0]);
+    }
+
+    private onPlaybackRateValueChange(value: number) {
+        $('#playback-rate-text')[0].innerText =  'Playback rate ' + value.toString() + 'x';
+        this.playbackRate.value = value;
+    }
+
+    private onSnapSliderValueChange(value: number) {
+        value = Math.pow(2, value);
+        $('#snap-lines-text')[0].innerText = 'Snap lines 1/' + value.toString();
+        this.snapValue.value = value;
+    }
+} 
+
+export class Editor implements IEditorCore {
+    transform = new Transform();
+    
+    viewport = new ViewportModule(this.transform);
+    editorData = new EditorData();
+    audio = new AudioModule();
+
+    private editorModules = new Array<IEditorModule>();
+    private editorCanvas: HTMLCanvasElement;
+
+    constructor() {
+        this.viewport.init(this);
+        this.audio.init(this);
+        this.editorCanvas = $("editor-canvas")[0] as HTMLCanvasElement;
         this.transform.scale = new Vec2(10, 1);
-        //this.ctx.translate(0.5,0.5);
-
-        this.audioPlayer = new AudioPlayer(this);
-        this.topScale = new TopScale(10);
-        this.leftScale = new LeftScale(10);
-        this.bottomScale = new BottomScale(10);
-        this.editorGrid = new EditorGrid(this, this.canvas);
-        this.audioCanvas = new AudioAmplitudeCanvas(this);
-        this.timestepLine = new TimestepLine(this.transform, appSettings.timestepLineColor);
-        this.drawEditor();
+        this.update();
     }
 
-    changeBeatlinesCount(beatLines) {
-        this.editorGrid.setBeatLinesCount(beatLines);
-        this.drawEditor();
+    addEditorModule(element: IEditorModule) {
+        this.editorModules.push(element)
     }
 
-    changeBpmValue(bpm) {
-        this.editorGrid.setBpmValue(bpm);
-        this.drawEditor();
-    }
+    update() {
+        Input.update();
+        this.audio.updateModule();
 
-    changeOffset(offset) {
-        this.offset = parseInt(offset.target.value);
-        this.editorGrid.transform.localPosition = new Vec2(this.offset / 100, 0);
-    }
+        console.log("ABC");
 
+        const ctx = this.editorCanvas.getContext("2d");
+        ctx.fillStyle = "green";
+        ctx.fillRect(0, 0, this.editorCanvas.width, this.editorCanvas.height)
 
-    updateLoop() {
-        this.inputController.update();
-        this.canvasPlacePhantomElementHandler();
-
-        this.audioPlayer.update();
-        this.drawEditor();
-    }
-
-    onAudioLoad(fileName: string, audioPath: string) {
-        this.audioPlayer.onSoundLoad(fileName, audioPath);
-        this.timestepLine.transform.parent = this.transform;
-
-        this.audioPlayer.sound.on('load', () => {
-            this.audioLoaded = true;
-            this.editorGrid.initBpmLines();
-            this.drawEditor();
-        })
+        for(let i = 0; i<this.editorModules.length; i++) {
+            this.editorModules[i].updateModule();
+        }
     }
 
     onPlayButtonClick(playBtn) {
         playBtn.classList.add('paused');
 
-        if (this.audioPlayer.isPlaying() == true) {
+        if (this.audio.isPlaying() == true) {
             playBtn.classList.remove('paused');
-            this.audioPlayer.pause();
+            this.audio.pause();
         }
         else {
-            this.audioPlayer.play();
+            this.audio.play();
         }
-    }
-
-    onPause() {
-        if (this.audioPlayer.isPlaying() == false)
-            return;
-
-        this.audioPlayer.sound.pause();
     }
 
     onCanvasScroll(mouseDelta: number, isSpeededUp: boolean) {
-        if (this.followingLine)
+        if (this.editorData.followLine)
             return;
 
-        var resultedDelta = mouseDelta * this.scrollingSpeed / this.transform.scale.x;
+        var resultedDelta = mouseDelta * this.editorData.scrollingSpeed.value / this.transform.scale.x;
         if (isSpeededUp)
-            resultedDelta *= this.fastScrollingSpeed;
+            resultedDelta *= this.editorData.fastScrollingSpeed.value;
 
         this.viewport.transform.localPosition = new Vec2(this.viewport.transform.localPosition.x + resultedDelta, this.viewport.position.y);
 
         if (this.viewport.transform.localPosition.x > this.viewport.maxDeviation.x)
             this.viewport.transform.localPosition = new Vec2(this.viewport.maxDeviation.x, this.viewport.position.y);
 
-        this.drawEditor();
+        this.update();
     }
 
-    onWindowResize(event) {
-        var w = document.documentElement.clientWidth;
-        var h = document.documentElement.clientHeight;
-
-        var div = this.canvas.parentElement;
-        div.setAttribute('style', 'height:' + (h * 0.6).toString() + 'px');
-        var info = this.canvas.parentElement.getBoundingClientRect();
-
-        this.canvas.setAttribute('width', (info.width).toString());
-        this.canvas.setAttribute('height', (info.height / 4 * 3).toString());
-
-        this.editorGrid.initGrid();
-        this.audioCanvas.onWindowResize(event);
-        this.drawEditor();
-    }
-
-
-    onCanvasResize(mouseDelta: number) {
-        var resultedDelta = mouseDelta * this.resizingSpeed;
+    onChangeScale(mouseDelta: number) {
+        var resultedDelta = mouseDelta * this.editorData.resizingSpeed.value;
         var oldScale = this.transform.scale.x;
 
-        const canvCenter = this.viewport.canvasToSongTime(new Vec2(this.canvas.width / 2, 0));
-
-        // if (resultedDelta < 0)
-        //     this.viewport.position = Vec2.Sum(this.viewport.position, canvCenter);
-        // else
-        //     this.viewport.position = Vec2.Substract(this.viewport.position, canvCenter);
+        const canvCenter = this.viewport.canvasToSongTime(new Vec2(this.editorCanvas.width / 2, 0));
 
         this.transform.scale = new Vec2(this.transform.scale.x - resultedDelta, this.transform.scale.y);
         var scaleIsChanged = true;
@@ -186,67 +188,151 @@ export class Editor {
             scaleIsChanged = false;
         }
 
-        const newCanvCenter = this.viewport.canvasToSongTime(new Vec2(this.canvas.width / 2, 0));
-        //this.viewport.position = Vec2.Sum(this.viewport.position, Vec2.Substract(newCanvCenter, canvCenter));
-        this.viewport.position = Vec2.Substract(new Vec2(this.canvas.width / 2, 0), canvCenter);
+        this.viewport.position = Vec2.Substract(new Vec2(this.editorCanvas.width / 2, 0), canvCenter);
+        this.update();
+    }
+}
 
-        // if (resultedDelta < 0)
-        //     this.viewport.position = Vec2.Sum(this.viewport.position, this.viewport.canvasToWorld(new Vec2(this.canvas.width/2,0)));
-        // else
-        //     this.viewport.position = Vec2.Substract(this.viewport.position, this.viewport.canvasToWorld(new Vec2(this.canvas.width/2,0)));
-        // const canvasCenter = this.viewport.canvasToWorld(new Vec2(this.canvas.width/2,0));
-        // this.viewport.position = new Vec2(canvasCenter.x/scaleDiff, 1); 
+class TimestepLineModule implements IEditorModule {
+    transform = new Transform();
+    
+    private editor: IEditorCore;
+    private timestepLine = new TimestepLine(this.transform, editorColorSettings.timestepLineColor);
+    private canvas: HTMLCanvasElement;
 
-
-        this.drawEditor();
+    constructor() {
+        this.canvas = $("editor-canvas")[0] as HTMLCanvasElement;
     }
 
-    canvasMouseDownHandle(event) {
-
+    init(editorCoreModules: IEditorCore) {
+        this.editor = editorCoreModules;
     }
 
+    updateModule() {
+        if (this.editor.audio.isPlaying()) {
+            this.timestepLine.transform.localPosition = new Vec2(this.editor.audio.seek(), 0);
 
-    canvasMouseClickHandle(event) {
-        if (!this.audioLoaded)
-            return;
+            if (this.editor.editorData.followLine) {
+                const result = new Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 1);
+                this.editor.viewport.transform.position = result;
+            }
+        }
+    }
+}
 
+// class PhantomTimestampModule implements IEditorModule {
+
+// }
+
+class CreatableLinesModule implements IEditorModule {
+    
+    transform = new Transform();
+    creatableLines = new Map<number, CreatableTimestampLine>();
+
+    init(editorCoreModules: IEditorCore) {
+        throw new Error('Method not implemented.');
+    }
+    
+    updateModule() {
+        
+    }
+
+    findClosestCreatableLine(positionX: number) {
+        const objectsArr = Object.keys(this.creatableLines);
+        objectsArr.forEach(el => {
+            console.log(el);   
+        })
+        const indexOfElement = Utils.binaryNearestSearch(objectsArr, positionX);
+        const closestCreatable = this.creatableLines[objectsArr[indexOfElement]];
+        return closestCreatable; 
+    }
+
+    createCustomBpmLine() {
+        console.log('Custom bpm line created');
+        var xPos = this.transform.position.x;
+        var line = new CreatableTimestampLine(xPos, this.transform, editorColorSettings.creatableTimestampLineColor);
+        this.creatableLines[line.transform.localPosition.x] = line;
+    }
+
+}
+
+class TimestampPrefab {
+    prefabId: number;
+    color: RgbaColor;
+
+    constructor(id: number, color: RgbaColor) {
+        this.prefabId = id;
+        this.color = color;
+    }
+}
+
+class TimestampsModule implements IEditorModule {
+
+    transform = new Transform();
+
+    private static nextPrefabId = 0;
+    private selectedPrefabId = 0;
+    private idToPrefab = new Map<number, TimestampPrefab>();
+    private timestamps = new Map<number, Map<number, Timestamp>>();
+    private phantomTimestamp: Timestamp;
+    private canvas: HTMLCanvasElement;
+    
+    private editorCore: IEditorCore;
+    private editorGrid: EditorGrid;
+
+    constructor(editorGrid: EditorGrid) {
+        this.editorGrid = editorGrid;
+        const defaultPrefab = this.createTimestampPrefab(new RgbaColor(0, 255, 26));
+        this.canvas = $("editor-canvas")[0] as HTMLCanvasElement;
+        this.idToPrefab[defaultPrefab.prefabId] = defaultPrefab;
+    }
+
+    init(editorCoreModules: IEditorCore) {
+        this.editorCore = editorCoreModules;
+    }
+
+    registerTimestampPrefab(timestampPrefab: TimestampPrefab) {
+        this.idToPrefab[timestampPrefab.prefabId] = timestampPrefab;
+    }
+
+    selectPrefab(id: number) {
+        this.selectedPrefabId = id;
+    }
+
+    getSelectedPrefab() : TimestampPrefab {
+        return this.idToPrefab[this.selectedPrefabId];
+    }
+
+    onCanvasClick(event) {
         const rect = this.canvas.getBoundingClientRect();
         const clickX = event.clientX - rect.left;
         const clickY = event.clientY - rect.top;
         const click = new Vec2(clickX, clickY);
-        let worldClickPos = this.viewport.canvasToWorld(click);
+        let worldClickPos = this.transform.canvasToWorld(click);
         worldClickPos = new Vec2(-1*worldClickPos.x,-1*worldClickPos.y)
-        console.log(click);
     
+        let closestBeatline = this.editorGrid.findClosestBeatLine(click);
+        let closestObjects = new Array<GridElement>();
 
-        if (clickY <= this.topScale.width) {
-            this.audioPlayer.setMusicFromCanvasPosition(click, this);
-            return;
+        if (!this.editorCore.editorData.hideBpmLines && this.editorGrid.bpmLines.length > 0) {
+            closestObjects.push(this.editorGrid.findClosestBpmLine(worldClickPos.x));
         }
 
-        if (this.phantomTimestamp != null) {
-            let timestamp = new Timestamp(new RgbaColor(100, 160, 0), new Vec2(clickX, clickY), 5, this.transform);
-            this.timestamps[timestamp.transform.position.x] = timestamp;
-            return;
-1        }
+        // if (!this.editorCore.editorData.hideCreatableLines && Object.keys(this.creatableLines).length > 0) {
+        //     closestObjects.push(this.editorGrid.findClosestCreatableLine(worldClickPos.x));
+        // }
 
-        let closestBeatline = this.findClosestBeatLine(click);
-        let closestObjects = [];
-
-        if (!this.hideBpmLines && this.editorGrid.bpmLines.length > 0) {
-            closestObjects.push(this.findClosestBpmLine(worldClickPos.x));
-        }
-
-        if (!this.hideCreatableLines && Object.keys(this.creatableLines).length > 0) {
-            closestObjects.push(this.findClosestCreatableLine(worldClickPos.x));
-        }
-
-        let closestObject;
+        let min = 100000, index = 0;
         for (let i = 0; i<closestObjects.length; i++) {
-            
+            let diff = Math.abs(worldClickPos.x-closestObjects[i].transform.localPosition.x);
+            if (diff < min) {
+                min = diff;
+                index = i;
+            }
         }
+        let closestObject = closestObjects[index];
 
-        console.log(closestObjects);
+        console.log(closestObjects);   
         console.log(closestObject);
         let newTimestamp =  new Timestamp(new RgbaColor(123,123,65),
             new Vec2(closestObject.transform.localPosition.x, closestBeatline.transform.position.y), 5, this.editorGrid.transform);
@@ -254,36 +340,14 @@ export class Editor {
         this.timestamps[newTimestamp.transform.position.x] = newTimestamp;
     }
 
-    private findClosestCreatableLine(position: number) {
-        const objectsArr = Object.keys(this.creatableLines);
-        const indexOfElement = this.binSearch(objectsArr, position);
-        const closestCreatable = this.creatableLines[objectsArr[indexOfElement]];
-        return closestCreatable; 
-    }
-
-    private findClosestBpmLine(position: number) {
-        let closestBpmIndex = this.binSearch(Object.keys(this.editorGrid.bpmLines), position, true);
-        let closestBpm = this.editorGrid.bpmLines[closestBpmIndex];
-        
-        let closestBpmSnapIndex = this.binSearch(Object.keys(closestBpm.snapLines), position)
-        let closestBpmSnap = closestBpm.snapLines[closestBpmSnapIndex];
-    
-        if (closestBpmSnap != null && closestBpmSnap != undefined && Math.abs(position - closestBpm.transform.position.x) >
-            Math.abs(position - closestBpmSnap.transform.position.x))
-            return closestBpmSnap;
-        else 
-            return closestBpm;
-        
-    }
-
     canvasPlacePhantomElementHandler() {
-        if (this.inputController.keysPressed['Alt']) {
+        if (Input.keysPressed['Alt']) {
             const rect = this.canvas.getBoundingClientRect();
-            const clickX = this.inputController.mousePosition.x - rect.left;
-            const clickY = this.inputController.mousePosition.y - rect.top;
+            const clickX = Input.mousePosition.x - rect.left;
+            const clickY = Input.mousePosition.y - rect.top;
             const click = new Vec2(clickX, clickY); 
 
-            var closestBeatline = this.findClosestBeatLine(click);
+            var closestBeatline = this.editorGrid.findClosestBeatLine(click);
             this.phantomTimestamp = new Timestamp(new RgbaColor(158, 23, 240, 0.7), new Vec2(click.x / this.editorGrid.transform.scale.x, closestBeatline.transform.position.y), 10, this.editorGrid.transform);
         }
         else {
@@ -291,140 +355,103 @@ export class Editor {
         }
     }
 
-    private findClosestBeatLine(canvasCoords: Vec2): BeatLine {
-        const beatlinesCanvasDistance = this.editorGrid.distanceBetweenBeatLines();
-        let beatlineIndex = Math.round(canvasCoords.y / beatlinesCanvasDistance) - 1;
-        if (beatlineIndex < 0)
-            beatlineIndex = 0;
-        if (beatlineIndex > this.editorGrid.beatLinesCount - 1)
-            beatlineIndex = this.editorGrid.beatLinesCount - 1;
-
-        return this.editorGrid.beatLines[beatlineIndex];
-    }
-
-    private findClosestXLine(positionX: number, array: {}) : GridElement {
-        const objectsArr = Object.keys(array);
-        const indexOfElement = this.binSearch(objectsArr, positionX);
-        return array[objectsArr[indexOfElement]];
-    }
-
-    private binSearch(array, searchValue: number, useFlooring=false): number {
-        let left = 0, right = array.length-1;
-       // console.log(`Seaching closest for ${searchValue}`)
-
-        while(right - left > 1) {
-            let middle = Math.floor((right + left) / 2);
-    
-            // console.log(`left: ${left} right: ${right}`);
-            // console.log(`middle is ${middle}`);
-            // console.log(array[middle])
-
-            if (parseFloat(array[middle]) < searchValue) {
-                left = middle;
-            }
-            else {
-                right = middle;
+    updateModule() {
+        for (const [i, value] of Object.entries(this.timestamps)) {
+            for (const [j, timestamp] of Object.entries(value)) {
+                (timestamp as Timestamp).draw(this.editorCore.viewport, this.canvas);
             }
         }
-        
-        if (!useFlooring)
-            return Math.abs(searchValue - parseFloat(array[left]))
-            < Math.abs(searchValue - parseFloat(array[right])) ? left : right;
-        
-        return left;
     }
 
-
-    createCustomBpmLine() {
-        console.log('Custom bpm line created');
-        var xPos = this.timestepLine.transform.position.x;
-        var line = new CreatableTimestampLine(xPos, this.transform, appSettings.creatableTimestampLineColor);
-        this.creatableLines[line.transform.position.x] = line;
-    }
-
-    drawEditor() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
-        this.ctx.fillStyle = appSettings.editorBackgroundColor.value();
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
-
-        this.editorGrid.draw(this.audioPlayer != null
-            && this.audioPlayer.sound != undefined
-            && this.audioPlayer.sound != null
-            && this.audioPlayer.sound.state() == 'loaded' && !this.hideBpmLines,
-            this);
-
-        if (!this.hideCreatableLines) {
-            for (const [key, value] of Object.entries(this.creatableLines)) {
-                (value as CreatableTimestampLine).draw(this.viewport, this.canvas);
-            }
-        }
-
-        for (const [key, value] of Object.entries(this.timestamps)) {
-            (value as Timestamp).draw(this.viewport, this.canvas);
-        }
-
-        this.audioCanvas.draw();
-        this.topScale.draw(this.canvas);
-
-        if (this.audioPlayer.isPlaying()) {
-            this.timestepLine.transform.localPosition = new Vec2(this.audioPlayer.sound.seek(), 0);
-
-            if (this.followingLine) {
-                const result = new Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 1);
-                this.viewport.transform.position = result;
-            }
-        }
-
-        this.timestepLine.draw(this.viewport, this.canvas);
-        this.phantomTimestamp?.draw(this.viewport, this.canvas);
+    createTimestampPrefab(color: RgbaColor) : TimestampPrefab {
+        return new TimestampPrefab(TimestampsModule.nextPrefabId++, color); 
     }
 }
 
-class EditorGrid {
+export class EditorGrid implements IEditorModule {
 
-    canvas: HTMLCanvasElement;
+    private canvas: HTMLCanvasElement;
+    private ctx: CanvasRenderingContext2D;
+    private drawBpmLines: boolean;
 
-    bpmValue: number;
-    beatLinesCount: number;
-    snapValue = 0;
+    private audioController: AudioModule;
 
-    bpmLines: Array<BPMLine>;
-    beatLines: Array<BeatLine>;
-    editor: Editor;
-    transform: Transform;
+    bpmLines = new Array<BPMLine>();
+    beatLines = new Array<BeatLine>();
+    transform = new Transform();
 
     private beatLinesRange = new Vec2(1, 20);
     private bpmRange = new Vec2(1, 10000);
+    private editorCore: IEditorCore;
 
-
-    constructor(editor: Editor, canvas: HTMLCanvasElement) {
-        this.editor = editor;
-        this.canvas = canvas;
-        this.bpmValue = 60;
-        this.beatLinesCount = 5;
-        this.bpmLines = [];
-        this.beatLines = [];
-
+    constructor() {
         this.transform = new Transform();
-        this.transform.parent = editor.transform;
         this.transform.localScale = new Vec2(1, 1);
         this.initGrid();
     }
 
+    init(editorCoreModules: IEditorCore) {
+        this.editorCore = editorCoreModules;
+    }
+
+    private subscribeOnEvents() {
+
+    }
+
+    private onWindowResize() {
+        var w = document.documentElement.clientWidth;
+        var h = document.documentElement.clientHeight;
+
+        var div = this.canvas.parentElement;
+        div.setAttribute('style', 'height:' + (h * 0.6).toString() + 'px');
+        var info = this.canvas.parentElement.getBoundingClientRect();
+
+        this.canvas.setAttribute('width', (info.width).toString());
+        this.canvas.setAttribute('height', (info.height / 4 * 3).toString());
+
+        this.initGrid();
+    }
+
+    inti(editorCore: IEditorCore) {
+        this.editorCore = editorCore;
+    }
+
+    updateModule() {
+        const ctx = this.canvas.getContext("2d");
+        ctx.fillStyle = editorColorSettings.editorBackgroundColor.value();
+        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
+
+        this.beatLines.forEach(beatLine => {
+            if (beatLine.isActive)
+                beatLine.draw(this.editorCore.viewport, this.canvas);
+        });
+
+        if (this.drawBpmLines) {
+            var soundLength = this.audioController.duration();
+            var bpmCount = (soundLength / 60) * this.editorCore.editorData.bpmValue.value;
+            var pixelsPerBeat = soundLength / bpmCount;
+
+            this.bpmLines.forEach(bpmLine => {
+                if (bpmLine.isActive)
+                    bpmLine.draw(this.editorCore.viewport, this.canvas)
+            });
+        }
+    }
+
     distanceBetweenBpmLines() {
-        var soundLength = this.editor.audioPlayer.sound.duration();
-        var bpmCount = (soundLength / 60) * this.bpmValue;
+        var soundLength = this.audioController.duration();
+        var bpmCount = (soundLength / 60) * this.editorCore.editorData.bpmValue.value;
         var pixelsPerBeat = soundLength / bpmCount;
         return pixelsPerBeat;
     }
 
     distanceBetweenBeatLines() {
-        return (this.canvas.height) / (this.beatLinesCount + 1);
+        return (this.canvas.height) / (this.editorCore.editorData.beatLinesCount.value + 1);
     }
 
     setSnapValue(val: number) {
         console.log(val);
-        this.snapValue = val;
+        this.editorCore.editorData.snapValue.value = val;
         const distance = this.distanceBetweenBpmLines();
 
         this.bpmLines.forEach(line => {
@@ -438,7 +465,7 @@ class EditorGrid {
         bpm < this.bpmRange.x ? bpm = this.bpmRange.x : bpm = bpm;
         bpm > this.bpmRange.y ? bpm = this.bpmRange.y : bpm = bpm;
 
-        this.bpmValue = bpm;
+        this.editorCore.editorData.bpmValue.value = bpm;
         this.initBpmLines();
         console.log(bpm);
     }
@@ -449,71 +476,70 @@ class EditorGrid {
         beatLines < this.beatLinesRange.x ? beatLines = this.beatLinesRange.x : beatLines = beatLines;
         beatLines > this.beatLinesRange.y ? beatLines = this.beatLinesRange.y : beatLines = beatLines;
 
-        this.beatLinesCount = beatLines;
+        this.editorCore.editorData.beatLinesCount.value = beatLines;
         this.initGrid();
     }
 
     getGridSize(): Vec2 {
-        return new Vec2(this.bpmValue, this.beatLinesCount);
+        return new Vec2(this.editorCore.editorData.bpmValue.value, this.editorCore.editorData.beatLinesCount.value);
     }
 
     initGrid() {
-        for (var i = 0; i < this.beatLinesCount; i++) {
+        for (var i = 0; i < this.editorCore.editorData.beatLinesCount.value; i++) {
             if (i + 1 > this.beatLines.length) {
                 console.log(`distance between lines is ${this.distanceBetweenBeatLines()}`)
-                var beatLine = new BeatLine((i + 1) * this.distanceBetweenBeatLines(), this.transform, appSettings.beatLineColor);
+                var beatLine = new BeatLine((i + 1) * this.distanceBetweenBeatLines(), this.transform, editorColorSettings.beatLineColor);
                 this.beatLines.push(beatLine);
             }
             this.beatLines[i].transform.localPosition = new Vec2(0, (i + 1) * this.distanceBetweenBeatLines());
             this.beatLines[i].activate();
         }
-        for (var i = this.beatLinesCount; i < this.beatLines.length; i++) {
+        for (var i = this.editorCore.editorData.beatLinesCount.value; i < this.beatLines.length; i++) {
             this.beatLines[i].deactivate();
         }
     }
 
     initBpmLines() {
         this.bpmLines = [];
-        var soundLength = editor.audioPlayer.sound.duration();
-        var bpmCount = (soundLength / 60) * this.bpmValue;
+        var soundLength = this.audioController.duration();
+        var bpmCount = (soundLength / 60) * this.editorCore.editorData.bpmValue.value;
 
         for (var i = 0; i < bpmCount; i++) {
             var color: RgbaColor;
 
             if (i % 2 == 0) {
-                color = appSettings.mainBpmLineColorStrong;
+                color = editorColorSettings.mainBpmLineColorStrong;
             }
             else
-                color = appSettings.mainBpmLineColorWeak;
+                color = editorColorSettings.mainBpmLineColorWeak;
 
             var bpmLine = new BPMLine(i * this.distanceBetweenBpmLines(), this.transform, color);
             this.bpmLines.push(bpmLine);
         }
     }
 
-    draw(drawBpmLines: boolean, editor: Editor) {
-        const canvas = this.canvas;
-        const ctx = canvas.getContext('2d');
+    findClosestBeatLine(canvasCoords: Vec2): BeatLine {
+        const beatlinesCanvasDistance = this.distanceBetweenBeatLines();
+        let beatlineIndex = Math.round(canvasCoords.y / beatlinesCanvasDistance) - 1;
+        if (beatlineIndex < 0)
+            beatlineIndex = 0;
+        if (beatlineIndex > this.editorCore.editorData.beatLinesCount.value - 1)
+            beatlineIndex = this.editorCore.editorData.beatLinesCount.value - 1;
 
-        this.beatLines.forEach(beatLine => {
-            if (beatLine.isActive)
-                beatLine.draw(editor.viewport, canvas);
-        });
+        return this.beatLines[beatlineIndex];
+    }
 
-        if (drawBpmLines) {
-            var soundLength = editor.audioPlayer.sound.duration();
-            var bpmCount = (soundLength / 60) * this.bpmValue;
-            var pixelsPerBeat = soundLength / bpmCount;
-
-            this.bpmLines.forEach(bpmLine => {
-                if (bpmLine.isActive)
-                    bpmLine.draw(editor.viewport, canvas)
-            });
-        }
+    findClosestBpmLine(positionX: number) {
+        let closestBpmIndex = Utils.binaryNearestSearch(Object.keys(this.bpmLines), positionX, true);
+        let closestBpm = this.bpmLines[closestBpmIndex];
+        
+        let closestBpmSnapIndex = Utils.binaryNearestSearch(Object.keys(closestBpm.snapLines), positionX)
+        let closestBpmSnap = closestBpm.snapLines[closestBpmSnapIndex];
+    
+        if (closestBpmSnap != null && closestBpmSnap != undefined && Math.abs(positionX - closestBpm.transform.position.x) >
+            Math.abs(positionX - closestBpmSnap.transform.position.x))
+            return closestBpmSnap;
+        else 
+            return closestBpm;
     }
 }
-
-const editor = new Editor();
-const inputController = new Input(editor);
-editor.inputController = inputController;
-module.exports = editor;

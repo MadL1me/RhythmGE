@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.appSettings = void 0;
+exports.editorColorSettings = void 0;
 var RgbaColor_1 = require("./RgbaColor");
-exports.appSettings = new /** @class */ (function () {
-    function AppSettings() {
+exports.editorColorSettings = new /** @class */ (function () {
+    function EditorColorSettings() {
         this.editorBackgroundColor = new RgbaColor_1.RgbaColor(73, 75, 90);
         this.beatLineColor = new RgbaColor_1.RgbaColor(130, 130, 130); // (74, 74, 74)
         this.mainBpmLineColorStrong = new RgbaColor_1.RgbaColor(255, 255, 255); //(92, 92, 92);
@@ -13,5 +13,5 @@ exports.appSettings = new /** @class */ (function () {
         this.loudnessBarColor = new RgbaColor_1.RgbaColor(255, 103, 0);
         this.timestepLineColor = new RgbaColor_1.RgbaColor(255, 103, 0);
     }
-    return AppSettings;
+    return EditorColorSettings;
 }());

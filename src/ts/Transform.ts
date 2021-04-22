@@ -12,6 +12,23 @@ export class Transform {
     maxScale: Vec2 = new Vec2(1000, 1);
     minScale: Vec2 = new Vec2(1, 1);
 
+    constructor(localPosition: Vec2 = new Vec2(0,0), parent = null) {
+        this._parent = parent;
+        this._localPosition = localPosition;
+    }
+
+    worldToCanvas(worldCoords : Vec2) : Vec2 {
+        const pos = this.position;
+        return new Vec2(pos.x - worldCoords.x/this.scale.x,
+                        pos.y - worldCoords.y/this.scale.y);
+    }
+
+    canvasToWorld(canvasCoords : Vec2) : Vec2 {
+        const pos = this.position;
+        return new Vec2((pos.x - canvasCoords.x) / this.scale.x, 
+            (pos.y - canvasCoords.y) / this.scale.y);
+    }
+
     get localPosition() : Vec2 {
         return this._localPosition;
     }
@@ -77,7 +94,6 @@ export class Transform {
         this.position = this.localPosition;
     }
 
-
     private addChild(child : Transform) : void {
         this._children.push(child);
     }
@@ -88,4 +104,5 @@ export class Transform {
             this._children.splice(index, 1);
         }
     }
+
 }

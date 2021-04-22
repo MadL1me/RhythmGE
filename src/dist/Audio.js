@@ -3,34 +3,49 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AudioAmplitudeCanvas = exports.AudioPlayer = exports.AudioPlayerView = exports.TimeAccuracy = void 0;
+exports.AudioAmplitudeViewModule = exports.AudioModule = void 0;
 var Utils_1 = require("./Utils");
 var AppSettings_1 = require("./AppSettings");
 var jquery_1 = __importDefault(require("jquery"));
+var Transform_1 = require("./Transform");
 var _a = require('howler'), Howl = _a.Howl, Howler = _a.Howler;
 var TimeAccuracy;
 (function (TimeAccuracy) {
     TimeAccuracy[TimeAccuracy["seconds"] = 0] = "seconds";
     TimeAccuracy[TimeAccuracy["milliseconds"] = 1] = "milliseconds";
-})(TimeAccuracy = exports.TimeAccuracy || (exports.TimeAccuracy = {}));
+})(TimeAccuracy || (TimeAccuracy = {}));
 var AudioPlayerView = /** @class */ (function () {
     function AudioPlayerView() {
-        this.snapSlider = new Utils_1.Slider('snap-lines');
+        var _this = this;
+        this.songTimeSlider = new Utils_1.Slider('audio-slider');
         this.volumeSlider = new Utils_1.Slider('volume-slider');
+        this.onVolumeSliderChange = new Utils_1.Event();
+        this.onPlayButtonClick = new Utils_1.Event();
         this.audioFileName = jquery_1.default('#file-name')[0];
         this.audioCurrentTime = jquery_1.default('#current-audio-time')[0];
         this.audioDuration = jquery_1.default('#audio-duration')[0];
-        this.songTimeSlider = new Utils_1.Slider('audio-slider');
+        this.volumeSlider.onValueChange.addListener(function (value) { _this.onVolumeSliderChange.invoke(value); });
+        jquery_1.default('#play-button').on('click', function (event) { _this.onPlayClick(event.target); });
     }
     AudioPlayerView.prototype.onAudioLoad = function (fileName, duration) {
         this.audioFileName.innerHTML = fileName;
         this.audioCurrentTime.innerHTML = '0:00';
         this.audioDuration.innerHTML = this.formatTime(duration, TimeAccuracy.seconds);
-        this.songTimeSlider.setMaxValue(duration * 100);
+        this.songTimeSlider.maxValue = duration * 100;
     };
     AudioPlayerView.prototype.update = function (currentTime) {
         this.audioCurrentTime.innerHTML = this.formatTime(currentTime, TimeAccuracy.seconds);
-        this.songTimeSlider.setValue(currentTime * 100);
+        this.songTimeSlider.value = currentTime * 100;
+    };
+    AudioPlayerView.prototype.onPlayClick = function (playBtn) {
+        playBtn.classList.add('paused');
+        if (this.audioController.isPlaying() == true) {
+            playBtn.classList.remove('paused');
+            this.audioController.pause();
+        }
+        else {
+            this.audioController.play();
+        }
     };
     AudioPlayerView.prototype.formatTime = function (time, accuracy) {
         var minutes = Math.floor(time / 60);
@@ -45,144 +60,149 @@ var AudioPlayerView = /** @class */ (function () {
     };
     return AudioPlayerView;
 }());
-exports.AudioPlayerView = AudioPlayerView;
-var AudioPlayer = /** @class */ (function () {
-    function AudioPlayer(editor) {
-        this.view = new AudioPlayerView();
-        this.editor = editor;
+var AudioModule = /** @class */ (function () {
+    function AudioModule() {
+        this._view = new AudioPlayerView();
+        this.onAudioLoaded = new Utils_1.Event();
+        this.onLoad = new Utils_1.Event();
+        this.onSeek = new Utils_1.Event();
+        this.onPlay = new Utils_1.Event();
+        this.onStop = new Utils_1.Event();
     }
-    AudioPlayer.prototype.onSoundLoad = function (fileName, soundPath) {
+    Object.defineProperty(AudioModule.prototype, "bufferSource", {
+        get: function () {
+            return this._bufferSource;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    AudioModule.prototype.duration = function () {
+        return this._howl.duration();
+    };
+    AudioModule.prototype.loadAudio = function (fileName, soundPath) {
         var _this = this;
-        this.sound = new Howl({ src: [soundPath] });
-        this.analyser = Howler.ctx.createAnalyser();
-        this.analyser.fftSize = 256;
-        this.sound.on('load', function () {
-            //this.soundId = this.sound.play();
-            //this.sound.stop();
-            _this.view.onAudioLoad(fileName, _this.sound.duration());
+        this._howl = new Howl({ src: [soundPath] });
+        this._analyser = Howler.ctx.createAnalyser();
+        this._analyser.fftSize = 256;
+        this._howl.on('load', function () {
+            _this._view.onAudioLoad(fileName, _this._howl.duration());
         });
-        this.sound.on('play', function () {
-            _this.setupEditor();
+        this._howl.on('play', function (id) {
+            _this.setupData();
+            _this.onPlay.invoke(id);
         });
-        this.sound.on('seek', function () {
-            _this.setupEditor();
+        this._howl.on('seek', function (id) {
+            _this.onSeek.invoke(id);
         });
-        this.sound.on('stop', function () {
-            //setupEditor();
+        this._howl.on('stop', function (id) {
+            _this.onStop.invoke(id);
         });
     };
-    AudioPlayer.prototype.setVolume = function (value) {
-        this.sound.volume([value]);
+    AudioModule.prototype.setVolume = function (value) {
+        this._howl.volume([value]);
     };
-    AudioPlayer.prototype.update = function () {
-        this.view.update(this.sound.seek());
+    AudioModule.prototype.init = function (editorCoreModules) {
+        this._editorCore = editorCoreModules;
     };
-    AudioPlayer.prototype.setPlaybackRate = function (value) {
-        console.log(value);
-        this.sound.rate([value]);
+    AudioModule.prototype.updateModule = function () {
+        this._view.update(this._howl.seek());
     };
-    AudioPlayer.prototype.setupEditor = function () {
-        this.bufferSource = this.sound._soundById(this.soundId)._node.bufferSource;
-        this.sound._soundById(this.soundId)._node.bufferSource.connect(this.analyser);
-        editor.audioCanvas.onAudioLoad(this);
-        editor.drawEditor();
+    AudioModule.prototype.setPlaybackRate = function (value) {
+        this._howl.rate([value]);
     };
-    AudioPlayer.prototype.isPlaying = function () {
-        if (this.sound == undefined || this.sound == null)
+    AudioModule.prototype.isAudioLoaded = function () {
+        return false;
+    };
+    AudioModule.prototype.isPlaying = function () {
+        if (this._howl == undefined || this._howl == null)
             return false;
-        return this.sound.playing([this.soundId]);
+        return this._howl.playing([this._soundId]);
     };
-    AudioPlayer.prototype.play = function () {
-        this.soundId = this.sound.play();
+    AudioModule.prototype.play = function () {
+        this._soundId = this._howl.play();
     };
-    AudioPlayer.prototype.pause = function () {
-        this.sound.pause();
+    AudioModule.prototype.pause = function () {
+        this._howl.pause();
     };
-    AudioPlayer.prototype.playClapSound = function () {
+    AudioModule.prototype.seek = function () {
     };
-    AudioPlayer.prototype.setMusicFromCanvasPosition = function (position, editor) {
+    AudioModule.prototype.setMusicFromCanvasPosition = function (position, editor) {
         var second = editor.viewport.canvasToSongTime(position).x / editor.transform.scale.x;
-        this.sound.seek([second]);
+        this._howl.seek([second]);
     };
-    AudioPlayer.prototype.setMusicFromTimePosition = function () {
-    };
-    AudioPlayer.prototype.getDomainData = function () {
-        var dataArray = new Float32Array(this.analyser.frequencyBinCount);
-        this.analyser.getFloatTimeDomainData(dataArray);
+    AudioModule.prototype.getDomainData = function () {
+        var dataArray = new Float32Array(this._analyser.frequencyBinCount);
+        this._analyser.getFloatTimeDomainData(dataArray);
         return dataArray;
     };
-    return AudioPlayer;
+    AudioModule.prototype.setupData = function () {
+        this._bufferSource = this._howl._soundById(this._soundId)._node.bufferSource;
+        this._howl._soundById(this._soundId)._node.bufferSource.connect(this._analyser);
+    };
+    return AudioModule;
 }());
-exports.AudioPlayer = AudioPlayer;
-var AudioAmplitudeCanvas = /** @class */ (function () {
-    function AudioAmplitudeCanvas(editor) {
+exports.AudioModule = AudioModule;
+var AudioAmplitudeViewModule = /** @class */ (function () {
+    function AudioAmplitudeViewModule(parent) {
+        this.transform = new Transform_1.Transform();
         this.amplitudeData = new Array();
         this.sampleRate = 48000;
         this.divideValue = 20;
         this.samplesPerArrayValue = this.sampleRate / this.divideValue;
-        this.editor = editor;
-        this.audio = editor.audioPlayer;
+        this.transform.parent = parent;
         this.canvas = jquery_1.default('#audio-amplitude-canvas')[0];
         this.ctx = this.canvas.getContext('2d');
     }
-    AudioAmplitudeCanvas.prototype.onWindowResize = function (event) {
+    AudioAmplitudeViewModule.prototype.onWindowResize = function (event) {
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
         var info = this.canvas.parentElement.getBoundingClientRect();
         this.canvas.setAttribute('width', info.width.toString());
         this.canvas.setAttribute('height', (info.height / 4).toString());
     };
-    AudioAmplitudeCanvas.prototype.onAudioLoad = function (audio) {
-        this.data = audio.bufferSource.buffer.getChannelData(0);
+    AudioAmplitudeViewModule.prototype.onAudioLoad = function (audio) {
+        this.analyserData = audio.bufferSource.buffer.getChannelData(0);
         this.calculateAmplitudeArray();
     };
-    AudioAmplitudeCanvas.prototype.draw = function () {
+    AudioAmplitudeViewModule.prototype.init = function (editorCore) {
+        this.editorCore = editorCore;
+    };
+    AudioAmplitudeViewModule.prototype.updateModule = function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = AppSettings_1.appSettings.editorBackgroundColor.value();
+        this.ctx.fillStyle = AppSettings_1.editorColorSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        if (this.data == undefined || this.data == null)
+        var view = this.editorCore.viewport;
+        if (this.analyserData == undefined || this.analyserData == null)
             return;
         if (this.amplitudeData == undefined || this.amplitudeData == null)
             return;
         for (var i = 0; i < this.amplitudeData.length; i++) {
             var interpolated = this.amplitudeData[i] * this.canvas.height;
-            var position = this.editor.viewport.position.x + i * this.editor.editorGrid.transform.scale.x / this.divideValue;
-            var width = this.editor.editorGrid.transform.scale.x / this.divideValue;
+            var position = view.position.x + i * this.transform.scale.x / this.divideValue;
+            var width = this.transform.scale.x / this.divideValue;
             var gap = Math.floor(width / 3);
             if (gap < 4)
                 gap = 0;
-            this.ctx.fillStyle = AppSettings_1.appSettings.loudnessBarColor.value();
+            this.ctx.fillStyle = AppSettings_1.editorColorSettings.loudnessBarColor.value();
             this.ctx.fillRect(position + gap, 0, width - gap, interpolated);
             this.ctx.fill();
         }
     };
-    AudioAmplitudeCanvas.prototype.calculateAmplitudeArray = function () {
+    AudioAmplitudeViewModule.prototype.calculateAmplitudeArray = function () {
         this.amplitudeData = [];
-        for (var i = 0; i < this.data.length; i += this.samplesPerArrayValue) {
+        for (var i = 0; i < this.analyserData.length; i += this.samplesPerArrayValue) {
             var value = this.getAvarageAtRange(i, i + this.samplesPerArrayValue);
             this.amplitudeData.push(value);
         }
     };
-    AudioAmplitudeCanvas.prototype.getAmplitudeBarWitdh = function () {
-        return this.editor.transform.scale.x * this.samplesPerArrayValue / this.sampleRate;
-    };
-    AudioAmplitudeCanvas.prototype.getMaxAtRange = function (from, to) {
-        var max = -10;
-        for (var i = from; i < to && i < this.data.length; i++) {
-            if (Math.abs(this.data[i]) >= max) {
-                max = Math.abs(this.data[i]);
-            }
-        }
-        return max;
-    };
-    AudioAmplitudeCanvas.prototype.getAvarageAtRange = function (from, to) {
+    AudioAmplitudeViewModule.prototype.getAvarageAtRange = function (from, to) {
         var result = 0;
-        for (var i = from; i < to && i < this.data.length; i++) {
-            result += Math.abs(this.data[i]);
+        for (var i = from; i < to && i < this.analyserData.length; i++) {
+            result += Math.abs(this.analyserData[i]);
         }
         result = result / (to - from);
         return result;
     };
-    return AudioAmplitudeCanvas;
+    return AudioAmplitudeViewModule;
 }());
-exports.AudioAmplitudeCanvas = AudioAmplitudeCanvas;
+exports.AudioAmplitudeViewModule = AudioAmplitudeViewModule;

@@ -1,37 +1,14 @@
-var Howler = require("howler");
-var Howl = require("howler");
-var editor = require("./dist/editor");
+import { Editor, EditorGrid } from "./Editor";
+//var editor = require("./dist/editor");
 
-let arr = [0, 1, 10, 12, 16]
+console.log("abc");
 
-function binSearch(array, searchValue: number, useFlooring=false): number {
-    let left = 0, right = array.length-1;
+const editor = new Editor();
 
-    while(right - left > 1) {
-        let middle = Math.floor((right + left) / 2);
-
-        console.log(`left: ${left} right: ${right}`);
-        console.log(`middle is ${middle}`);
-
-        if (array[middle] < searchValue) {
-            left = middle;
-        }
-        else if (array[middle] >= searchValue) {
-            right = middle;
-        }
-    }
-    
-    if (!useFlooring)
-        return Math.abs(searchValue - array[left])
-        < Math.abs(searchValue - array[right]) ? left : right;
-    
-    return left;
+function setupModules() {
+    editor.addEditorModule(new EditorGrid());
 }
 
-console.log(binSearch(arr, 0));
-console.log(binSearch(arr, 11));
-console.log(binSearch(arr, 16));
-console.log(binSearch(arr, 9));
-console.log(binSearch(arr, 5));
+setupModules();
 
-setInterval(() => { editor.updateLoop(); }, 15);
+setInterval(() => { editor.update(); console.log("updating lol") }, 15);

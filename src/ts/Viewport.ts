@@ -1,49 +1,50 @@
 import {Transform} from "./Transform";
 import {Vec2} from "./Vec2";
+import {IEditorModule, IEditorCore} from "./Editor";
 
 import $ from 'jquery';
 
-export class Viewport {
+export interface IViewportModule extends IEditorModule {
+    position: Vec2;
+    isOutOfViewportBounds(position: Vec2) : boolean;
+    canvasToSongTime(canvCoords: Vec2) : Vec2;
+}
+
+export class ViewportModule implements IViewportModule {
     
+    private _canvas: HTMLCanvasElement;
+
     transform = new Transform(); 
     maxDeviation: Vec2 = new Vec2(10,100);
-    gridTransform: Transform;
-    editorCanvas: HTMLCanvasElement;
 
-    constructor(editorCanvas){
-        this.editorCanvas = editorCanvas;
+    constructor(parent) {
+        this.transform.parent = parent;
+        this.transform.position = new Vec2(10, 0);
     }
 
-    get position() {
+    get position() : Vec2 {
         return this.transform.position;
     }
 
-    set position(value : Vec2) {
-        console.log(value);
-        this.transform.position = value;
-        console.log(this.transform.position);
+    set position(pos: Vec2) {
+        this.transform.position = pos; 
     }
 
-    worldToCanvas(worldCoords : Vec2) : Vec2 {
-        const pos = this.position;
-        return new Vec2(pos.x - worldCoords.x/this.gridTransform.scale.x,
-                        pos.y - worldCoords.y/this.gridTransform.scale.y);
-    }
+    init(editorCore: IEditorCore) {}
 
-    canvasToWorld(canvasCoords : Vec2) : Vec2 {
-        const pos = this.position;
-        return new Vec2((pos.x - canvasCoords.x) / this.gridTransform.scale.x, 
-            (pos.y - canvasCoords.y) / this.gridTransform.scale.y);
+    updateModule() {
+        
     }
 
     canvasToSongTime(canvasCoords : Vec2) : Vec2 {
-        const pos = this.position;
+        const pos = this.transform.position;
         return new Vec2((canvasCoords.x - pos.x),
                         (canvasCoords.y - pos.y));
     }  
 
-    outOfCanvasBounds(position: Vec2, canvas: HTMLCanvasElement) : boolean {
-        const rightPos = new Vec2(this.transform.position.x+canvas.width,this.transform.position.y+canvas.height);
+    isOutOfViewportBounds(position: Vec2) : boolean {
+        const rightPos = new Vec2(this.transform.position.x+this._canvas.width,
+            this.transform.position.y+this._canvas.height);
         
         return position.x < this.transform.position.x 
         || position.y < this.transform.position.y 

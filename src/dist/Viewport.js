@@ -1,45 +1,39 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Viewport = void 0;
+exports.ViewportModule = void 0;
 var Transform_1 = require("./Transform");
 var Vec2_1 = require("./Vec2");
-var Viewport = /** @class */ (function () {
-    function Viewport(editorCanvas) {
+var ViewportModule = /** @class */ (function () {
+    function ViewportModule(parent) {
         this.transform = new Transform_1.Transform();
         this.maxDeviation = new Vec2_1.Vec2(10, 100);
-        this.editorCanvas = editorCanvas;
+        this.transform.parent = parent;
+        this.transform.position = new Vec2_1.Vec2(10, 0);
     }
-    Object.defineProperty(Viewport.prototype, "position", {
+    Object.defineProperty(ViewportModule.prototype, "position", {
         get: function () {
             return this.transform.position;
         },
-        set: function (value) {
-            console.log(value);
-            this.transform.position = value;
-            console.log(this.transform.position);
+        set: function (pos) {
+            this.transform.position = pos;
         },
         enumerable: false,
         configurable: true
     });
-    Viewport.prototype.worldToCanvas = function (worldCoords) {
-        var pos = this.position;
-        return new Vec2_1.Vec2(pos.x - worldCoords.x / this.gridTransform.scale.x, pos.y - worldCoords.y / this.gridTransform.scale.y);
+    ViewportModule.prototype.init = function (editorCore) { };
+    ViewportModule.prototype.updateModule = function () {
     };
-    Viewport.prototype.canvasToWorld = function (canvasCoords) {
-        var pos = this.position;
-        return new Vec2_1.Vec2((pos.x - canvasCoords.x) / this.gridTransform.scale.x, (pos.y - canvasCoords.y) / this.gridTransform.scale.y);
-    };
-    Viewport.prototype.canvasToSongTime = function (canvasCoords) {
-        var pos = this.position;
+    ViewportModule.prototype.canvasToSongTime = function (canvasCoords) {
+        var pos = this.transform.position;
         return new Vec2_1.Vec2((canvasCoords.x - pos.x), (canvasCoords.y - pos.y));
     };
-    Viewport.prototype.outOfCanvasBounds = function (position, canvas) {
-        var rightPos = new Vec2_1.Vec2(this.transform.position.x + canvas.width, this.transform.position.y + canvas.height);
+    ViewportModule.prototype.isOutOfViewportBounds = function (position) {
+        var rightPos = new Vec2_1.Vec2(this.transform.position.x + this._canvas.width, this.transform.position.y + this._canvas.height);
         return position.x < this.transform.position.x
             || position.y < this.transform.position.y
             || position.x > rightPos.x
             || position.y > rightPos.y;
     };
-    return Viewport;
+    return ViewportModule;
 }());
-exports.Viewport = Viewport;
+exports.ViewportModule = ViewportModule;

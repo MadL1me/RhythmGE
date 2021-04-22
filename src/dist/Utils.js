@@ -3,17 +3,44 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Slider = exports.Event = void 0;
+exports.Slider = exports.Event = exports.Utils = void 0;
 var jquery_1 = __importDefault(require("jquery"));
+var Utils = /** @class */ (function () {
+    function Utils() {
+    }
+    Utils.binaryNearestSearch = function (array, searchValue, useFlooring) {
+        if (useFlooring === void 0) { useFlooring = false; }
+        var left = 0, right = array.length - 1;
+        // console.log(`Seaching closest for ${searchValue}`)
+        while (right - left > 1) {
+            var middle = Math.floor((right + left) / 2);
+            // console.log(`left: ${left} right: ${right}`);
+            // console.log(`middle is ${middle}`);
+            // console.log(array[middle])
+            if (parseFloat(array[middle]) < searchValue) {
+                left = middle;
+            }
+            else {
+                right = middle;
+            }
+        }
+        if (!useFlooring)
+            return Math.abs(searchValue - parseFloat(array[left]))
+                < Math.abs(searchValue - parseFloat(array[right])) ? left : right;
+        return left;
+    };
+    return Utils;
+}());
+exports.Utils = Utils;
 var Event = /** @class */ (function () {
     function Event() {
-        this.listeners = [];
+        this.listeners = new Array();
     }
     Event.prototype.addListener = function (listener) {
         this.listeners.push(listener);
     };
     Event.prototype.removeListener = function (listener) {
-        var index = this.listeners.findIndex(listener);
+        var index = this.listeners.findIndex(function (element) { return listener == element; });
         this.listeners.slice(index, index);
     };
     Event.prototype.invoke = function (data) {
@@ -27,29 +54,50 @@ exports.Event = Event;
 var Slider = /** @class */ (function () {
     function Slider(sliderId) {
         var _this = this;
-        this.maxValue = 100;
-        this.minValue = 0;
+        this._maxValue = 100;
+        this._minValue = 0;
         this.onValueChange = new Event();
         this.sliderInput = jquery_1.default('#' + sliderId)[0];
         this.sliderInput.value = '0';
         this.sliderInput.oninput = function (event) {
-            _this.setValue(event.target.value);
+            _this.value = event.target.value;
         };
         this.value = 0;
     }
-    Slider.prototype.setMaxValue = function (value) {
-        this.maxValue = value;
-        this.sliderInput.max = value.toString();
-    };
-    Slider.prototype.setMinValue = function (value) {
-        this.minValue = value;
-        this.sliderInput.min = value.toString();
-    };
-    Slider.prototype.setValue = function (value) {
-        this.value = value;
-        this.sliderInput.value = value.toString();
-        this.onValueChange.invoke(value);
-    };
+    Object.defineProperty(Slider.prototype, "maxValue", {
+        get: function () {
+            return this._maxValue;
+        },
+        set: function (value) {
+            this._maxValue = value;
+            this.sliderInput.max = value.toString();
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Slider.prototype, "minValue", {
+        get: function () {
+            return this._minValue;
+        },
+        set: function (value) {
+            this._minValue = value;
+            this.sliderInput.min = value.toString();
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Slider.prototype, "value", {
+        get: function () {
+            return this._value;
+        },
+        set: function (value) {
+            this.value = value;
+            this.sliderInput.value = value.toString();
+            this.onValueChange.invoke(value);
+        },
+        enumerable: false,
+        configurable: true
+    });
     return Slider;
 }());
 exports.Slider = Slider;

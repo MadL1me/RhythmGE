@@ -1,29 +1,11 @@
-var Howler = require("howler");
-var Howl = require("howler");
-var editor = require("./dist/editor");
-var arr = [0, 1, 10, 12, 16];
-function binSearch(array, searchValue, useFlooring) {
-    if (useFlooring === void 0) { useFlooring = false; }
-    var left = 0, right = array.length - 1;
-    while (right - left > 1) {
-        var middle = Math.floor((right + left) / 2);
-        console.log("left: " + left + " right: " + right);
-        console.log("middle is " + middle);
-        if (array[middle] < searchValue) {
-            left = middle;
-        }
-        else if (array[middle] >= searchValue) {
-            right = middle;
-        }
-    }
-    if (!useFlooring)
-        return Math.abs(searchValue - array[left])
-            < Math.abs(searchValue - array[right]) ? left : right;
-    return left;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var Editor_1 = require("./Editor");
+//var editor = require("./dist/editor");
+console.log("abc");
+var editor = new Editor_1.Editor();
+function setupModules() {
+    editor.addEditorModule(new Editor_1.EditorGrid());
 }
-console.log(binSearch(arr, 0));
-console.log(binSearch(arr, 11));
-console.log(binSearch(arr, 16));
-console.log(binSearch(arr, 9));
-console.log(binSearch(arr, 5));
-setInterval(function () { editor.updateLoop(); }, 15);
+setupModules();
+setInterval(function () { editor.update(); console.log("updating lol"); }, 15);

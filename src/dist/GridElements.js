@@ -27,7 +27,7 @@ var GridElement = /** @class */ (function () {
         this.transform.parent = parent;
     }
     GridElement.prototype.draw = function (view, canvas) {
-        if (view.outOfCanvasBounds(this.transform.position, canvas)) {
+        if (view.isOutOfViewportBounds(this.transform.position)) {
             return;
         }
     };
@@ -106,12 +106,12 @@ var TimestepLine = /** @class */ (function (_super) {
         if (x <= 0)
             x = 0;
         ctx.beginPath();
-        ctx.fillStyle = AppSettings_1.appSettings.timestepLineColor.value();
+        ctx.fillStyle = AppSettings_1.editorColorSettings.timestepLineColor.value();
         ctx.moveTo(x, 10);
         ctx.lineTo(x - 5, 0);
         ctx.lineTo(x + 5, 0);
         ctx.fill();
-        ctx.strokeStyle = AppSettings_1.appSettings.timestepLineColor.value();
+        ctx.strokeStyle = AppSettings_1.editorColorSettings.timestepLineColor.value();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
         ctx.stroke();
@@ -143,7 +143,7 @@ var BPMLine = /** @class */ (function (_super) {
         this.snapLines = new Array();
         var distance = distanceBetweenBpmLines / snapValue;
         for (var i = 0; i < snapValue - 1; i++) {
-            this.snapLines.push(new BPMLine((i + 1) * distance, this.transform, AppSettings_1.appSettings.snapBpmLineColor));
+            this.snapLines.push(new BPMLine((i + 1) * distance, this.transform, AppSettings_1.editorColorSettings.snapBpmLineColor));
         }
     };
     return BPMLine;

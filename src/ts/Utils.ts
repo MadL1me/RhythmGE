@@ -1,18 +1,50 @@
 import $ from 'jquery';
 
-export class Event {
-    private listeners = [];
+export abstract class Utils {
+    
+    static binaryNearestSearch(array, searchValue: number, useFlooring=false): number {
+        let left = 0, right = array.length-1;
+       // console.log(`Seaching closest for ${searchValue}`)
 
-    addListener(listener: any) {
+        while(right - left > 1) {
+            let middle = Math.floor((right + left) / 2);
+    
+            // console.log(`left: ${left} right: ${right}`);
+            // console.log(`middle is ${middle}`);
+            // console.log(array[middle])
+
+            if (parseFloat(array[middle]) < searchValue) {
+                left = middle;
+            }
+            else {
+                right = middle;
+            }
+        }
+        
+        if (!useFlooring)
+            return Math.abs(searchValue - parseFloat(array[left]))
+            < Math.abs(searchValue - parseFloat(array[right])) ? left : right;
+        
+        return left;
+    }
+}
+
+export type Action<T> = (item: T) => void;
+export type EmptyAction = () => void;
+
+export class Event<T> {
+    private listeners = new Array<Action<T>>();
+
+    addListener(listener: Action<T>) {
         this.listeners.push(listener)
     }
 
-    removeListener(listener: any) {
-        var index = this.listeners.findIndex(listener);
+    removeListener(listener: Action<T>) {
+        var index = this.listeners.findIndex((element)=>{ return listener==element; });
         this.listeners.slice(index,index);
     }   
 
-    invoke(data: any) {
+    invoke(data: T) {
         this.listeners.forEach(listener => {
             listener(data);
         });
@@ -21,32 +53,45 @@ export class Event {
 
 export class Slider {
     
-    maxValue: number = 100;
-    minValue: number = 0;
-    value: number
-    sliderInput: HTMLInputElement;
-    onValueChange = new Event();
+    private _maxValue: number = 100;
+    private _minValue: number = 0;
+    private _value: number
+    private sliderInput: HTMLInputElement;
+    
+    onValueChange = new Event<number>();
 
     constructor(sliderId: string) {
         this.sliderInput = $('#' + sliderId)[0] as HTMLInputElement;
         this.sliderInput.value = '0';
         this.sliderInput.oninput = (event : any) => {
-            this.setValue(event.target.value);
+            this.value = event.target.value;
         };
         this.value = 0;
     }
 
-    setMaxValue(value: number) {
-        this.maxValue = value;
+    set maxValue(value: number) {
+        this._maxValue = value;
         this.sliderInput.max = value.toString();
     }
 
-    setMinValue(value: number) {
-        this.minValue = value;
+    get maxValue() {
+        return this._maxValue;
+    }
+
+    set minValue(value: number) {
+        this._minValue = value;
         this.sliderInput.min = value.toString();
     }
 
-    setValue(value: number) {
+    get minValue() {
+        return this._minValue;
+    }
+
+    get value() : number { 
+        return this._value;
+    }
+
+    set value(value: number) {
         this.value = value;
         this.sliderInput.value = value.toString();
         this.onValueChange.invoke(value);

@@ -1,12 +1,16 @@
 import { Transform } from "./Transform";
 import { RgbaColor } from "./RgbaColor";
-import { Viewport } from "./Viewport";
+import { IViewportModule } from "./Viewport";
 import { Vec2 } from "./Vec2";
-import { appSettings } from "./AppSettings";
+import { editorColorSettings } from "./AppSettings";
 
 import $ from 'jquery';
 
-export abstract class GridElement {
+export interface IDrawable {
+    draw(view: IViewportModule, canvas: HTMLCanvasElement);
+}
+
+export abstract class GridElement implements IDrawable {
     
     transform: Transform = new Transform();
     isActive: boolean = true;
@@ -17,8 +21,8 @@ export abstract class GridElement {
         this.transform.parent = parent;
     }
 
-    draw(view : Viewport, canvas : HTMLCanvasElement) {
-        if (view.outOfCanvasBounds(this.transform.position, canvas)) {
+    draw(view : IViewportModule, canvas : HTMLCanvasElement) {
+        if (view.isOutOfViewportBounds(this.transform.position)) {
             return;
         }
     }
@@ -45,12 +49,14 @@ export class Timestamp extends GridElement {
         this.color = color;
     }
 
-    draw(view: Viewport, canvas : HTMLCanvasElement) {
+    draw(view: IViewportModule, canvas : HTMLCanvasElement) {
         super.draw(view, canvas)
         
         const ctx = canvas.getContext('2d');
-        const pos = new Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
+        const pos = new Vec2(this.transform.position.x + view.position.x,
+         this.transform.position.y + view.position.y);
         const width = this.width*this.transform.parent.localScale.x;
+        
         ctx.fillStyle = this.color.value();
         ctx.beginPath();
         ctx.moveTo(pos.x - width, pos.y);
@@ -69,7 +75,7 @@ export class CreatableTimestampLine extends GridElement {
         this.transform.position = new Vec2(x, 0);
     }
 
-    draw(view: Viewport, canvas: HTMLCanvasElement) {
+    draw(view: IViewportModule, canvas: HTMLCanvasElement) {
         super.draw(view, canvas)
         
         var x = this.transform.position.x + view.position.x;
@@ -95,7 +101,7 @@ export class TimestepLine extends GridElement {
         super(parent, color);
     }
 
-    draw(view : Viewport, canvas: HTMLCanvasElement) {
+    draw(view : IViewportModule, canvas: HTMLCanvasElement) {
         super.draw(view, canvas)
         
         var x = this.transform.position.x + view.position.x;
@@ -107,13 +113,13 @@ export class TimestepLine extends GridElement {
             x = 0;
 
         ctx.beginPath();
-        ctx.fillStyle = appSettings.timestepLineColor.value();
+        ctx.fillStyle = editorColorSettings.timestepLineColor.value();
         ctx.moveTo(x, 10);
         ctx.lineTo(x-5, 0);
         ctx.lineTo(x+5, 0);
         ctx.fill();
 
-        ctx.strokeStyle = appSettings.timestepLineColor.value();
+        ctx.strokeStyle = editorColorSettings.timestepLineColor.value();
         ctx.moveTo(x,0);
         ctx.lineTo(x, canvas.height);
         ctx.stroke();
@@ -129,7 +135,7 @@ export class BPMLine extends GridElement {
         this.transform.localPosition = new Vec2(x, 0);
     }
 
-    draw(view : Viewport, canvas : HTMLCanvasElement) {
+    draw(view : IViewportModule, canvas : HTMLCanvasElement) {
         super.draw(view, canvas)
 
         if (!this.isActive)
@@ -151,7 +157,7 @@ export class BPMLine extends GridElement {
         const distance = distanceBetweenBpmLines/snapValue;
 
         for (var i = 0; i<snapValue-1; i++) {
-            this.snapLines.push(new BPMLine((i+1)*distance, this.transform, appSettings.snapBpmLineColor));
+            this.snapLines.push(new BPMLine((i+1)*distance, this.transform, editorColorSettings.snapBpmLineColor));
         }
     }
 }
@@ -163,7 +169,7 @@ export class BeatLine extends GridElement {
         this.transform.localPosition = new Vec2(0,y)
     }
 
-    draw(view: Viewport, canvas : HTMLCanvasElement) {
+    draw(view: IViewportModule, canvas : HTMLCanvasElement) {
         super.draw(view, canvas)
        
         const ctx = canvas.getContext('2d');
