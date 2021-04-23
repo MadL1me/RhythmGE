@@ -7,14 +7,29 @@ exports.ViewportModule = void 0;
 var Transform_1 = require("./Transform");
 var Vec2_1 = require("./Vec2");
 var jquery_1 = __importDefault(require("jquery"));
+var Input_1 = require("./Input");
 var ViewportModule = /** @class */ (function () {
     function ViewportModule(parent) {
+        var _this = this;
         this.transform = new Transform_1.Transform();
         this.maxDeviation = new Vec2_1.Vec2(10, 100);
         this._canvas = jquery_1.default("#editor-canvas")[0];
         this.transform.parent = parent;
-        this.transform.position = new Vec2_1.Vec2(10, 0);
+        this.transform.position = new Vec2_1.Vec2(100, 0);
+        Input_1.Input.onCanvasWheel.addListener(function (event) { _this.onCanvasScroll(event); });
     }
+    ViewportModule.prototype.onCanvasScroll = function (event) {
+        var isSpeededUp = Input_1.Input.keysPressed["ShiftLeft"] == true;
+        var mouseDelta = event.deltaY;
+        if (this.editor.editorData.followLine.value)
+            return;
+        var resultedDelta = mouseDelta * this.editor.editorData.scrollingSpeed.value / this.transform.scale.x;
+        if (isSpeededUp)
+            resultedDelta *= this.editor.editorData.fastScrollingSpeed.value;
+        this.transform.localPosition = new Vec2_1.Vec2(this.transform.localPosition.x + resultedDelta, this.position.y);
+        if (this.transform.localPosition.x > this.maxDeviation.x)
+            this.transform.localPosition = new Vec2_1.Vec2(this.maxDeviation.x, this.position.y);
+    };
     Object.defineProperty(ViewportModule.prototype, "position", {
         get: function () {
             return this.transform.position;
@@ -25,9 +40,8 @@ var ViewportModule = /** @class */ (function () {
         enumerable: false,
         configurable: true
     });
-    ViewportModule.prototype.init = function (editorCore) { };
-    ViewportModule.prototype.updateModule = function () {
-    };
+    ViewportModule.prototype.init = function (editorCore) { this.editor = editorCore; };
+    ViewportModule.prototype.updateModule = function () { };
     ViewportModule.prototype.canvasToSongTime = function (canvasCoords) {
         var pos = this.transform.position;
         return new Vec2_1.Vec2((canvasCoords.x - pos.x), (canvasCoords.y - pos.y));

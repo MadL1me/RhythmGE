@@ -35,15 +35,14 @@ var Input = /** @class */ (function () {
             console.log("prevent default");
             event.preventDefault();
         }
-        this.keysPressed[event.key] = true;
+        this.keysPressed[event.code] = true;
+        console.log('Key pressed' + event.code);
+        Input.onKeyDown.invoke(event.code);
     };
     Input.onCanvasKeyUp = function (event) {
-        delete this.keysPressed[event.key];
-        console.log('Key removed' + event.key);
+        delete this.keysPressed[event.code];
+        console.log('Key removed' + event.code);
         Input.onKeyUp.invoke(event);
-    };
-    Input.onCanvasWheelEvent = function (event) {
-        Input.onCanvasWheel.invoke(event);
     };
     Input.initialized = false;
     Input.lastMousePosition = new Vec2_1.Vec2(0, 0);
@@ -53,7 +52,6 @@ var Input = /** @class */ (function () {
     Input.onKeyDown = new Utils_1.Event();
     Input.onWindowResize = new Utils_1.Event();
     Input.onCanvasWheel = new Utils_1.Event();
-    Input.onCanvasResize = new Utils_1.Event();
     Input.onMouseClick = new Utils_1.Event();
     return Input;
 }());

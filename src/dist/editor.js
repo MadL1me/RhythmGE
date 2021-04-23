@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EditorGrid = exports.TimestepLineModule = exports.Editor = exports.EditorData = void 0;
+exports.EditorGrid = exports.CreatableLinesModule = exports.TimestepLineModule = exports.Editor = exports.EditorData = void 0;
 var jquery_1 = __importDefault(require("jquery"));
 var RgbaColor_1 = require("./RgbaColor");
 var Vec2_1 = require("./Vec2");
@@ -35,8 +35,8 @@ var EventVar = /** @class */ (function () {
 var EditorData = /** @class */ (function () {
     function EditorData() {
         var _this = this;
-        this.snapSlider = new Utils_1.Slider('snap-lines');
-        this.playbackSpeedSlider = new Utils_1.Slider('playback-rate');
+        this._snapSlider = new Utils_1.Slider('snap-lines');
+        this._playbackSpeedSlider = new Utils_1.Slider('playback-rate');
         this.useClaps = new EventVar(false);
         this.followLine = new EventVar(false);
         this.hideBpmLines = new EventVar(false);
@@ -58,10 +58,10 @@ var EditorData = /** @class */ (function () {
         jquery_1.default('#beat-lines').on('change', function (event) { _this.beatLinesCount.value = parseInt(event.target.value); });
         jquery_1.default('#bpm').on('change', function (event) { _this.bpmValue.value = parseInt(event.target.value); });
         jquery_1.default('#offset').on('change', function (event) { _this.offset.value = parseInt(event.target.value); });
-        this.playbackSpeedSlider.value = 1;
-        this.snapSlider.value = 1;
-        this.playbackSpeedSlider.onValueChange.addListener(function (value) { _this.onPlaybackRateValueChange(value); });
-        this.snapSlider.onValueChange.addListener(function (value) { _this.onSnapSliderValueChange(value); });
+        this._playbackSpeedSlider.value = 1;
+        this._snapSlider.value = 1;
+        this._playbackSpeedSlider.onValueChange.addListener(function (value) { _this.onPlaybackRateValueChange(value); });
+        this._snapSlider.onValueChange.addListener(function (value) { _this.onSnapSliderValueChange(value); });
     }
     EditorData.prototype.onAudioLoad = function (event) {
         var files = event.target.files;
@@ -83,60 +83,40 @@ var EditorData = /** @class */ (function () {
 exports.EditorData = EditorData;
 var Editor = /** @class */ (function () {
     function Editor() {
+        var _this = this;
         this.transform = new Transform_1.Transform();
         this.viewport = new Viewport_1.ViewportModule(this.transform);
         this.editorData = new EditorData();
         this.audio = new Audio_1.AudioModule();
-        this.editorModules = new Array();
-        this.editorCanvas = jquery_1.default("#editor-canvas")[0];
+        this._editorModules = new Array();
+        this._editorCanvas = jquery_1.default("#editor-canvas")[0];
         this.transform.scale = new Vec2_1.Vec2(10, 1);
         this.viewport.init(this);
         this.audio.init(this);
         this.viewport.transform.parent = this.transform;
         this.audio.transform.parent = this.transform;
+        Input_1.Input.onCanvasWheel.addListener(function (event) { _this.onChangeScale(event.deltaY); });
         this.update();
     }
     Editor.prototype.addEditorModule = function (element) {
         element.init(this);
         element.transform.parent = this.transform;
-        this.editorModules.push(element);
+        this._editorModules.push(element);
     };
     Editor.prototype.update = function () {
         Input_1.Input.update();
         this.audio.updateModule();
         this.viewport.updateModule();
-        var ctx = this.editorCanvas.getContext("2d");
-        ctx.fillStyle = "green";
-        ctx.fillRect(0, 0, this.editorCanvas.width, this.editorCanvas.height);
-        for (var i = 0; i < this.editorModules.length; i++) {
-            this.editorModules[i].updateModule();
+        for (var i = 0; i < this._editorModules.length; i++) {
+            this._editorModules[i].updateModule();
         }
-    };
-    Editor.prototype.onPlayButtonClick = function (playBtn) {
-        playBtn.classList.add('paused');
-        if (this.audio.isPlaying() == true) {
-            playBtn.classList.remove('paused');
-            this.audio.pause();
-        }
-        else {
-            this.audio.play();
-        }
-    };
-    Editor.prototype.onCanvasScroll = function (mouseDelta, isSpeededUp) {
-        if (this.editorData.followLine)
-            return;
-        var resultedDelta = mouseDelta * this.editorData.scrollingSpeed.value / this.transform.scale.x;
-        if (isSpeededUp)
-            resultedDelta *= this.editorData.fastScrollingSpeed.value;
-        this.viewport.transform.localPosition = new Vec2_1.Vec2(this.viewport.transform.localPosition.x + resultedDelta, this.viewport.position.y);
-        if (this.viewport.transform.localPosition.x > this.viewport.maxDeviation.x)
-            this.viewport.transform.localPosition = new Vec2_1.Vec2(this.viewport.maxDeviation.x, this.viewport.position.y);
-        this.update();
     };
     Editor.prototype.onChangeScale = function (mouseDelta) {
+        if (!Input_1.Input.keysPressed["ControlLeft"])
+            return;
         var resultedDelta = mouseDelta * this.editorData.resizingSpeed.value;
         var oldScale = this.transform.scale.x;
-        var canvCenter = this.viewport.canvasToSongTime(new Vec2_1.Vec2(this.editorCanvas.width / 2, 0));
+        var canvCenter = this.viewport.canvasToSongTime(new Vec2_1.Vec2(this._editorCanvas.width / 2, 0));
         this.transform.scale = new Vec2_1.Vec2(this.transform.scale.x - resultedDelta, this.transform.scale.y);
         var scaleIsChanged = true;
         if (this.transform.scale.x <= this.transform.minScale.x) {
@@ -147,7 +127,7 @@ var Editor = /** @class */ (function () {
             this.transform.scale = new Vec2_1.Vec2(this.transform.maxScale.x, this.transform.scale.y);
             scaleIsChanged = false;
         }
-        this.viewport.position = Vec2_1.Vec2.Substract(new Vec2_1.Vec2(this.editorCanvas.width / 2, 0), canvCenter);
+        this.viewport.position = Vec2_1.Vec2.Substract(new Vec2_1.Vec2(this._editorCanvas.width / 2, 0), canvCenter);
         this.update();
     };
     return Editor;
@@ -165,7 +145,7 @@ var TimestepLineModule = /** @class */ (function () {
     TimestepLineModule.prototype.updateModule = function () {
         if (this.editor.audio.isPlaying()) {
             this.timestepLine.transform.localPosition = new Vec2_1.Vec2(this.editor.audio.seek(), 0);
-            if (this.editor.editorData.followLine) {
+            if (this.editor.editorData.followLine.value) {
                 var result = new Vec2_1.Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 1);
                 this.editor.viewport.transform.position = result;
             }
@@ -181,11 +161,18 @@ var CreatableLinesModule = /** @class */ (function () {
     function CreatableLinesModule() {
         this.transform = new Transform_1.Transform();
         this.creatableLines = new Map();
+        this.canvas = jquery_1.default("#editor-canvas")[0];
     }
     CreatableLinesModule.prototype.init = function (editorCoreModules) {
-        throw new Error('Method not implemented.');
+        var _this = this;
+        this.editor = editorCoreModules;
+        Input_1.Input.onKeyDown.addListener(function () { _this.handleInput(); });
     };
     CreatableLinesModule.prototype.updateModule = function () {
+        var _this = this;
+        Object.values(this.creatableLines).forEach(function (element) {
+            element.draw(_this.editor.viewport, _this.canvas);
+        });
     };
     CreatableLinesModule.prototype.findClosestCreatableLine = function (positionX) {
         var objectsArr = Object.keys(this.creatableLines);
@@ -196,14 +183,19 @@ var CreatableLinesModule = /** @class */ (function () {
         var closestCreatable = this.creatableLines[objectsArr[indexOfElement]];
         return closestCreatable;
     };
+    CreatableLinesModule.prototype.handleInput = function () {
+        if (Input_1.Input.keysPressed["Space"] == true) {
+            this.createCustomBpmLine();
+        }
+    };
     CreatableLinesModule.prototype.createCustomBpmLine = function () {
-        console.log('Custom bpm line created');
-        var xPos = this.transform.position.x;
+        var xPos = this.editor.audio.seek();
         var line = new GridElements_1.CreatableTimestampLine(xPos, this.transform, AppSettings_1.editorColorSettings.creatableTimestampLineColor);
         this.creatableLines[line.transform.localPosition.x] = line;
     };
     return CreatableLinesModule;
 }());
+exports.CreatableLinesModule = CreatableLinesModule;
 var TimestampPrefab = /** @class */ (function () {
     function TimestampPrefab(id, color) {
         this.prefabId = id;
@@ -299,7 +291,7 @@ var EditorGrid = /** @class */ (function () {
         this.transform = new Transform_1.Transform();
         this.beatLinesRange = new Vec2_1.Vec2(1, 20);
         this.bpmRange = new Vec2_1.Vec2(1, 10000);
-        this.canvas = jquery_1.default("#editor-canvas")[0];
+        this._canvas = jquery_1.default("#editor-canvas")[0];
         this.transform = new Transform_1.Transform();
         this.transform.localScale = new Vec2_1.Vec2(1, 1);
         //this.initGrid();
@@ -321,11 +313,11 @@ var EditorGrid = /** @class */ (function () {
     EditorGrid.prototype.onWindowResize = function () {
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
-        var div = this.canvas.parentElement;
+        var div = this._canvas.parentElement;
         div.setAttribute('style', 'height:' + (h * 0.6).toString() + 'px');
-        var info = this.canvas.parentElement.getBoundingClientRect();
-        this.canvas.setAttribute('width', (info.width).toString());
-        this.canvas.setAttribute('height', (info.height / 4 * 3).toString());
+        var info = this._canvas.parentElement.getBoundingClientRect();
+        this._canvas.setAttribute('width', (info.width).toString());
+        this._canvas.setAttribute('height', (info.height / 4 * 3).toString());
         this.initGrid();
         //this.initBpmLines();
     };
@@ -334,31 +326,31 @@ var EditorGrid = /** @class */ (function () {
     };
     EditorGrid.prototype.updateModule = function () {
         var _this = this;
-        var ctx = this.canvas.getContext("2d");
+        var ctx = this._canvas.getContext("2d");
         ctx.fillStyle = AppSettings_1.editorColorSettings.editorBackgroundColor.value();
-        ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
         this.beatLines.forEach(function (beatLine) {
             if (beatLine.isActive)
-                beatLine.draw(_this.editorCore.viewport, _this.canvas);
+                beatLine.draw(_this.editorCore.viewport, _this._canvas);
         });
-        if (this.drawBpmLines) {
-            var soundLength = this.audioController.duration();
+        if (!this.editorCore.editorData.hideBpmLines.value && this.editorCore.audio.isAudioLoaded()) {
+            var soundLength = this.editorCore.audio.duration();
             var bpmCount = (soundLength / 60) * this.editorCore.editorData.bpmValue.value;
             var pixelsPerBeat = soundLength / bpmCount;
             this.bpmLines.forEach(function (bpmLine) {
                 if (bpmLine.isActive)
-                    bpmLine.draw(_this.editorCore.viewport, _this.canvas);
+                    bpmLine.draw(_this.editorCore.viewport, _this._canvas);
             });
         }
     };
     EditorGrid.prototype.distanceBetweenBpmLines = function () {
-        var soundLength = this.audioController.duration();
+        var soundLength = this.editorCore.audio.duration();
         var bpmCount = (soundLength / 60) * this.editorCore.editorData.bpmValue.value;
         var pixelsPerBeat = soundLength / bpmCount;
         return pixelsPerBeat;
     };
     EditorGrid.prototype.distanceBetweenBeatLines = function () {
-        return (this.canvas.height) / (this.editorCore.editorData.beatLinesCount.value + 1);
+        return (this._canvas.height) / (this.editorCore.editorData.beatLinesCount.value + 1);
     };
     EditorGrid.prototype.setSnapValue = function (val) {
         console.log(val);
@@ -403,8 +395,9 @@ var EditorGrid = /** @class */ (function () {
     EditorGrid.prototype.initBpmLines = function () {
         if (!this.editorCore.audio.isAudioLoaded())
             return;
+        console.log("init BPM");
         this.bpmLines = [];
-        var soundLength = this.audioController.duration();
+        var soundLength = this.editorCore.audio.duration();
         var bpmCount = (soundLength / 60) * this.editorCore.editorData.bpmValue.value;
         for (var i = 0; i < bpmCount; i++) {
             var color;
@@ -416,6 +409,8 @@ var EditorGrid = /** @class */ (function () {
             var bpmLine = new GridElements_1.BPMLine(i * this.distanceBetweenBpmLines(), this.transform, color);
             this.bpmLines.push(bpmLine);
         }
+        console.log(this.distanceBetweenBpmLines());
+        console.log(this.bpmLines.length);
     };
     EditorGrid.prototype.findClosestBeatLine = function (canvasCoords) {
         var beatlinesCanvasDistance = this.distanceBetweenBeatLines();

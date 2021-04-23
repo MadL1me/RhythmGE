@@ -71,7 +71,7 @@ var CreatableTimestampLine = /** @class */ (function (_super) {
     function CreatableTimestampLine(x, parent, color) {
         var _this = _super.call(this, parent, color) || this;
         _this.transform.parent = parent;
-        _this.transform.position = new Vec2_1.Vec2(x, 0);
+        _this.transform.localPosition = new Vec2_1.Vec2(x, 0);
         return _this;
     }
     CreatableTimestampLine.prototype.draw = function (view, canvas) {

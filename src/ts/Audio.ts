@@ -107,14 +107,15 @@ export class AudioModule implements IAudioModule {
 
     transform = new Transform();
 
-    private _howl : any;
-    private _soundId : number;
-    private _clapSoundId: number;
-    private _analyser : AnalyserNode;
+    private howl : any;
+    private soundId : number;
+    private clapSoundId: number;
+    private analyser : AnalyserNode;
     private _bufferSource: AudioBufferSourceNode;
-    private _view = new AudioPlayerView(this);
-    private _editorCore: IEditorCore;
-    
+    private view = new AudioPlayerView(this);
+    private editorCore: IEditorCore;
+    private audioLoaded: boolean;
+
     onAudioLoaded = new Event<[string, string]>();
     onLoad = new Event<number>();
     onSeek = new Event<number>();
@@ -126,91 +127,93 @@ export class AudioModule implements IAudioModule {
     }
 
     duration() : number {
-        return this._howl.duration();
+        return this.howl.duration();
     }
 
     loadAudio(fileName: string, soundPath : string) {
-        this._howl = new Howl({src:[soundPath]});
+        this.howl = new Howl({src:[soundPath]});
         
-        this._analyser = Howler.ctx.createAnalyser();
-        this._analyser.fftSize = 256;
+        this.analyser = Howler.ctx.createAnalyser();
+        this.analyser.fftSize = 256;
 
-        this._howl.on('load', () => {
-            this._view.onAudioLoad(fileName, this._howl.duration());
+        this.howl.on('load', () => {
+            this.audioLoaded = true;
+            this.view.onAudioLoad(fileName, this.howl.duration());
             this.onAudioLoaded.invoke([fileName, soundPath]);
         })
 
-        this._howl.on('play', (id) => {
+        this.howl.on('play', (id) => {
             this.setupData();
             this.onPlay.invoke(id);
         });
 
-        this._howl.on('seek', (id) => {
+        this.howl.on('seek', (id) => {
             this.onSeek.invoke(id);
         });
 
-        this._howl.on('stop', (id) => {
+        this.howl.on('stop', (id) => {
             this.onStop.invoke(id);
         });
 
     }
 
     setVolume(value: number) {
-        this._howl.volume([value]);
+        this.howl.volume([value]);
     }
 
     init(editorCoreModules: IEditorCore) {
-        this._editorCore = editorCoreModules;
-        this._editorCore.editorData.audioFile.onValueChange.addListener(([s1, s2]) => {this.loadAudio(s1, s2)})
-        this._view.onVolumeSliderChange.addListener((value) => {this.setVolume(value)});
+        this.editorCore = editorCoreModules;
+        this.editorCore.editorData.audioFile.onValueChange.addListener(([s1, s2]) => {this.loadAudio(s1, s2);})
+        this.view.onVolumeSliderChange.addListener((value) => {this.setVolume(value);});
+        this.editorCore.editorData.playbackRate.onValueChange.addListener((value) => {this.setPlaybackRate(value);});
     }
 
     updateModule() {
-        if (this._howl == null || this._howl == undefined)
+        if (this.howl == null || this.howl == undefined)
             return;
-        this._view.update(this._howl.seek());
+        this.view.update(this.howl.seek());
     }
 
     setPlaybackRate(value: number) {
-        this._howl.rate([value]);
+        this.howl.rate([value]);
     }
 
     isAudioLoaded() : boolean {
-        return false;
+        return this.audioLoaded;
     }
 
     isPlaying() : boolean {
-        if (this._howl == undefined || this._howl == null)
+        if (this.howl == undefined || this.howl == null)
             return false;
-        return this._howl.playing([this._soundId]);
+        return this.howl.playing([this.soundId]);
     }
 
     play() {
-        this._soundId = this._howl.play();
+        this.soundId = this.howl.play();
     }
     
     pause() {
-        this._howl.pause();
+        this.howl.pause();
     }
 
-    seek() {
-
-    }
+    seek() : number {
+        return this.howl.seek();
+    }   
 
     setMusicFromCanvasPosition(position : Vec2, editor : IEditorCore) {
         var second = editor.viewport.canvasToSongTime(position).x/editor.transform.scale.x;
-        this._howl.seek([second]);
+        this.howl.seek([second]);
     }
 
     getDomainData() : Float32Array {
-        var dataArray = new Float32Array(this._analyser.frequencyBinCount);
-        this._analyser.getFloatTimeDomainData(dataArray);
+        var dataArray = new Float32Array(this.analyser.frequencyBinCount);
+        this.analyser.getFloatTimeDomainData(dataArray);
         return dataArray;
     }
 
     private setupData() {
-        this._bufferSource = this._howl._soundById(this._soundId)._node.bufferSource;
-        this._howl._soundById(this._soundId)._node.bufferSource.connect(this._analyser) 
+        this._bufferSource = this.howl._soundById(this.soundId)._node.bufferSource;
+        this.howl._soundById(this.soundId)._node.bufferSource.connect(this.analyser) 
     }
 }
 
@@ -229,13 +232,13 @@ export class AudioAmplitudeViewModule implements IEditorModule {
     private samplesPerArrayValue = this.sampleRate/this.divideValue;
     private editorCore: IEditorCore;
 
-    constructor(parent: Transform) {
-        this.transform.parent = parent;
+    constructor() {
+        console.log("asdasdasdsad");
         this.canvas = $('#audio-amplitude-canvas')[0] as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d');
     }
 
-    onWindowResize(event: UIEvent) {
+    onWindowResize() {
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
 
@@ -245,13 +248,15 @@ export class AudioAmplitudeViewModule implements IEditorModule {
         this.canvas.setAttribute('height', (info.height/4).toString());
     }
 
-    onAudioLoad(audio: AudioModule) {        
-        this.analyserData = audio.bufferSource.buffer.getChannelData(0);
+    onAudioLoad() {        
+        this.analyserData = this.editorCore.audio.bufferSource.buffer.getChannelData(0);
         this.calculateAmplitudeArray();
     }
 
     init(editorCore: IEditorCore){
         this.editorCore = editorCore;
+        Input.onWindowResize.addListener(() => {this.onWindowResize();});
+        this.editorCore.audio.onPlay.addListener(() => {this.onAudioLoad();});
     } 
 
     updateModule() {

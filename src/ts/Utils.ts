@@ -30,6 +30,7 @@ export abstract class Utils {
 }
 
 export type Action<T> = (item: T) => void;
+
 export type EmptyAction = () => void;
 
 export class Event<T> {

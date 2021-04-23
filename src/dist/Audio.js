@@ -8,6 +8,7 @@ var Utils_1 = require("./Utils");
 var AppSettings_1 = require("./AppSettings");
 var jquery_1 = __importDefault(require("jquery"));
 var Transform_1 = require("./Transform");
+var Input_1 = require("./Input");
 var _a = require('howler'), Howl = _a.Howl, Howler = _a.Howler;
 var TimeAccuracy;
 (function (TimeAccuracy) {
@@ -64,7 +65,7 @@ var AudioPlayerView = /** @class */ (function () {
 var AudioModule = /** @class */ (function () {
     function AudioModule() {
         this.transform = new Transform_1.Transform();
-        this._view = new AudioPlayerView(this);
+        this.view = new AudioPlayerView(this);
         this.onAudioLoaded = new Utils_1.Event();
         this.onLoad = new Utils_1.Event();
         this.onSeek = new Utils_1.Event();
@@ -79,104 +80,110 @@ var AudioModule = /** @class */ (function () {
         configurable: true
     });
     AudioModule.prototype.duration = function () {
-        return this._howl.duration();
+        return this.howl.duration();
     };
     AudioModule.prototype.loadAudio = function (fileName, soundPath) {
         var _this = this;
-        this._howl = new Howl({ src: [soundPath] });
-        this._analyser = Howler.ctx.createAnalyser();
-        this._analyser.fftSize = 256;
-        this._howl.on('load', function () {
-            _this._view.onAudioLoad(fileName, _this._howl.duration());
+        this.howl = new Howl({ src: [soundPath] });
+        this.analyser = Howler.ctx.createAnalyser();
+        this.analyser.fftSize = 256;
+        this.howl.on('load', function () {
+            _this.audioLoaded = true;
+            _this.view.onAudioLoad(fileName, _this.howl.duration());
             _this.onAudioLoaded.invoke([fileName, soundPath]);
         });
-        this._howl.on('play', function (id) {
+        this.howl.on('play', function (id) {
             _this.setupData();
             _this.onPlay.invoke(id);
         });
-        this._howl.on('seek', function (id) {
+        this.howl.on('seek', function (id) {
             _this.onSeek.invoke(id);
         });
-        this._howl.on('stop', function (id) {
+        this.howl.on('stop', function (id) {
             _this.onStop.invoke(id);
         });
     };
     AudioModule.prototype.setVolume = function (value) {
-        this._howl.volume([value]);
+        this.howl.volume([value]);
     };
     AudioModule.prototype.init = function (editorCoreModules) {
         var _this = this;
-        this._editorCore = editorCoreModules;
-        this._editorCore.editorData.audioFile.onValueChange.addListener(function (_a) {
+        this.editorCore = editorCoreModules;
+        this.editorCore.editorData.audioFile.onValueChange.addListener(function (_a) {
             var s1 = _a[0], s2 = _a[1];
             _this.loadAudio(s1, s2);
         });
-        this._view.onVolumeSliderChange.addListener(function (value) { _this.setVolume(value); });
+        this.view.onVolumeSliderChange.addListener(function (value) { _this.setVolume(value); });
+        this.editorCore.editorData.playbackRate.onValueChange.addListener(function (value) { _this.setPlaybackRate(value); });
     };
     AudioModule.prototype.updateModule = function () {
-        if (this._howl == null || this._howl == undefined)
+        if (this.howl == null || this.howl == undefined)
             return;
-        this._view.update(this._howl.seek());
+        this.view.update(this.howl.seek());
     };
     AudioModule.prototype.setPlaybackRate = function (value) {
-        this._howl.rate([value]);
+        this.howl.rate([value]);
     };
     AudioModule.prototype.isAudioLoaded = function () {
-        return false;
+        return this.audioLoaded;
     };
     AudioModule.prototype.isPlaying = function () {
-        if (this._howl == undefined || this._howl == null)
+        if (this.howl == undefined || this.howl == null)
             return false;
-        return this._howl.playing([this._soundId]);
+        return this.howl.playing([this.soundId]);
     };
     AudioModule.prototype.play = function () {
-        this._soundId = this._howl.play();
+        this.soundId = this.howl.play();
     };
     AudioModule.prototype.pause = function () {
-        this._howl.pause();
+        this.howl.pause();
     };
     AudioModule.prototype.seek = function () {
+        return this.howl.seek();
     };
     AudioModule.prototype.setMusicFromCanvasPosition = function (position, editor) {
         var second = editor.viewport.canvasToSongTime(position).x / editor.transform.scale.x;
-        this._howl.seek([second]);
+        this.howl.seek([second]);
     };
     AudioModule.prototype.getDomainData = function () {
-        var dataArray = new Float32Array(this._analyser.frequencyBinCount);
-        this._analyser.getFloatTimeDomainData(dataArray);
+        var dataArray = new Float32Array(this.analyser.frequencyBinCount);
+        this.analyser.getFloatTimeDomainData(dataArray);
         return dataArray;
     };
     AudioModule.prototype.setupData = function () {
-        this._bufferSource = this._howl._soundById(this._soundId)._node.bufferSource;
-        this._howl._soundById(this._soundId)._node.bufferSource.connect(this._analyser);
+        this._bufferSource = this.howl._soundById(this.soundId)._node.bufferSource;
+        this.howl._soundById(this.soundId)._node.bufferSource.connect(this.analyser);
     };
     return AudioModule;
 }());
 exports.AudioModule = AudioModule;
 var AudioAmplitudeViewModule = /** @class */ (function () {
-    function AudioAmplitudeViewModule(parent) {
+    function AudioAmplitudeViewModule() {
         this.transform = new Transform_1.Transform();
         this.amplitudeData = new Array();
         this.sampleRate = 48000;
         this.divideValue = 20;
         this.samplesPerArrayValue = this.sampleRate / this.divideValue;
-        this.transform.parent = parent;
+        console.log("asdasdasdsad");
         this.canvas = jquery_1.default('#audio-amplitude-canvas')[0];
         this.ctx = this.canvas.getContext('2d');
     }
-    AudioAmplitudeViewModule.prototype.onWindowResize = function (event) {
+    AudioAmplitudeViewModule.prototype.onWindowResize = function () {
         var w = document.documentElement.clientWidth;
         var h = document.documentElement.clientHeight;
         var info = this.canvas.parentElement.getBoundingClientRect();
         this.canvas.setAttribute('width', info.width.toString());
         this.canvas.setAttribute('height', (info.height / 4).toString());
     };
-    AudioAmplitudeViewModule.prototype.onAudioLoad = function (audio) {
-        this.analyserData = audio.bufferSource.buffer.getChannelData(0);
+    AudioAmplitudeViewModule.prototype.onAudioLoad = function () {
+        this.analyserData = this.editorCore.audio.bufferSource.buffer.getChannelData(0);
         this.calculateAmplitudeArray();
     };
     AudioAmplitudeViewModule.prototype.init = function (editorCore) {
+        var _this = this;
         this.editorCore = editorCore;
+        Input_1.Input.onWindowResize.addListener(function () { _this.onWindowResize(); });
+        this.editorCore.audio.onPlay.addListener(function () { _this.onAudioLoad(); });
     };
     AudioAmplitudeViewModule.prototype.updateModule = function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);

@@ -83,8 +83,8 @@ export class Transform {
 
     set parent(parent : Transform) {
         
-        if (parent == null) {
-            parent.removeChild(this);
+        if (parent == null && this._parent != null) {
+            this._parent.removeChild(this);
             this._parent = parent;
             return;
         }

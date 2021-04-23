@@ -72,7 +72,7 @@ export class CreatableTimestampLine extends GridElement {
     constructor(x: number, parent: Transform, color: RgbaColor) {
         super(parent, color);
         this.transform.parent = parent;
-        this.transform.position = new Vec2(x, 0);
+        this.transform.localPosition = new Vec2(x, 0);
     }
 
     draw(view: IViewportModule, canvas: HTMLCanvasElement) {
@@ -140,7 +140,7 @@ export class BPMLine extends GridElement {
 
         if (!this.isActive)
             return;
-        
+
         const ctx = canvas.getContext('2d');
         ctx.strokeStyle = this.color.value();
         ctx.beginPath();

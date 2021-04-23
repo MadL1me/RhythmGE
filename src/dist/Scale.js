@@ -14,8 +14,13 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LeftScale = exports.BottomScale = exports.TopScale = void 0;
+exports.TopScale = void 0;
+var Transform_1 = require("./Transform");
+var jquery_1 = __importDefault(require("jquery"));
 var Scale = /** @class */ (function () {
     function Scale(width) {
         this.width = width;
@@ -24,9 +29,18 @@ var Scale = /** @class */ (function () {
 }());
 var TopScale = /** @class */ (function (_super) {
     __extends(TopScale, _super);
-    function TopScale() {
-        return _super !== null && _super.apply(this, arguments) || this;
+    function TopScale(width) {
+        var _this = _super.call(this, width) || this;
+        _this.transform = new Transform_1.Transform();
+        _this.canvas = jquery_1.default("#editor-canvas")[0];
+        return _this;
     }
+    TopScale.prototype.init = function (editorCoreModules) {
+        this.editorCore = editorCoreModules;
+    };
+    TopScale.prototype.updateModule = function () {
+        this.draw(this.canvas);
+    };
     TopScale.prototype.draw = function (canvas) {
         var ctx = canvas.getContext('2d');
         ctx.fillStyle = '#1B1C21';
@@ -35,29 +49,3 @@ var TopScale = /** @class */ (function (_super) {
     return TopScale;
 }(Scale));
 exports.TopScale = TopScale;
-var BottomScale = /** @class */ (function (_super) {
-    __extends(BottomScale, _super);
-    function BottomScale() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    BottomScale.prototype.draw = function (canvas) {
-        var ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#1B1C21';
-        ctx.fillRect(0, canvas.height + 5, canvas.width, -this.width - 5);
-    };
-    return BottomScale;
-}(Scale));
-exports.BottomScale = BottomScale;
-var LeftScale = /** @class */ (function (_super) {
-    __extends(LeftScale, _super);
-    function LeftScale() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    LeftScale.prototype.draw = function (canvas) {
-        var ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#1B1C21';
-        ctx.fillRect(0, 0, this.width, canvas.height);
-    };
-    return LeftScale;
-}(Scale));
-exports.LeftScale = LeftScale;

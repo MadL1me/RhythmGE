@@ -1,14 +1,17 @@
-import { Editor, EditorGrid, TimestepLineModule } from "./Editor";
+import { Editor, EditorGrid, TimestepLineModule, CreatableLinesModule } from "./Editor";
 import { TimestepLine } from "./GridElements";
+import { TopScale } from "./Scale" 
+import { AudioAmplitudeViewModule } from "./Audio";
 //var editor = require("./dist/editor");
-
-console.log("abc");
 
 const editor = new Editor();
 
 function setupModules() {
     editor.addEditorModule(new EditorGrid());
-    editor.addEditorModule(new TimestepLineModule())
+    editor.addEditorModule(new CreatableLinesModule());
+    editor.addEditorModule(new TopScale(10));
+    editor.addEditorModule(new TimestepLineModule());
+    editor.addEditorModule(new AudioAmplitudeViewModule());
 }
 
 setupModules();

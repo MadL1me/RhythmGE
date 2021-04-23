@@ -82,8 +82,8 @@ var Transform = /** @class */ (function () {
         },
         set: function (parent) {
             var _a;
-            if (parent == null) {
-                parent.removeChild(this);
+            if (parent == null && this._parent != null) {
+                this._parent.removeChild(this);
                 this._parent = parent;
                 return;
             }

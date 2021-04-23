@@ -15,7 +15,6 @@ export abstract class Input {
     static onKeyDown = new Event<any>();
     static onWindowResize = new Event<any>();
     static onCanvasWheel = new Event<any>();
-    static onCanvasResize = new Event<any>();
     static onMouseClick = new Event<any>();
 
     static init() {
@@ -51,17 +50,15 @@ export abstract class Input {
             event.preventDefault();
         }
 
-        this.keysPressed[event.key] = true;
+        this.keysPressed[event.code] = true;
+        console.log('Key pressed' + event.code);
+        Input.onKeyDown.invoke(event.code);
     }
 
     private static onCanvasKeyUp(event) {
-        delete this.keysPressed[event.key];
-        console.log('Key removed' + event.key);
+        delete this.keysPressed[event.code];
+        console.log('Key removed' + event.code);
         Input.onKeyUp.invoke(event);
-    }
-
-    private static onCanvasWheelEvent(event) {
-        Input.onCanvasWheel.invoke(event);
     }
 }
 
