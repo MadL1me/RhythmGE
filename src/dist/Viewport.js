@@ -1,12 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ViewportModule = void 0;
 var Transform_1 = require("./Transform");
 var Vec2_1 = require("./Vec2");
+var jquery_1 = __importDefault(require("jquery"));
 var ViewportModule = /** @class */ (function () {
     function ViewportModule(parent) {
         this.transform = new Transform_1.Transform();
         this.maxDeviation = new Vec2_1.Vec2(10, 100);
+        this._canvas = jquery_1.default("#editor-canvas")[0];
         this.transform.parent = parent;
         this.transform.position = new Vec2_1.Vec2(10, 0);
     }

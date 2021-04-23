@@ -116,22 +116,27 @@ export class Editor implements IEditorCore {
     private editorCanvas: HTMLCanvasElement;
 
     constructor() {
-        this.viewport.init(this);
-        this.audio.init(this);
         this.editorCanvas = $("#editor-canvas")[0] as HTMLCanvasElement;
         this.transform.scale = new Vec2(10, 1);
+        
+        this.viewport.init(this);
+        this.audio.init(this);
+        this.viewport.transform.parent = this.transform;
+        this.audio.transform.parent = this.transform;
+
         this.update();
     }
 
     addEditorModule(element: IEditorModule) {
+        element.init(this);
+        element.transform.parent = this.transform;
         this.editorModules.push(element)
     }
 
     update() {
         Input.update();
         this.audio.updateModule();
-
-        console.log("ABC");
+        this.viewport.updateModule();
 
         const ctx = this.editorCanvas.getContext("2d");
         ctx.fillStyle = "green";
@@ -193,7 +198,7 @@ export class Editor implements IEditorCore {
     }
 }
 
-class TimestepLineModule implements IEditorModule {
+export class TimestepLineModule implements IEditorModule {
     transform = new Transform();
     
     private editor: IEditorCore;
@@ -217,6 +222,8 @@ class TimestepLineModule implements IEditorModule {
                 this.editor.viewport.transform.position = result;
             }
         }
+
+        this.timestepLine.draw(this.editor.viewport, this.canvas);
     }
 }
 
@@ -385,17 +392,26 @@ export class EditorGrid implements IEditorModule {
     private editorCore: IEditorCore;
 
     constructor() {
+        this.canvas = $("#editor-canvas")[0] as HTMLCanvasElement;
         this.transform = new Transform();
         this.transform.localScale = new Vec2(1, 1);
-        this.initGrid();
+        //this.initGrid();
     }
 
     init(editorCoreModules: IEditorCore) {
         this.editorCore = editorCoreModules;
+        this.subscribeOnEvents();
     }
 
     private subscribeOnEvents() {
+        Input.onWindowResize.addListener(() => {this.onWindowResize();});
+        this.editorCore.audio.onAudioLoaded.addListener(() => {this.onAudioLoad();})
+    }
 
+    private onAudioLoad() {
+        console.log("audio loaded");
+        this.initGrid();
+        this.initBpmLines();
     }
 
     private onWindowResize() {
@@ -410,6 +426,7 @@ export class EditorGrid implements IEditorModule {
         this.canvas.setAttribute('height', (info.height / 4 * 3).toString());
 
         this.initGrid();
+        //this.initBpmLines();
     }
 
     inti(editorCore: IEditorCore) {
@@ -500,6 +517,9 @@ export class EditorGrid implements IEditorModule {
     }
 
     initBpmLines() {
+        if (!this.editorCore.audio.isAudioLoaded())
+            return;
+        
         this.bpmLines = [];
         var soundLength = this.audioController.duration();
         var bpmCount = (soundLength / 60) * this.editorCore.editorData.bpmValue.value;

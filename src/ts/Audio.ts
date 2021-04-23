@@ -8,6 +8,7 @@ import $ from 'jquery';
 import { ViewportModule } from "./Viewport";
 import { Transform } from "./Transform";
 import { throws } from "node:assert";
+import { Input } from "./Input";
 
 const { Howl, Howler } = require('howler');
 
@@ -29,7 +30,8 @@ class AudioPlayerView {
     onVolumeSliderChange = new Event<number>();
     onPlayButtonClick = new Event<boolean>();
 
-    constructor() {
+    constructor(audio: AudioModule) {
+        this.audioController = audio;
         this.audioFileName = $('#file-name')[0] as HTMLParagraphElement;
         this.audioCurrentTime = $('#current-audio-time')[0] as  HTMLParagraphElement;
         this.audioDuration = $('#audio-duration')[0] as HTMLParagraphElement;
@@ -79,7 +81,7 @@ class AudioPlayerView {
 
 
 export interface IAudioModule extends IEditorModule {
-    onAudioLoaded: Event<[number, string]>;
+    onAudioLoaded: Event<[string, string]>;
     onLoad: Event<number>;
     onSeek: Event<number>;
     onPlay: Event<number>;
@@ -103,17 +105,17 @@ export interface IAudioModule extends IEditorModule {
 
 export class AudioModule implements IAudioModule {
 
-    transform: Transform;
+    transform = new Transform();
 
     private _howl : any;
     private _soundId : number;
     private _clapSoundId: number;
     private _analyser : AnalyserNode;
     private _bufferSource: AudioBufferSourceNode;
-    private _view = new AudioPlayerView();
+    private _view = new AudioPlayerView(this);
     private _editorCore: IEditorCore;
     
-    onAudioLoaded = new Event<[number, string]>();
+    onAudioLoaded = new Event<[string, string]>();
     onLoad = new Event<number>();
     onSeek = new Event<number>();
     onPlay = new Event<number>();
@@ -135,6 +137,7 @@ export class AudioModule implements IAudioModule {
 
         this._howl.on('load', () => {
             this._view.onAudioLoad(fileName, this._howl.duration());
+            this.onAudioLoaded.invoke([fileName, soundPath]);
         })
 
         this._howl.on('play', (id) => {
@@ -158,6 +161,8 @@ export class AudioModule implements IAudioModule {
 
     init(editorCoreModules: IEditorCore) {
         this._editorCore = editorCoreModules;
+        this._editorCore.editorData.audioFile.onValueChange.addListener(([s1, s2]) => {this.loadAudio(s1, s2)})
+        this._view.onVolumeSliderChange.addListener((value) => {this.setVolume(value)});
     }
 
     updateModule() {

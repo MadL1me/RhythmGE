@@ -18,6 +18,7 @@ export class ViewportModule implements IViewportModule {
     maxDeviation: Vec2 = new Vec2(10,100);
 
     constructor(parent) {
+        this._canvas = $("#editor-canvas")[0] as HTMLCanvasElement;
         this.transform.parent = parent;
         this.transform.position = new Vec2(10, 0);
     }

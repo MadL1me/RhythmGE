@@ -15,12 +15,13 @@ var TimeAccuracy;
     TimeAccuracy[TimeAccuracy["milliseconds"] = 1] = "milliseconds";
 })(TimeAccuracy || (TimeAccuracy = {}));
 var AudioPlayerView = /** @class */ (function () {
-    function AudioPlayerView() {
+    function AudioPlayerView(audio) {
         var _this = this;
         this.songTimeSlider = new Utils_1.Slider('audio-slider');
         this.volumeSlider = new Utils_1.Slider('volume-slider');
         this.onVolumeSliderChange = new Utils_1.Event();
         this.onPlayButtonClick = new Utils_1.Event();
+        this.audioController = audio;
         this.audioFileName = jquery_1.default('#file-name')[0];
         this.audioCurrentTime = jquery_1.default('#current-audio-time')[0];
         this.audioDuration = jquery_1.default('#audio-duration')[0];
@@ -62,7 +63,8 @@ var AudioPlayerView = /** @class */ (function () {
 }());
 var AudioModule = /** @class */ (function () {
     function AudioModule() {
-        this._view = new AudioPlayerView();
+        this.transform = new Transform_1.Transform();
+        this._view = new AudioPlayerView(this);
         this.onAudioLoaded = new Utils_1.Event();
         this.onLoad = new Utils_1.Event();
         this.onSeek = new Utils_1.Event();
@@ -86,6 +88,7 @@ var AudioModule = /** @class */ (function () {
         this._analyser.fftSize = 256;
         this._howl.on('load', function () {
             _this._view.onAudioLoad(fileName, _this._howl.duration());
+            _this.onAudioLoaded.invoke([fileName, soundPath]);
         });
         this._howl.on('play', function (id) {
             _this.setupData();
@@ -102,7 +105,13 @@ var AudioModule = /** @class */ (function () {
         this._howl.volume([value]);
     };
     AudioModule.prototype.init = function (editorCoreModules) {
+        var _this = this;
         this._editorCore = editorCoreModules;
+        this._editorCore.editorData.audioFile.onValueChange.addListener(function (_a) {
+            var s1 = _a[0], s2 = _a[1];
+            _this.loadAudio(s1, s2);
+        });
+        this._view.onVolumeSliderChange.addListener(function (value) { _this.setVolume(value); });
     };
     AudioModule.prototype.updateModule = function () {
         if (this._howl == null || this._howl == undefined)

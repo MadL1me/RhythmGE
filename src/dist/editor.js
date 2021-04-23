@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EditorGrid = exports.Editor = exports.EditorData = void 0;
+exports.EditorGrid = exports.TimestepLineModule = exports.Editor = exports.EditorData = void 0;
 var jquery_1 = __importDefault(require("jquery"));
 var RgbaColor_1 = require("./RgbaColor");
 var Vec2_1 = require("./Vec2");
@@ -88,19 +88,23 @@ var Editor = /** @class */ (function () {
         this.editorData = new EditorData();
         this.audio = new Audio_1.AudioModule();
         this.editorModules = new Array();
-        this.viewport.init(this);
-        this.audio.init(this);
         this.editorCanvas = jquery_1.default("#editor-canvas")[0];
         this.transform.scale = new Vec2_1.Vec2(10, 1);
+        this.viewport.init(this);
+        this.audio.init(this);
+        this.viewport.transform.parent = this.transform;
+        this.audio.transform.parent = this.transform;
         this.update();
     }
     Editor.prototype.addEditorModule = function (element) {
+        element.init(this);
+        element.transform.parent = this.transform;
         this.editorModules.push(element);
     };
     Editor.prototype.update = function () {
         Input_1.Input.update();
         this.audio.updateModule();
-        console.log("ABC");
+        this.viewport.updateModule();
         var ctx = this.editorCanvas.getContext("2d");
         ctx.fillStyle = "green";
         ctx.fillRect(0, 0, this.editorCanvas.width, this.editorCanvas.height);
@@ -166,9 +170,11 @@ var TimestepLineModule = /** @class */ (function () {
                 this.editor.viewport.transform.position = result;
             }
         }
+        this.timestepLine.draw(this.editor.viewport, this.canvas);
     };
     return TimestepLineModule;
 }());
+exports.TimestepLineModule = TimestepLineModule;
 // class PhantomTimestampModule implements IEditorModule {
 // }
 var CreatableLinesModule = /** @class */ (function () {
@@ -293,14 +299,24 @@ var EditorGrid = /** @class */ (function () {
         this.transform = new Transform_1.Transform();
         this.beatLinesRange = new Vec2_1.Vec2(1, 20);
         this.bpmRange = new Vec2_1.Vec2(1, 10000);
+        this.canvas = jquery_1.default("#editor-canvas")[0];
         this.transform = new Transform_1.Transform();
         this.transform.localScale = new Vec2_1.Vec2(1, 1);
-        this.initGrid();
+        //this.initGrid();
     }
     EditorGrid.prototype.init = function (editorCoreModules) {
         this.editorCore = editorCoreModules;
+        this.subscribeOnEvents();
     };
     EditorGrid.prototype.subscribeOnEvents = function () {
+        var _this = this;
+        Input_1.Input.onWindowResize.addListener(function () { _this.onWindowResize(); });
+        this.editorCore.audio.onAudioLoaded.addListener(function () { _this.onAudioLoad(); });
+    };
+    EditorGrid.prototype.onAudioLoad = function () {
+        console.log("audio loaded");
+        this.initGrid();
+        this.initBpmLines();
     };
     EditorGrid.prototype.onWindowResize = function () {
         var w = document.documentElement.clientWidth;
@@ -311,6 +327,7 @@ var EditorGrid = /** @class */ (function () {
         this.canvas.setAttribute('width', (info.width).toString());
         this.canvas.setAttribute('height', (info.height / 4 * 3).toString());
         this.initGrid();
+        //this.initBpmLines();
     };
     EditorGrid.prototype.inti = function (editorCore) {
         this.editorCore = editorCore;
@@ -384,6 +401,8 @@ var EditorGrid = /** @class */ (function () {
         }
     };
     EditorGrid.prototype.initBpmLines = function () {
+        if (!this.editorCore.audio.isAudioLoaded())
+            return;
         this.bpmLines = [];
         var soundLength = this.audioController.duration();
         var bpmCount = (soundLength / 60) * this.editorCore.editorData.bpmValue.value;

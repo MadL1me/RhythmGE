@@ -6,6 +6,7 @@ console.log("abc");
 var editor = new Editor_1.Editor();
 function setupModules() {
     editor.addEditorModule(new Editor_1.EditorGrid());
+    editor.addEditorModule(new Editor_1.TimestepLineModule());
 }
 setupModules();
-setInterval(function () { editor.update(); console.log("updating lol"); }, 15);
+setInterval(function () { editor.update(); }, 15);
