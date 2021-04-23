@@ -161,6 +161,8 @@ export class AudioModule implements IAudioModule {
     }
 
     updateModule() {
+        if (this._howl == null || this._howl == undefined)
+            return;
         this._view.update(this._howl.seek());
     }
 

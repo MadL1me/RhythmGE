@@ -90,7 +90,7 @@ var Editor = /** @class */ (function () {
         this.editorModules = new Array();
         this.viewport.init(this);
         this.audio.init(this);
-        this.editorCanvas = jquery_1.default("editor-canvas")[0];
+        this.editorCanvas = jquery_1.default("#editor-canvas")[0];
         this.transform.scale = new Vec2_1.Vec2(10, 1);
         this.update();
     }
@@ -153,7 +153,7 @@ var TimestepLineModule = /** @class */ (function () {
     function TimestepLineModule() {
         this.transform = new Transform_1.Transform();
         this.timestepLine = new GridElements_1.TimestepLine(this.transform, AppSettings_1.editorColorSettings.timestepLineColor);
-        this.canvas = jquery_1.default("editor-canvas")[0];
+        this.canvas = jquery_1.default("#editor-canvas")[0];
     }
     TimestepLineModule.prototype.init = function (editorCoreModules) {
         this.editor = editorCoreModules;
@@ -213,7 +213,7 @@ var TimestampsModule = /** @class */ (function () {
         this.timestamps = new Map();
         this.editorGrid = editorGrid;
         var defaultPrefab = this.createTimestampPrefab(new RgbaColor_1.RgbaColor(0, 255, 26));
-        this.canvas = jquery_1.default("editor-canvas")[0];
+        this.canvas = jquery_1.default("#editor-canvas")[0];
         this.idToPrefab[defaultPrefab.prefabId] = defaultPrefab;
     }
     TimestampsModule.prototype.init = function (editorCoreModules) {

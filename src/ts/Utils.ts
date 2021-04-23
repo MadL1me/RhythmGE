@@ -92,7 +92,7 @@ export class Slider {
     }
 
     set value(value: number) {
-        this.value = value;
+        this._value = value;
         this.sliderInput.value = value.toString();
         this.onValueChange.invoke(value);
     }

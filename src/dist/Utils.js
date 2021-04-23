@@ -91,7 +91,7 @@ var Slider = /** @class */ (function () {
             return this._value;
         },
         set: function (value) {
-            this.value = value;
+            this._value = value;
             this.sliderInput.value = value.toString();
             this.onValueChange.invoke(value);
         },

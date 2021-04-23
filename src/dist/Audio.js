@@ -105,6 +105,8 @@ var AudioModule = /** @class */ (function () {
         this._editorCore = editorCoreModules;
     };
     AudioModule.prototype.updateModule = function () {
+        if (this._howl == null || this._howl == undefined)
+            return;
         this._view.update(this._howl.seek());
     };
     AudioModule.prototype.setPlaybackRate = function (value) {

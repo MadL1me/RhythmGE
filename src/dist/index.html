@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <title>RhythmGE</title>
-  <link rel="stylesheet" href="dist/index.css">
+  <link rel="stylesheet" href="index.css">
 </head>
 
 <body>
@@ -106,10 +106,9 @@
     <canvas width="800" height="100" id="audio-amplitude-canvas"></canvas>
   </div>
 
-  <!-- <script> var exports = {};</script>  -->
-  <!-- <script defer> var exports = {"__esModule": false};</script> -->
-  <script defer src="dist/renderer.js"></script>
-  <script defer src="dist/editor.js"></script>
+  <script>
+    require("./renderer.js")
+  </script>
 </body>
 
 </html>

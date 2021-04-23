@@ -3,7 +3,7 @@
   "productName": "RhythmGE",
   "version": "0.0.1",
   "description": "Tool for rhythm game developers",
-  "main": "src/index.js",
+  "main": "src/dist/index.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",

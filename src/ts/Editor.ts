@@ -118,7 +118,7 @@ export class Editor implements IEditorCore {
     constructor() {
         this.viewport.init(this);
         this.audio.init(this);
-        this.editorCanvas = $("editor-canvas")[0] as HTMLCanvasElement;
+        this.editorCanvas = $("#editor-canvas")[0] as HTMLCanvasElement;
         this.transform.scale = new Vec2(10, 1);
         this.update();
     }
@@ -201,7 +201,7 @@ class TimestepLineModule implements IEditorModule {
     private canvas: HTMLCanvasElement;
 
     constructor() {
-        this.canvas = $("editor-canvas")[0] as HTMLCanvasElement;
+        this.canvas = $("#editor-canvas")[0] as HTMLCanvasElement;
     }
 
     init(editorCoreModules: IEditorCore) {
@@ -283,7 +283,7 @@ class TimestampsModule implements IEditorModule {
     constructor(editorGrid: EditorGrid) {
         this.editorGrid = editorGrid;
         const defaultPrefab = this.createTimestampPrefab(new RgbaColor(0, 255, 26));
-        this.canvas = $("editor-canvas")[0] as HTMLCanvasElement;
+        this.canvas = $("#editor-canvas")[0] as HTMLCanvasElement;
         this.idToPrefab[defaultPrefab.prefabId] = defaultPrefab;
     }
 
