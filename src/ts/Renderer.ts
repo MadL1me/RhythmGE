@@ -1,4 +1,4 @@
-import { Editor, EditorGrid, TimestepLineModule, CreatableLinesModule } from "./Editor";
+import { Editor, EditorGrid, TimestepLineModule, CreatableLinesModule, TimestampsModule } from "./Editor";
 import { TimestepLine } from "./GridElements";
 import { TopScale } from "./Scale" 
 import { AudioAmplitudeViewModule } from "./Audio";
@@ -7,11 +7,19 @@ import { AudioAmplitudeViewModule } from "./Audio";
 const editor = new Editor();
 
 function setupModules() {
-    editor.addEditorModule(new EditorGrid());
-    editor.addEditorModule(new CreatableLinesModule());
-    editor.addEditorModule(new TopScale(10));
-    editor.addEditorModule(new TimestepLineModule());
-    editor.addEditorModule(new AudioAmplitudeViewModule());
+    const grid = new EditorGrid();
+    const cLines = new CreatableLinesModule();
+    const topScale = new TopScale(10);
+    const timestampsModule = new TimestampsModule(grid, cLines);
+    const timestampLine = new TimestepLineModule();
+    const audio = new AudioAmplitudeViewModule();
+
+    editor.addEditorModule(grid);
+    editor.addEditorModule(cLines);
+    editor.addEditorModule(topScale);
+    editor.addEditorModule(timestampsModule);
+    editor.addEditorModule(timestampLine);
+    editor.addEditorModule(audio);
 }
 
 setupModules();

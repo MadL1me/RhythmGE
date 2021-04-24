@@ -1,4 +1,4 @@
-const { app, ipcMain, dialog, BrowserWindow } = require('electron');
+const { app, ipcMain, dialog, BrowserWindow, nativeTheme } = require('electron');
 const fs = require("fs");
 const path = require('path');
 
@@ -18,6 +18,7 @@ const createWindow = () => {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      themeSource: "dark"
   }
   });
 

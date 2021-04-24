@@ -25,6 +25,7 @@ export class Transform {
 
     canvasToWorld(canvasCoords : Vec2) : Vec2 {
         const pos = this.position;
+        return new Vec2(-1*(canvasCoords.x/this.scale.x - this.position.x/this.scale.x), 1);
         return new Vec2((pos.x - canvasCoords.x) / this.scale.x, 
             (pos.y - canvasCoords.y) / this.scale.y);
     }

@@ -44,6 +44,8 @@ var Timestamp = /** @class */ (function (_super) {
     __extends(Timestamp, _super);
     function Timestamp(color, localPosition, width, parent) {
         var _this = _super.call(this, parent, color) || this;
+        _this.maxWidth = 7;
+        _this.minWidth = 1;
         _this.width = width;
         _this.transform.parent = parent;
         _this.transform.localPosition = localPosition;
@@ -54,7 +56,11 @@ var Timestamp = /** @class */ (function (_super) {
         _super.prototype.draw.call(this, view, canvas);
         var ctx = canvas.getContext('2d');
         var pos = new Vec2_1.Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
-        var width = this.width * this.transform.parent.localScale.x;
+        var width = this.width + this.transform.scale.x / 5;
+        if (width > this.maxWidth)
+            width = this.maxWidth;
+        if (width < this.minWidth)
+            width = this.minWidth;
         ctx.fillStyle = this.color.value();
         ctx.beginPath();
         ctx.moveTo(pos.x - width, pos.y);

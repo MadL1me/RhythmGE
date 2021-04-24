@@ -21,6 +21,7 @@ var Transform = /** @class */ (function () {
     };
     Transform.prototype.canvasToWorld = function (canvasCoords) {
         var pos = this.position;
+        return new Vec2_1.Vec2(-1 * (canvasCoords.x / this.scale.x - this.position.x / this.scale.x), 1);
         return new Vec2_1.Vec2((pos.x - canvasCoords.x) / this.scale.x, (pos.y - canvasCoords.y) / this.scale.y);
     };
     Object.defineProperty(Transform.prototype, "localPosition", {

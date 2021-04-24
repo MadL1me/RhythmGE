@@ -41,6 +41,9 @@ export class Timestamp extends GridElement {
     id: number;
     width: number;
 
+    private maxWidth = 7;
+    private minWidth = 1;
+
     constructor(color: RgbaColor, localPosition: Vec2, width : number, parent: Transform) {
         super(parent, color);
         this.width = width;
@@ -54,9 +57,14 @@ export class Timestamp extends GridElement {
         
         const ctx = canvas.getContext('2d');
         const pos = new Vec2(this.transform.position.x + view.position.x,
-         this.transform.position.y + view.position.y);
-        const width = this.width*this.transform.parent.localScale.x;
+        this.transform.position.y + view.position.y);
         
+        let width = this.width + this.transform.scale.x/5;
+        if (width > this.maxWidth)
+            width = this.maxWidth;
+        if (width < this.minWidth)
+            width = this.minWidth;
+
         ctx.fillStyle = this.color.value();
         ctx.beginPath();
         ctx.moveTo(pos.x - width, pos.y);

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EditorGrid = exports.CreatableLinesModule = exports.TimestepLineModule = exports.Editor = exports.EditorData = void 0;
+exports.EditorGrid = exports.TimestampsModule = exports.CreatableLinesModule = exports.TimestepLineModule = exports.Editor = exports.EditorData = void 0;
 var jquery_1 = __importDefault(require("jquery"));
 var RgbaColor_1 = require("./RgbaColor");
 var Vec2_1 = require("./Vec2");
@@ -170,15 +170,17 @@ var CreatableLinesModule = /** @class */ (function () {
     };
     CreatableLinesModule.prototype.updateModule = function () {
         var _this = this;
+        if (this.editor.editorData.hideCreatableLines.value)
+            return;
         Object.values(this.creatableLines).forEach(function (element) {
             element.draw(_this.editor.viewport, _this.canvas);
         });
     };
     CreatableLinesModule.prototype.findClosestCreatableLine = function (positionX) {
         var objectsArr = Object.keys(this.creatableLines);
-        objectsArr.forEach(function (el) {
-            console.log(el);
-        });
+        // objectsArr.forEach(el => {
+        //     console.log(el);   
+        // })
         var indexOfElement = Utils_1.Utils.binaryNearestSearch(objectsArr, positionX);
         var closestCreatable = this.creatableLines[objectsArr[indexOfElement]];
         return closestCreatable;
@@ -204,18 +206,30 @@ var TimestampPrefab = /** @class */ (function () {
     return TimestampPrefab;
 }());
 var TimestampsModule = /** @class */ (function () {
-    function TimestampsModule(editorGrid) {
+    function TimestampsModule(editorGrid, creatableLines) {
         this.transform = new Transform_1.Transform();
         this.selectedPrefabId = 0;
         this.idToPrefab = new Map();
         this.timestamps = new Map();
-        this.editorGrid = editorGrid;
+        this.editorGridModule = editorGrid;
+        this.createableLinesModule = creatableLines;
         var defaultPrefab = this.createTimestampPrefab(new RgbaColor_1.RgbaColor(0, 255, 26));
         this.canvas = jquery_1.default("#editor-canvas")[0];
         this.idToPrefab[defaultPrefab.prefabId] = defaultPrefab;
     }
     TimestampsModule.prototype.init = function (editorCoreModules) {
+        var _this = this;
         this.editorCore = editorCoreModules;
+        Input_1.Input.onMainCanvasMouseClick.addListener(function (event) { _this.onCanvasClick(event); });
+    };
+    TimestampsModule.prototype.updateModule = function () {
+        for (var _i = 0, _a = Object.entries(this.timestamps); _i < _a.length; _i++) {
+            var _b = _a[_i], i = _b[0], value = _b[1];
+            for (var _c = 0, _d = Object.entries(value); _c < _d.length; _c++) {
+                var _e = _d[_c], j = _e[0], timestamp = _e[1];
+                timestamp.draw(this.editorCore.viewport, this.canvas);
+            }
+        }
     };
     TimestampsModule.prototype.registerTimestampPrefab = function (timestampPrefab) {
         this.idToPrefab[timestampPrefab.prefabId] = timestampPrefab;
@@ -231,16 +245,19 @@ var TimestampsModule = /** @class */ (function () {
         var clickX = event.clientX - rect.left;
         var clickY = event.clientY - rect.top;
         var click = new Vec2_1.Vec2(clickX, clickY);
-        var worldClickPos = this.transform.canvasToWorld(click);
+        var worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
         worldClickPos = new Vec2_1.Vec2(-1 * worldClickPos.x, -1 * worldClickPos.y);
-        var closestBeatline = this.editorGrid.findClosestBeatLine(click);
+        console.log(click);
+        console.log("World click pos is: " + worldClickPos);
+        console.log(worldClickPos);
+        var closestBeatline = this.editorGridModule.findClosestBeatLine(click);
         var closestObjects = new Array();
-        if (!this.editorCore.editorData.hideBpmLines && this.editorGrid.bpmLines.length > 0) {
-            closestObjects.push(this.editorGrid.findClosestBpmLine(worldClickPos.x));
+        if (!this.editorCore.editorData.hideBpmLines.value && this.editorGridModule.bpmLines.length > 0) {
+            closestObjects.push(this.editorGridModule.findClosestBpmLine(worldClickPos.x));
         }
-        // if (!this.editorCore.editorData.hideCreatableLines && Object.keys(this.creatableLines).length > 0) {
-        //     closestObjects.push(this.editorGrid.findClosestCreatableLine(worldClickPos.x));
-        // }
+        if (!this.editorCore.editorData.hideCreatableLines.value && Object.keys(this.createableLinesModule.creatableLines).length > 0) {
+            closestObjects.push(this.createableLinesModule.findClosestCreatableLine(worldClickPos.x));
+        }
         var min = 100000, index = 0;
         for (var i = 0; i < closestObjects.length; i++) {
             var diff = Math.abs(worldClickPos.x - closestObjects[i].transform.localPosition.x);
@@ -252,9 +269,13 @@ var TimestampsModule = /** @class */ (function () {
         var closestObject = closestObjects[index];
         console.log(closestObjects);
         console.log(closestObject);
-        var newTimestamp = new GridElements_1.Timestamp(new RgbaColor_1.RgbaColor(123, 123, 65), new Vec2_1.Vec2(closestObject.transform.localPosition.x, closestBeatline.transform.position.y), 5, this.editorGrid.transform);
+        var prefab = this.idToPrefab[this.selectedPrefabId];
+        var newTimestamp = new GridElements_1.Timestamp(prefab.color, new Vec2_1.Vec2(closestObject.transform.localPosition.x, closestBeatline.transform.localPosition.y), 0.5, this.editorGridModule.transform);
         console.log(newTimestamp);
-        this.timestamps[newTimestamp.transform.position.x] = newTimestamp;
+        if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
+            this.timestamps[newTimestamp.transform.localPosition.x] = {};
+        }
+        this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
     };
     TimestampsModule.prototype.canvasPlacePhantomElementHandler = function () {
         if (Input_1.Input.keysPressed['Alt']) {
@@ -262,20 +283,11 @@ var TimestampsModule = /** @class */ (function () {
             var clickX = Input_1.Input.mousePosition.x - rect.left;
             var clickY = Input_1.Input.mousePosition.y - rect.top;
             var click = new Vec2_1.Vec2(clickX, clickY);
-            var closestBeatline = this.editorGrid.findClosestBeatLine(click);
-            this.phantomTimestamp = new GridElements_1.Timestamp(new RgbaColor_1.RgbaColor(158, 23, 240, 0.7), new Vec2_1.Vec2(click.x / this.editorGrid.transform.scale.x, closestBeatline.transform.position.y), 10, this.editorGrid.transform);
+            var closestBeatline = this.editorGridModule.findClosestBeatLine(click);
+            this.phantomTimestamp = new GridElements_1.Timestamp(new RgbaColor_1.RgbaColor(158, 23, 240, 0.7), new Vec2_1.Vec2(click.x / this.editorGridModule.transform.scale.x, closestBeatline.transform.position.y), 10, this.editorGridModule.transform);
         }
         else {
             this.phantomTimestamp = null;
-        }
-    };
-    TimestampsModule.prototype.updateModule = function () {
-        for (var _i = 0, _a = Object.entries(this.timestamps); _i < _a.length; _i++) {
-            var _b = _a[_i], i = _b[0], value = _b[1];
-            for (var _c = 0, _d = Object.entries(value); _c < _d.length; _c++) {
-                var _e = _d[_c], j = _e[0], timestamp = _e[1];
-                timestamp.draw(this.editorCore.viewport, this.canvas);
-            }
         }
     };
     TimestampsModule.prototype.createTimestampPrefab = function (color) {
@@ -284,6 +296,7 @@ var TimestampsModule = /** @class */ (function () {
     TimestampsModule.nextPrefabId = 0;
     return TimestampsModule;
 }());
+exports.TimestampsModule = TimestampsModule;
 var EditorGrid = /** @class */ (function () {
     function EditorGrid() {
         this.bpmLines = new Array();
@@ -303,6 +316,10 @@ var EditorGrid = /** @class */ (function () {
     EditorGrid.prototype.subscribeOnEvents = function () {
         var _this = this;
         Input_1.Input.onWindowResize.addListener(function () { _this.onWindowResize(); });
+        this.editorCore.editorData.offset.onValueChange.addListener(function (value) { _this.setOffsetValue(value); });
+        this.editorCore.editorData.snapValue.onValueChange.addListener(function (value) { _this.setSnapValue(value); });
+        this.editorCore.editorData.bpmValue.onValueChange.addListener(function (value) { _this.setBpmValue(value); });
+        this.editorCore.editorData.beatLinesCount.onValueChange.addListener(function (value) { _this.setBeatLinesCount(value); });
         this.editorCore.audio.onAudioLoaded.addListener(function () { _this.onAudioLoad(); });
     };
     EditorGrid.prototype.onAudioLoad = function () {
@@ -320,9 +337,6 @@ var EditorGrid = /** @class */ (function () {
         this._canvas.setAttribute('height', (info.height / 4 * 3).toString());
         this.initGrid();
         //this.initBpmLines();
-    };
-    EditorGrid.prototype.inti = function (editorCore) {
-        this.editorCore = editorCore;
     };
     EditorGrid.prototype.updateModule = function () {
         var _this = this;
@@ -354,38 +368,41 @@ var EditorGrid = /** @class */ (function () {
     };
     EditorGrid.prototype.setSnapValue = function (val) {
         console.log(val);
-        this.editorCore.editorData.snapValue.value = val;
         var distance = this.distanceBetweenBpmLines();
         this.bpmLines.forEach(function (line) {
             line.setSnapLines(val, distance);
         });
     };
-    EditorGrid.prototype.setBpmValue = function (event) {
-        var bpm = parseInt(event.target.value);
+    EditorGrid.prototype.setBpmValue = function (value) {
+        //var bpm = parseInt(event.target.value);
+        var bpm = value;
         bpm < this.bpmRange.x ? bpm = this.bpmRange.x : bpm = bpm;
         bpm > this.bpmRange.y ? bpm = this.bpmRange.y : bpm = bpm;
-        this.editorCore.editorData.bpmValue.value = bpm;
         this.initBpmLines();
         console.log(bpm);
     };
-    EditorGrid.prototype.setBeatLinesCount = function (event) {
-        var beatLines = parseInt(event.target.value);
+    EditorGrid.prototype.setBeatLinesCount = function (value) {
+        //var beatLines = parseInt(event.target.value);
+        var beatLines = value;
         beatLines < this.beatLinesRange.x ? beatLines = this.beatLinesRange.x : beatLines = beatLines;
         beatLines > this.beatLinesRange.y ? beatLines = this.beatLinesRange.y : beatLines = beatLines;
-        this.editorCore.editorData.beatLinesCount.value = beatLines;
         this.initGrid();
+    };
+    EditorGrid.prototype.setOffsetValue = function (value) {
+        //var offset = parseInt(event);
+        var offset = value;
+        this.transform.localPosition = new Vec2_1.Vec2(offset / 10, this.transform.localPosition.y);
     };
     EditorGrid.prototype.getGridSize = function () {
         return new Vec2_1.Vec2(this.editorCore.editorData.bpmValue.value, this.editorCore.editorData.beatLinesCount.value);
     };
     EditorGrid.prototype.initGrid = function () {
+        this.transform.parent.scale = new Vec2_1.Vec2(this.transform.parent.scale.x, this.distanceBetweenBeatLines());
         for (var i = 0; i < this.editorCore.editorData.beatLinesCount.value; i++) {
             if (i + 1 > this.beatLines.length) {
-                console.log("distance between lines is " + this.distanceBetweenBeatLines());
-                var beatLine = new GridElements_1.BeatLine((i + 1) * this.distanceBetweenBeatLines(), this.transform, AppSettings_1.editorColorSettings.beatLineColor);
+                var beatLine = new GridElements_1.BeatLine((i + 1), this.transform, AppSettings_1.editorColorSettings.beatLineColor);
                 this.beatLines.push(beatLine);
             }
-            this.beatLines[i].transform.localPosition = new Vec2_1.Vec2(0, (i + 1) * this.distanceBetweenBeatLines());
             this.beatLines[i].activate();
         }
         for (var i = this.editorCore.editorData.beatLinesCount.value; i < this.beatLines.length; i++) {
@@ -426,6 +443,8 @@ var EditorGrid = /** @class */ (function () {
         var closestBpm = this.bpmLines[closestBpmIndex];
         var closestBpmSnapIndex = Utils_1.Utils.binaryNearestSearch(Object.keys(closestBpm.snapLines), positionX);
         var closestBpmSnap = closestBpm.snapLines[closestBpmSnapIndex];
+        console.log("closest bpm: " + closestBpm);
+        console.log("closest bpm: " + closestBpmSnap);
         if (closestBpmSnap != null && closestBpmSnap != undefined && Math.abs(positionX - closestBpm.transform.position.x) >
             Math.abs(positionX - closestBpmSnap.transform.position.x))
             return closestBpmSnap;

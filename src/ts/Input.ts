@@ -15,7 +15,7 @@ export abstract class Input {
     static onKeyDown = new Event<any>();
     static onWindowResize = new Event<any>();
     static onCanvasWheel = new Event<any>();
-    static onMouseClick = new Event<any>();
+    static onMainCanvasMouseClick = new Event<any>();
 
     static init() {
         if (Input.initialized)
@@ -28,7 +28,7 @@ export abstract class Input {
         $(window).on('keyup', (event) => { Input.onCanvasKeyUp(event);});
 
         $('#editor-canvas').on('wheel', (event) => { Input.onCanvasWheel.invoke(event.originalEvent);})
-        .on('click', (event) => { Input.onMouseClick.invoke(event);})
+        .on('click', (event) => { Input.onMainCanvasMouseClick.invoke(event);})
         .on('mousemove', (event) => { Input.onCanvasHover(event);});
     }
 
