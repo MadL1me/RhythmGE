@@ -3,6 +3,8 @@
   $background-second-color: #494b5a;
   $background-main-color: #30323D;
   $accent-color: #ff6700;
+  $accent-color-second: #0affce;
+  $block-border-radius: 5px;
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -42,16 +44,89 @@
     padding: 10px 10px 10px 10px;
   }
 
+  button {
+    border-radius: $block-border-radius;
+  }
+
   canvas {
     //display: block;
     margin-bottom: 5px;
   }
 
+  $diamond-width: 60%;
+  $selected-button:#7c84af;
+  $hovered-button: #6a749e;
+  $default-button: #35384a;
+
   .editor-container {
     margin-left: 5px;
     margin-right: 5px;
     max-height: 70%;
+
+    canvas {
+      border-radius: $block-border-radius;
+    }
   }
+
+  .prefab-button {
+    background-color: $default-button;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    justify-self: stretch;
+    align-self: stretch;
+    margin: 2px;
+    border-radius: $block-border-radius;
+
+    &:selected {
+      background-color: $selected-button;
+    }
+
+    &:hover{
+      background-color: $hovered-button;
+    }
+  }
+
+  .diamond-shape {
+    background: #fff;
+    height: $diamond-width;
+    transform:rotate(45deg);
+    transform-origin: center;
+    width:  $diamond-width;
+  }
+
+  // .prefab-button {
+  //   background-color: $background-main-color;
+  //   margin: 5px;
+  //   max-width: 10px;
+  //   max-height: 10px;
+
+  //   &:selected {
+  //     background-color: $accent-color-second;
+  //   }
+  // }
+  
+  // .diamond {
+  //   width: 0;
+  //   height: 0;
+  //   border: $diamond-width solid transparent;
+  //   border-bottom-color: red;
+  //   position: relative;
+  //   top: -$diamond-width;
+  //   //align-self: center;
+  //   //justify-self: center;
+
+  //   &:after {
+  //     content: '';
+  //     position: absolute;
+  //     left: -$diamond-width;
+  //     top: $diamond-width;
+  //     width: 0;
+  //     height: 0;
+  //     border: $diamond-width solid transparent;
+  //     border-top-color: red;
+  //   }
+  // }
 
   topbar {
     display: flex;
@@ -74,6 +149,7 @@
           flex-direction: row;
           background-color: $background-second-color;
           margin: 5px;
+          border-radius: $block-border-radius;
 
           .col-1 {
             flex: 6;
@@ -90,6 +166,7 @@
                 margin-top: 8px;
                 margin-bottom: 8px;
                 max-height: 50%;
+                border-radius: 0px;
               }
             }
   
@@ -124,7 +201,16 @@
           }
         }
 
-        .visualizer {
+        .prefabs-holder {
+          display: grid;
+          padding: 5px;
+          grid-template-columns: 40px;
+          grid-template-rows: 40px;
+          row-gap: 5px;
+          column-gap: 5px;
+          border-radius: $block-border-radius;
+          align-items: center;
+          justify-items: center;
           flex: 1;
           margin: 5px;
           background-color: $background-second-color;
@@ -139,7 +225,8 @@
         justify-content: space-between;
         margin: 5px;
         background-color: $background-second-color;     
-        
+        border-radius: $block-border-radius;
+
         .inputs-block-container {
           display: flex;
           flex-direction: row;
@@ -159,6 +246,7 @@
             input {
               margin-left: auto;
               margin-right: auto;
+              border-radius: $block-border-radius;
             }
           }
         }
@@ -189,6 +277,7 @@
       flex: 1;
       background-color: $background-second-color;
       margin: 5px;
+      border-radius: $block-border-radius;
 
       .drop-zone {
         flex: 2;
@@ -223,13 +312,13 @@
       width: 10px;
       border: 1px solid grey;
       display: inline-block;
+      border-radius: 3px;
     }
   }
 
   [type=checkbox]:checked + span {
     background: $accent-color;
   }
-  
   
   .canvas-holder {
     margin-top: 1rem;
