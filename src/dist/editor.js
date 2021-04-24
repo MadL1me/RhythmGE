@@ -200,9 +200,46 @@ var CreatableLinesModule = /** @class */ (function () {
 exports.CreatableLinesModule = CreatableLinesModule;
 var TimestampPrefab = /** @class */ (function () {
     function TimestampPrefab(id, color) {
+        this.onPrefabSelected = new Utils_1.Event();
+        this.onPrefabDeselected = new Utils_1.Event();
         this.prefabId = id;
         this.color = color;
+        this.createButton();
     }
+    Object.defineProperty(TimestampPrefab.prototype, "isSelected", {
+        get: function () {
+            return this._isSelected;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    TimestampPrefab.prototype.createButton = function () {
+        var _this = this;
+        var prefabsContainer = jquery_1.default('#prefabs-container');
+        this.buttonElement = jquery_1.default("<div>", { id: this.prefabId, "class": "prefab-button" });
+        this.diamondElement = jquery_1.default("<div>", { "class": "diamond-shape" });
+        this.diamondElement.attr("style", "background-color:" + this.color.value());
+        this.buttonElement.append(this.diamondElement);
+        prefabsContainer.append(this.buttonElement);
+        this.buttonElement.on("click", function () {
+            if (!_this._isSelected)
+                _this.select(true);
+        });
+    };
+    TimestampPrefab.prototype.select = function (callEvent) {
+        if (callEvent === void 0) { callEvent = false; }
+        this._isSelected = true;
+        this.buttonElement.addClass("selected");
+        if (callEvent)
+            this.onPrefabSelected.invoke(this.prefabId);
+    };
+    TimestampPrefab.prototype.deselect = function (callEvent) {
+        if (callEvent === void 0) { callEvent = false; }
+        this._isSelected = false;
+        this.buttonElement.removeClass("selected");
+        if (callEvent)
+            this.onPrefabDeselected.invoke(this.prefabId);
+    };
     return TimestampPrefab;
 }());
 var TimestampsModule = /** @class */ (function () {
@@ -213,9 +250,13 @@ var TimestampsModule = /** @class */ (function () {
         this.timestamps = new Map();
         this.editorGridModule = editorGrid;
         this.createableLinesModule = creatableLines;
-        var defaultPrefab = this.createTimestampPrefab(new RgbaColor_1.RgbaColor(0, 255, 26));
         this.canvas = jquery_1.default("#editor-canvas")[0];
-        this.idToPrefab[defaultPrefab.prefabId] = defaultPrefab;
+        this.createTimestampPrefab(new RgbaColor_1.RgbaColor(0, 255, 26));
+        this.createTimestampPrefab(new RgbaColor_1.RgbaColor(252, 236, 8));
+        this.createTimestampPrefab(new RgbaColor_1.RgbaColor(8, 215, 252));
+        this.createTimestampPrefab(new RgbaColor_1.RgbaColor(134, 13, 255));
+        this.createTimestampPrefab(new RgbaColor_1.RgbaColor(255, 13, 166));
+        this.createTimestampPrefab(new RgbaColor_1.RgbaColor(255, 13, 74));
     }
     TimestampsModule.prototype.init = function (editorCoreModules) {
         var _this = this;
@@ -231,15 +272,29 @@ var TimestampsModule = /** @class */ (function () {
             }
         }
     };
-    TimestampsModule.prototype.registerTimestampPrefab = function (timestampPrefab) {
-        this.idToPrefab[timestampPrefab.prefabId] = timestampPrefab;
+    TimestampsModule.prototype.createTimestampPrefab = function (color) {
+        var _this = this;
+        var prefab = new TimestampPrefab(TimestampsModule.nextPrefabId++, color);
+        this.idToPrefab[prefab.prefabId] = prefab;
+        prefab.onPrefabSelected.addListener(function (id) { _this.selectPrefab(id); });
+        return prefab;
     };
     TimestampsModule.prototype.selectPrefab = function (id) {
+        console.log("prefab selected");
         this.selectedPrefabId = id;
+        Object.values(this.idToPrefab).forEach(function (prefab) {
+            console.log("Abracadabra");
+            prefab.deselect();
+        });
+        this.selectedPrefab.select();
     };
-    TimestampsModule.prototype.getSelectedPrefab = function () {
-        return this.idToPrefab[this.selectedPrefabId];
-    };
+    Object.defineProperty(TimestampsModule.prototype, "selectedPrefab", {
+        get: function () {
+            return this.idToPrefab[this.selectedPrefabId];
+        },
+        enumerable: false,
+        configurable: true
+    });
     TimestampsModule.prototype.onCanvasClick = function (event) {
         var rect = this.canvas.getBoundingClientRect();
         var clickX = event.clientX - rect.left;
@@ -289,9 +344,6 @@ var TimestampsModule = /** @class */ (function () {
         else {
             this.phantomTimestamp = null;
         }
-    };
-    TimestampsModule.prototype.createTimestampPrefab = function (color) {
-        return new TimestampPrefab(TimestampsModule.nextPrefabId++, color);
     };
     TimestampsModule.nextPrefabId = 0;
     return TimestampsModule;

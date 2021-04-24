@@ -54,7 +54,7 @@
   }
 
   $diamond-width: 60%;
-  $selected-button:#7c84af;
+  $selected-button: $accent-color;
   $hovered-button: #6a749e;
   $default-button: #35384a;
 
@@ -76,19 +76,21 @@
     justify-self: stretch;
     align-self: stretch;
     margin: 2px;
+    width: 40px;
+    height: 40px;
     border-radius: $block-border-radius;
-
-    &:selected {
-      background-color: $selected-button;
-    }
 
     &:hover{
       background-color: $hovered-button;
     }
   }
 
+  .selected {
+    background-color: $selected-button !important;
+  }
+
   .diamond-shape {
-    background: #fff;
+    background-color: #fff;
     height: $diamond-width;
     transform:rotate(45deg);
     transform-origin: center;
@@ -201,15 +203,16 @@
           }
         }
 
-        .prefabs-holder {
+        #prefabs-container {
           display: grid;
           padding: 5px;
-          grid-template-columns: 40px;
-          grid-template-rows: 40px;
+          grid-template-columns: repeat(4, 40px);
+          grid-template-rows: auto;
+          //grid-auto-flow: column;
           row-gap: 5px;
           column-gap: 5px;
           border-radius: $block-border-radius;
-          align-items: center;
+          //align-items: center;
           justify-items: center;
           flex: 1;
           margin: 5px;

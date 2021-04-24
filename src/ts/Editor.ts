@@ -257,10 +257,51 @@ export class CreatableLinesModule implements IEditorModule {
 class TimestampPrefab {
     prefabId: number;
     color: RgbaColor;
+    
+    private _isSelected: boolean;
+    private buttonElement: JQuery<HTMLElement>;
+    private diamondElement: JQuery<HTMLElement>;
+
+    onPrefabSelected = new Event<number>();
+    onPrefabDeselected = new Event<number>();
+
+    get isSelected() {
+        return this._isSelected;
+    }
 
     constructor(id: number, color: RgbaColor) {
         this.prefabId = id;
         this.color = color;
+        this.createButton();
+    }
+
+    private createButton() {
+        const prefabsContainer = $('#prefabs-container');
+        
+        this.buttonElement = $("<div>", {id: this.prefabId, "class": "prefab-button" });
+        this.diamondElement = $("<div>", {"class": "diamond-shape"});
+        this.diamondElement.attr("style", `background-color:${this.color.value()}`);
+        this.buttonElement.append(this.diamondElement);
+        prefabsContainer.append(this.buttonElement);
+        
+        this.buttonElement.on("click", () => {
+            if (!this._isSelected) 
+                this.select(true);
+        });
+    }
+
+    select(callEvent=false) {
+        this._isSelected = true;
+        this.buttonElement.addClass("selected");
+        if (callEvent)
+            this.onPrefabSelected.invoke(this.prefabId);
+    }
+
+    deselect(callEvent=false) {
+        this._isSelected = false;
+        this.buttonElement.removeClass("selected");
+        if (callEvent)
+            this.onPrefabDeselected.invoke(this.prefabId);
     }
 }
 
@@ -283,9 +324,14 @@ export class TimestampsModule implements IEditorModule {
     constructor(editorGrid: EditorGrid, creatableLines: CreatableLinesModule) {
         this.editorGridModule = editorGrid;
         this.createableLinesModule = creatableLines;
-        const defaultPrefab = this.createTimestampPrefab(new RgbaColor(0, 255, 26));
         this.canvas = $("#editor-canvas")[0] as HTMLCanvasElement;
-        this.idToPrefab[defaultPrefab.prefabId] = defaultPrefab;
+
+        this.createTimestampPrefab(new RgbaColor(0, 255, 26));
+        this.createTimestampPrefab(new RgbaColor(252, 236, 8));
+        this.createTimestampPrefab(new RgbaColor(8, 215, 252));
+        this.createTimestampPrefab(new RgbaColor(134, 13, 255));
+        this.createTimestampPrefab(new RgbaColor(255, 13, 166));
+        this.createTimestampPrefab(new RgbaColor(255, 13, 74));
     }
 
     init(editorCoreModules: IEditorCore) {
@@ -301,15 +347,24 @@ export class TimestampsModule implements IEditorModule {
         }
     }
 
-    registerTimestampPrefab(timestampPrefab: TimestampPrefab) {
-        this.idToPrefab[timestampPrefab.prefabId] = timestampPrefab;
+    createTimestampPrefab(color: RgbaColor) : TimestampPrefab {
+        const prefab = new TimestampPrefab(TimestampsModule.nextPrefabId++, color);
+        this.idToPrefab[prefab.prefabId] = prefab;
+        prefab.onPrefabSelected.addListener((id)=>{this.selectPrefab(id);});
+        return prefab; 
     }
 
     selectPrefab(id: number) {
+        console.log("prefab selected");
         this.selectedPrefabId = id;
+        Object.values(this.idToPrefab).forEach(prefab => {
+            console.log("Abracadabra");
+            prefab.deselect();
+        });
+        this.selectedPrefab.select();
     }
 
-    private getSelectedPrefab() : TimestampPrefab {
+    private get selectedPrefab() : TimestampPrefab {
         return this.idToPrefab[this.selectedPrefabId];
     }
 
@@ -372,10 +427,6 @@ export class TimestampsModule implements IEditorModule {
         else {
             this.phantomTimestamp = null;
         }
-    }
-
-    createTimestampPrefab(color: RgbaColor) : TimestampPrefab {
-        return new TimestampPrefab(TimestampsModule.nextPrefabId++, color); 
     }
 }
 
