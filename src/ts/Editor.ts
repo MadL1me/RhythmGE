@@ -191,7 +191,7 @@ export class TimestepLineModule implements IEditorModule {
             this.timestepLine.transform.localPosition = new Vec2(this.editor.audio.seek(), 0);
 
             if (this.editor.editorData.followLine.value) {
-                const result = new Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 1);
+                const result = new Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 0);
                 this.editor.viewport.transform.position = result;
             }
         }
@@ -231,12 +231,14 @@ export class CreatableLinesModule implements IEditorModule {
     }
 
     findClosestCreatableLine(positionX: number) {
-        const objectsArr = Object.keys(this.creatableLines);
+        const objectsArr = Object.values(this.creatableLines);
         // objectsArr.forEach(el => {
         //     console.log(el);   
         // })
+        if (objectsArr.length < 1)
+            return;
         const indexOfElement = Utils.binaryNearestSearch(objectsArr, positionX);
-        const closestCreatable = this.creatableLines[objectsArr[indexOfElement]];
+        const closestCreatable = objectsArr[indexOfElement];
         return closestCreatable; 
     }
 
@@ -355,10 +357,8 @@ export class TimestampsModule implements IEditorModule {
     }
 
     selectPrefab(id: number) {
-        console.log("prefab selected");
         this.selectedPrefabId = id;
         Object.values(this.idToPrefab).forEach(prefab => {
-            console.log("Abracadabra");
             prefab.deselect();
         });
         this.selectedPrefab.select();
@@ -374,7 +374,8 @@ export class TimestampsModule implements IEditorModule {
         const clickY = event.clientY - rect.top;
         const click = new Vec2(clickX, clickY);
         let worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
-        worldClickPos = new Vec2(-1*worldClickPos.x,-1*worldClickPos.y)
+        worldClickPos = new Vec2(worldClickPos.x,worldClickPos.y)
+        
         console.log(click);
         console.log(`World click pos is: ${worldClickPos}`);
         console.log(worldClickPos);
@@ -391,8 +392,11 @@ export class TimestampsModule implements IEditorModule {
         }
 
         let min = 100000, index = 0;
+        worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
+        console.log(worldClickPos);
+
         for (let i = 0; i<closestObjects.length; i++) {
-            let diff = Math.abs(worldClickPos.x-closestObjects[i].transform.localPosition.x);
+            let diff = Math.abs(worldClickPos.x-closestObjects[i].transform.position.x);
             if (diff < min) {
                 min = diff;
                 index = i;
@@ -404,7 +408,7 @@ export class TimestampsModule implements IEditorModule {
         console.log(closestObject);
         const prefab = this.idToPrefab[this.selectedPrefabId] as TimestampPrefab;
         let newTimestamp =  new Timestamp(prefab.color,
-            new Vec2(closestObject.transform.localPosition.x, closestBeatline.transform.localPosition.y), 0.5, this.editorGridModule.transform);
+            new Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y), 0.5, this.editorGridModule.transform);
         console.log(newTimestamp); 
         
         if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
@@ -608,18 +612,32 @@ export class EditorGrid implements IEditorModule {
         return this.beatLines[beatlineIndex];
     }
 
-    findClosestBpmLine(positionX: number) {
-        let closestBpmIndex = Utils.binaryNearestSearch(Object.keys(this.bpmLines), positionX, true);
+    findClosestBpmLine(worldPos: number) {
+        if (this.bpmLines.length < 1)
+            return;
+        
+        let getClosestBpm = () => {
+            if (this.bpmLines.length-1 > closestBpmIndex 
+                && Math.abs(this.bpmLines[closestBpmIndex+1].value - worldPos) <
+                Math.abs(this.bpmLines[closestBpmIndex].value - worldPos))
+                closestBpm = this.bpmLines[closestBpmIndex+1];    
+        };
+
+        let closestBpmIndex = Utils.binaryNearestSearch(this.bpmLines, worldPos, true);
         let closestBpm = this.bpmLines[closestBpmIndex];
         
-        let closestBpmSnapIndex = Utils.binaryNearestSearch(Object.keys(closestBpm.snapLines), positionX)
-        let closestBpmSnap = closestBpm.snapLines[closestBpmSnapIndex];
-    
-        console.log(`closest bpm: ${closestBpm}`);
-        console.log(`closest bpm: ${closestBpmSnap}`);
+        if (closestBpm.snapLines.length < 1) {
+            getClosestBpm(); 
+            return closestBpm;
+        }
 
-        if (closestBpmSnap != null && closestBpmSnap != undefined && Math.abs(positionX - closestBpm.transform.position.x) >
-            Math.abs(positionX - closestBpmSnap.transform.position.x))
+        let closestBpmSnapIndex = Utils.binaryNearestSearch(closestBpm.snapLines, worldPos)
+        let closestBpmSnap = closestBpm.snapLines[closestBpmSnapIndex];
+
+        getClosestBpm();
+
+        if (closestBpmSnap != null && closestBpmSnap != undefined && Math.abs(worldPos - closestBpm.transform.position.x) >
+            Math.abs(worldPos - closestBpmSnap.transform.position.x))
             return closestBpmSnap;
         else 
             return closestBpm;

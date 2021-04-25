@@ -17,7 +17,7 @@ var Utils = /** @class */ (function () {
             // console.log(`left: ${left} right: ${right}`);
             // console.log(`middle is ${middle}`);
             // console.log(array[middle])
-            if (parseFloat(array[middle]) < searchValue) {
+            if (array[middle].value < searchValue) {
                 left = middle;
             }
             else {
@@ -25,8 +25,8 @@ var Utils = /** @class */ (function () {
             }
         }
         if (!useFlooring)
-            return Math.abs(searchValue - parseFloat(array[left]))
-                < Math.abs(searchValue - parseFloat(array[right])) ? left : right;
+            return Math.abs(searchValue - array[left].value)
+                < Math.abs(searchValue - array[right].value) ? left : right;
         return left;
     };
     return Utils;

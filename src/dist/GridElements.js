@@ -26,6 +26,14 @@ var GridElement = /** @class */ (function () {
         this.color = rgbaColor;
         this.transform.parent = parent;
     }
+    Object.defineProperty(GridElement.prototype, "value", {
+        get: function () {
+            return this.transform.position.x;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ;
     GridElement.prototype.draw = function (view, canvas) {
         if (view.isOutOfViewportBounds(this.transform.position)) {
             return;
@@ -42,13 +50,13 @@ var GridElement = /** @class */ (function () {
 exports.GridElement = GridElement;
 var Timestamp = /** @class */ (function (_super) {
     __extends(Timestamp, _super);
-    function Timestamp(color, localPosition, width, parent) {
+    function Timestamp(color, position, width, parent) {
         var _this = _super.call(this, parent, color) || this;
         _this.maxWidth = 7;
         _this.minWidth = 1;
         _this.width = width;
         _this.transform.parent = parent;
-        _this.transform.localPosition = localPosition;
+        _this.transform.position = position;
         _this.color = color;
         return _this;
     }
@@ -133,6 +141,14 @@ var BPMLine = /** @class */ (function (_super) {
         _this.transform.localPosition = new Vec2_1.Vec2(x, 0);
         return _this;
     }
+    Object.defineProperty(BPMLine.prototype, "value", {
+        get: function () {
+            return this.transform.position.x;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    ;
     BPMLine.prototype.draw = function (view, canvas) {
         _super.prototype.draw.call(this, view, canvas);
         if (!this.isActive)

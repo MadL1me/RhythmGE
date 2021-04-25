@@ -9,8 +9,8 @@
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     //margin: auto;
-    padding: 2rem;
-    padding-top: 1rem;
+    padding: 10px;
+    padding-top: 6px;
     background-color: $background-main-color;
   }
 
@@ -54,7 +54,7 @@
   }
 
   $diamond-width: 60%;
-  $selected-button: $accent-color;
+  $selected-button: #7a87bd;
   $hovered-button: #6a749e;
   $default-button: #35384a;
 

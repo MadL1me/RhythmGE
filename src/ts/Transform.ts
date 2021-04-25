@@ -23,11 +23,14 @@ export class Transform {
                         pos.y - worldCoords.y/this.scale.y);
     }
 
-    canvasToWorld(canvasCoords : Vec2) : Vec2 {
+    canvasToLocal(canvasCoords : Vec2) : Vec2 {
         const pos = this.position;
         return new Vec2(-1*(canvasCoords.x/this.scale.x - this.position.x/this.scale.x), 1);
-        return new Vec2((pos.x - canvasCoords.x) / this.scale.x, 
-            (pos.y - canvasCoords.y) / this.scale.y);
+    }
+    
+    canvasToWorld(canvasCoords: Vec2) : Vec2 { 
+        const pos = this.position;
+        return new Vec2((canvasCoords.x - pos.x), 1);
     }
 
     get localPosition() : Vec2 {
@@ -37,6 +40,12 @@ export class Transform {
     set localPosition(value: Vec2) {
         this._localPosition = value;
     }
+
+    get localPositionInParent() {
+        if (this._parent == null)
+            return this.localPosition;
+        return Vec2.Sum(this.parent.localPosition, Vec2.Multiply(this.localPosition, this.parent.localScale));
+    }    
 
     get position() : Vec2 {
         if (this._parent == null)

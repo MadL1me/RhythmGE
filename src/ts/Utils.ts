@@ -1,10 +1,11 @@
 import $ from 'jquery';
+import { GridElement, ICompareNumberProvider } from './GridElements';
 
 export abstract class Utils {
     
-    static binaryNearestSearch(array, searchValue: number, useFlooring=false): number {
+    static binaryNearestSearch(array : Array<ICompareNumberProvider>, searchValue: number, useFlooring=false): number {
         let left = 0, right = array.length-1;
-       // console.log(`Seaching closest for ${searchValue}`)
+        // console.log(`Seaching closest for ${searchValue}`)
 
         while(right - left > 1) {
             let middle = Math.floor((right + left) / 2);
@@ -13,7 +14,7 @@ export abstract class Utils {
             // console.log(`middle is ${middle}`);
             // console.log(array[middle])
 
-            if (parseFloat(array[middle]) < searchValue) {
+            if (array[middle].value < searchValue) {
                 left = middle;
             }
             else {
@@ -22,8 +23,8 @@ export abstract class Utils {
         }
         
         if (!useFlooring)
-            return Math.abs(searchValue - parseFloat(array[left]))
-            < Math.abs(searchValue - parseFloat(array[right])) ? left : right;
+            return Math.abs(searchValue - array[left].value)
+            < Math.abs(searchValue - array[right].value) ? left : right;
         
         return left;
     }

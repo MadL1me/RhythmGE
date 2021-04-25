@@ -19,10 +19,13 @@ var Transform = /** @class */ (function () {
         var pos = this.position;
         return new Vec2_1.Vec2(pos.x - worldCoords.x / this.scale.x, pos.y - worldCoords.y / this.scale.y);
     };
-    Transform.prototype.canvasToWorld = function (canvasCoords) {
+    Transform.prototype.canvasToLocal = function (canvasCoords) {
         var pos = this.position;
         return new Vec2_1.Vec2(-1 * (canvasCoords.x / this.scale.x - this.position.x / this.scale.x), 1);
-        return new Vec2_1.Vec2((pos.x - canvasCoords.x) / this.scale.x, (pos.y - canvasCoords.y) / this.scale.y);
+    };
+    Transform.prototype.canvasToWorld = function (canvasCoords) {
+        var pos = this.position;
+        return new Vec2_1.Vec2((canvasCoords.x - pos.x), 1);
     };
     Object.defineProperty(Transform.prototype, "localPosition", {
         get: function () {
@@ -30,6 +33,15 @@ var Transform = /** @class */ (function () {
         },
         set: function (value) {
             this._localPosition = value;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(Transform.prototype, "localPositionInParent", {
+        get: function () {
+            if (this._parent == null)
+                return this.localPosition;
+            return Vec2_1.Vec2.Sum(this.parent.localPosition, Vec2_1.Vec2.Multiply(this.localPosition, this.parent.localScale));
         },
         enumerable: false,
         configurable: true

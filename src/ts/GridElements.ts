@@ -10,7 +10,11 @@ export interface IDrawable {
     draw(view: IViewportModule, canvas: HTMLCanvasElement);
 }
 
-export abstract class GridElement implements IDrawable {
+export interface ICompareNumberProvider {
+    value: number;
+}
+
+export abstract class GridElement implements IDrawable, ICompareNumberProvider {
     
     transform: Transform = new Transform();
     isActive: boolean = true;
@@ -20,6 +24,10 @@ export abstract class GridElement implements IDrawable {
         this.color = rgbaColor;
         this.transform.parent = parent;
     }
+
+    get value(): number {
+        return this.transform.position.x;
+    };
 
     draw(view : IViewportModule, canvas : HTMLCanvasElement) {
         if (view.isOutOfViewportBounds(this.transform.position)) {
@@ -44,11 +52,11 @@ export class Timestamp extends GridElement {
     private maxWidth = 7;
     private minWidth = 1;
 
-    constructor(color: RgbaColor, localPosition: Vec2, width : number, parent: Transform) {
+    constructor(color: RgbaColor, position: Vec2, width : number, parent: Transform) {
         super(parent, color);
         this.width = width;
         this.transform.parent = parent;
-        this.transform.localPosition = localPosition;
+        this.transform.position = position;
         this.color = color;
     }
 
@@ -142,6 +150,10 @@ export class BPMLine extends GridElement {
         super(parent, rgbaColor)
         this.transform.localPosition = new Vec2(x, 0);
     }
+
+    get value() : number {
+        return this.transform.position.x;
+    };
 
     draw(view : IViewportModule, canvas : HTMLCanvasElement) {
         super.draw(view, canvas)
