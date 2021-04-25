@@ -5,6 +5,8 @@ var Scale_1 = require("./Scale");
 var Audio_1 = require("./Audio");
 //var editor = require("./dist/editor");
 var editor = new Editor_1.Editor();
+//console.log(__dirname);
+//console.log('abc');
 function setupModules() {
     var grid = new Editor_1.EditorGrid();
     var cLines = new Editor_1.CreatableLinesModule();

@@ -162,6 +162,8 @@ export class Editor implements IEditorCore {
         this.viewport.transform.parent = this.transform;
         this.audio.transform.parent = this.transform;
 
+        setInterval(() => {this.audio.checkForClaps();}, 5);
+
         Input.onCanvasWheel.addListener((event) => {this.onChangeScale(event.deltaY);});
 
         this.update();
@@ -358,7 +360,6 @@ export class TimestampsModule implements IEditorModule {
     private editorCore: IEditorCore;
     private editorGridModule: EditorGrid;
     private createableLinesModule: CreatableLinesModule;
-    //private phantomTimestamp: Timestamp;
 
     onExistingElementClicked = new Event<Timestamp>();
 
@@ -373,6 +374,8 @@ export class TimestampsModule implements IEditorModule {
         this.createTimestampPrefab(new RgbaColor(134, 13, 255));
         this.createTimestampPrefab(new RgbaColor(255, 13, 166));
         this.createTimestampPrefab(new RgbaColor(255, 13, 74));
+
+        this.selectedPrefab.select();
     }
 
     init(editorCoreModules: IEditorCore) {
@@ -439,7 +442,7 @@ export class TimestampsModule implements IEditorModule {
 
         let min = 100000, index = 0;
         worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
-        console.log(worldClickPos);
+        //console.log(worldClickPos);
 
         for (let i = 0; i<closestObjects.length; i++) {
             let diff = Math.abs(worldClickPos.x-closestObjects[i].transform.position.x);
@@ -455,7 +458,7 @@ export class TimestampsModule implements IEditorModule {
         const prefab = this.idToPrefab[this.selectedPrefabId] as TimestampPrefab;
         let newTimestamp =  new Timestamp(prefab.color,
             new Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y), 0.5, this.editorGridModule.transform);
-        console.log(newTimestamp); 
+        //console.log(newTimestamp); 
         
         if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
             this.timestamps[newTimestamp.transform.localPosition.x] = {};
@@ -465,22 +468,21 @@ export class TimestampsModule implements IEditorModule {
             this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
         else if (Input.keysPressed["LeftControl"])
             this.onExistingElementClicked.invoke(this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y]);
+
+        if(this.editorCore.editorData.useClaps.value)
+            this.editorCore.audio.setClapTimings(this.getClapTimings());
     }
 
-    // canvasPlacePhantomElementHandler() {
-    //     if (Input.keysPressed['Alt']) {
-    //         const rect = this.canvas.getBoundingClientRect();
-    //         const clickX = Input.mousePosition.x - rect.left;
-    //         const clickY = Input.mousePosition.y - rect.top;
-    //         const click = new Vec2(clickX, clickY); 
-
-    //         var closestBeatline = this.editorGridModule.findClosestBeatLine(click);
-    //         this.phantomTimestamp = new Timestamp(new RgbaColor(158, 23, 240, 0.7), new Vec2(click.x / this.editorGridModule.transform.scale.x, closestBeatline.transform.position.y), 10, this.editorGridModule.transform);
-    //     }
-    //     else {
-    //         this.phantomTimestamp = null;
-    //     }
-    // }
+    private getClapTimings(): number[] {
+        const obj = Object.keys(this.timestamps);
+        const result = new Array<number>();
+        for (let i = 0; i<obj.length; i++) {
+            result[i] = parseFloat(obj[i]);
+        }
+        return result.sort((a, b) => {
+            return a - b;
+        });
+    }
 }
 
 class SelectArea implements IDrawable {

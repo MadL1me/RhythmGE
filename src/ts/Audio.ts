@@ -95,6 +95,8 @@ export interface IAudioModule extends IEditorModule {
     isAudioLoaded() : boolean;
     isPlaying(): boolean;
 
+    setClapTimings(array: number[]);
+
     play();
     pause();
     seek();
@@ -107,7 +109,9 @@ export class AudioModule implements IAudioModule {
 
     transform = new Transform();
 
-    private howl : any;
+    private clapSource = new Howl({src:[__dirname+"/Resources/clap.wav"]});
+    private songSource : any;
+
     private soundId : number;
     private clapSoundId: number;
     private analyser : AnalyserNode;
@@ -115,6 +119,9 @@ export class AudioModule implements IAudioModule {
     private view = new AudioPlayerView(this);
     private editorCore: IEditorCore;
     private audioLoaded: boolean;
+    
+    private clappingTimings= new Array<number>();
+    private clapTimingId = 0;
 
     onAudioLoaded = new Event<[string, string]>();
     onLoad = new Event<number>();
@@ -127,38 +134,67 @@ export class AudioModule implements IAudioModule {
     }
 
     duration() : number {
-        return this.howl.duration();
+        return this.songSource.duration();
+    }
+
+    setClapTimings(array: number[]) {
+        this.clappingTimings = array;
+        let seek = this.seek();
+        //console.log(array);
+        for(let i = 0; i<array.length;i++) {
+            console.log(array[i]);
+            if (array[i] > seek) {
+                console.log(i);
+                //this.clapTimingId = i;
+                return;
+            }
+        }
+    }
+
+    checkForClaps() {
+        if (this.songSource == null || this.clappingTimings.length < 1 || !this.editorCore.editorData.useClaps.value)
+            return;
+    
+        let seek = this.songSource.seek();
+        // console.log("CLAP LOOP");
+        // console.log(this.clappingTimings[this.clapTimingId]);
+        // console.log(seek);
+        // console.log(this.clapTimingId);
+        if (this.clappingTimings[this.clapTimingId] < seek) {
+            this.clapTimingId++;
+            this.playClapSound();
+            //console.log("PLAY CLAP");
+        }
     }
 
     loadAudio(fileName: string, soundPath : string) {
-        this.howl = new Howl({src:[soundPath]});
-        
+        this.songSource = new Howl({src:[soundPath]});
+
         this.analyser = Howler.ctx.createAnalyser();
         this.analyser.fftSize = 256;
 
-        this.howl.on('load', () => {
+        this.songSource.on('load', () => {
             this.audioLoaded = true;
-            this.view.onAudioLoad(fileName, this.howl.duration());
+            this.view.onAudioLoad(fileName, this.songSource.duration());
             this.onAudioLoaded.invoke([fileName, soundPath]);
         })
 
-        this.howl.on('play', (id) => {
+        this.songSource.on('play', (id) => {
             this.setupData();
             this.onPlay.invoke(id);
         });
 
-        this.howl.on('seek', (id) => {
+        this.songSource.on('seek', (id) => {
             this.onSeek.invoke(id);
         });
 
-        this.howl.on('stop', (id) => {
+        this.songSource.on('stop', (id) => {
             this.onStop.invoke(id);
         });
-
     }
 
     setVolume(value: number) {
-        this.howl.volume([value]);
+        this.songSource.volume([value]);
     }
 
     init(editorCoreModules: IEditorCore) {
@@ -169,13 +205,16 @@ export class AudioModule implements IAudioModule {
     }
 
     updateModule() {
-        if (this.howl == null || this.howl == undefined)
+        if (this.songSource == null || this.songSource == undefined)
             return;
-        this.view.update(this.howl.seek());
+          
+        let seek = this.songSource.seek();
+        this.view.update(seek);
+        //this.checkForClaps();
     }
 
     setPlaybackRate(value: number) {
-        this.howl.rate([value]);
+        this.songSource.rate([value]);
     }
 
     isAudioLoaded() : boolean {
@@ -183,26 +222,36 @@ export class AudioModule implements IAudioModule {
     }
 
     isPlaying() : boolean {
-        if (this.howl == undefined || this.howl == null)
+        if (this.songSource == undefined || this.songSource == null)
             return false;
-        return this.howl.playing([this.soundId]);
+        return this.songSource.playing([this.soundId]);
     }
 
     play() {
-        this.soundId = this.howl.play();
+        this.soundId = this.songSource.play();
+    }
+    
+    playClapSound() {
+        //console.log("PLAYED CLAP SOUND");
+        // if(this.clapSource.playing()) {
+        //     this.clapSource.seek([0]);
+        // }
+        // else
+        this.clapSource.stop();
+            this.clapSoundId = this.clapSource.play();
     }
     
     pause() {
-        this.howl.pause();
+        this.songSource.pause();
     }
 
     seek() : number {
-        return this.howl.seek();
+        return this.songSource.seek();
     }   
 
     setMusicFromCanvasPosition(position : Vec2, editor : IEditorCore) {
         var second = editor.viewport.canvasToSongTime(position).x/editor.transform.scale.x;
-        this.howl.seek([second]);
+        this.songSource.seek([second]);
     }
 
     getDomainData() : Float32Array {
@@ -212,8 +261,8 @@ export class AudioModule implements IAudioModule {
     }
 
     private setupData() {
-        this._bufferSource = this.howl._soundById(this.soundId)._node.bufferSource;
-        this.howl._soundById(this.soundId)._node.bufferSource.connect(this.analyser) 
+        this._bufferSource = this.songSource._soundById(this.soundId)._node.bufferSource;
+        this.songSource._soundById(this.soundId)._node.bufferSource.connect(this.analyser) 
     }
 }
 

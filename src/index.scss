@@ -3,6 +3,8 @@
   $background-second-color: #494b5a;
   $background-main-color: #30323D;
   $accent-color: #ff6700;
+  $accent-color-medium: #ee5f00;
+  $accent-color-dark: #d15400;
   $accent-color-second: #0affce;
   $block-border-radius: 5px;
 
@@ -52,6 +54,14 @@
     text-decoration: none;
     background-color: $accent-color;
     border-radius: $block-border-radius;
+
+    &:hover {
+      background-color: $accent-color-medium;
+    }
+
+    &:active{
+      background-color: $accent-color-dark;
+   }
   }
 
   canvas {
@@ -137,11 +147,19 @@
               justify-content: space-between;
               margin-left: 10px;
            
-              button {
+              #play-button {
                 margin-top: 8px;
                 margin-bottom: 8px;
                 max-height: 50%;
                 border-radius: 0px;
+
+                &:hover {
+                  background-color: transparent;
+                }
+            
+                &:active{
+                  background-color: transparent;
+                }
               }
             }
   
@@ -224,6 +242,19 @@
               margin-right: auto;
               border-radius: $block-border-radius;
             }
+          }
+        }
+
+        .buttons-container {
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+          justify-content: space-around;
+  
+          button {
+            min-height: 30px;
+            min-width: 50px;
+            flex-grow: 0;
           }
         }
 
@@ -411,4 +442,9 @@
   textarea:focus,
   button:focus {
     outline: none;
+}
+
+* {
+  user-select: none;
+  outline: none;
 }

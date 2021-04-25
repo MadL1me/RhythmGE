@@ -5,6 +5,8 @@ import { AudioAmplitudeViewModule } from "./Audio";
 //var editor = require("./dist/editor");
 
 const editor = new Editor();
+//console.log(__dirname);
+//console.log('abc');
 
 function setupModules() {
     const grid = new EditorGrid();

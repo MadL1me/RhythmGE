@@ -65,7 +65,10 @@ var AudioPlayerView = /** @class */ (function () {
 var AudioModule = /** @class */ (function () {
     function AudioModule() {
         this.transform = new Transform_1.Transform();
+        this.clapSource = new Howl({ src: [__dirname + "/Resources/clap.wav"] });
         this.view = new AudioPlayerView(this);
+        this.clappingTimings = new Array();
+        this.clapTimingId = 0;
         this.onAudioLoaded = new Utils_1.Event();
         this.onLoad = new Utils_1.Event();
         this.onSeek = new Utils_1.Event();
@@ -80,31 +83,58 @@ var AudioModule = /** @class */ (function () {
         configurable: true
     });
     AudioModule.prototype.duration = function () {
-        return this.howl.duration();
+        return this.songSource.duration();
+    };
+    AudioModule.prototype.setClapTimings = function (array) {
+        this.clappingTimings = array;
+        var seek = this.seek();
+        //console.log(array);
+        for (var i = 0; i < array.length; i++) {
+            console.log(array[i]);
+            if (array[i] > seek) {
+                console.log(i);
+                //this.clapTimingId = i;
+                return;
+            }
+        }
+    };
+    AudioModule.prototype.checkForClaps = function () {
+        if (this.songSource == null || this.clappingTimings.length < 1 || !this.editorCore.editorData.useClaps.value)
+            return;
+        var seek = this.songSource.seek();
+        // console.log("CLAP LOOP");
+        // console.log(this.clappingTimings[this.clapTimingId]);
+        // console.log(seek);
+        // console.log(this.clapTimingId);
+        if (this.clappingTimings[this.clapTimingId] < seek) {
+            this.clapTimingId++;
+            this.playClapSound();
+            //console.log("PLAY CLAP");
+        }
     };
     AudioModule.prototype.loadAudio = function (fileName, soundPath) {
         var _this = this;
-        this.howl = new Howl({ src: [soundPath] });
+        this.songSource = new Howl({ src: [soundPath] });
         this.analyser = Howler.ctx.createAnalyser();
         this.analyser.fftSize = 256;
-        this.howl.on('load', function () {
+        this.songSource.on('load', function () {
             _this.audioLoaded = true;
-            _this.view.onAudioLoad(fileName, _this.howl.duration());
+            _this.view.onAudioLoad(fileName, _this.songSource.duration());
             _this.onAudioLoaded.invoke([fileName, soundPath]);
         });
-        this.howl.on('play', function (id) {
+        this.songSource.on('play', function (id) {
             _this.setupData();
             _this.onPlay.invoke(id);
         });
-        this.howl.on('seek', function (id) {
+        this.songSource.on('seek', function (id) {
             _this.onSeek.invoke(id);
         });
-        this.howl.on('stop', function (id) {
+        this.songSource.on('stop', function (id) {
             _this.onStop.invoke(id);
         });
     };
     AudioModule.prototype.setVolume = function (value) {
-        this.howl.volume([value]);
+        this.songSource.volume([value]);
     };
     AudioModule.prototype.init = function (editorCoreModules) {
         var _this = this;
@@ -117,33 +147,44 @@ var AudioModule = /** @class */ (function () {
         this.editorCore.editorData.playbackRate.onValueChange.addListener(function (value) { _this.setPlaybackRate(value); });
     };
     AudioModule.prototype.updateModule = function () {
-        if (this.howl == null || this.howl == undefined)
+        if (this.songSource == null || this.songSource == undefined)
             return;
-        this.view.update(this.howl.seek());
+        var seek = this.songSource.seek();
+        this.view.update(seek);
+        //this.checkForClaps();
     };
     AudioModule.prototype.setPlaybackRate = function (value) {
-        this.howl.rate([value]);
+        this.songSource.rate([value]);
     };
     AudioModule.prototype.isAudioLoaded = function () {
         return this.audioLoaded;
     };
     AudioModule.prototype.isPlaying = function () {
-        if (this.howl == undefined || this.howl == null)
+        if (this.songSource == undefined || this.songSource == null)
             return false;
-        return this.howl.playing([this.soundId]);
+        return this.songSource.playing([this.soundId]);
     };
     AudioModule.prototype.play = function () {
-        this.soundId = this.howl.play();
+        this.soundId = this.songSource.play();
+    };
+    AudioModule.prototype.playClapSound = function () {
+        //console.log("PLAYED CLAP SOUND");
+        // if(this.clapSource.playing()) {
+        //     this.clapSource.seek([0]);
+        // }
+        // else
+        this.clapSource.stop();
+        this.clapSoundId = this.clapSource.play();
     };
     AudioModule.prototype.pause = function () {
-        this.howl.pause();
+        this.songSource.pause();
     };
     AudioModule.prototype.seek = function () {
-        return this.howl.seek();
+        return this.songSource.seek();
     };
     AudioModule.prototype.setMusicFromCanvasPosition = function (position, editor) {
         var second = editor.viewport.canvasToSongTime(position).x / editor.transform.scale.x;
-        this.howl.seek([second]);
+        this.songSource.seek([second]);
     };
     AudioModule.prototype.getDomainData = function () {
         var dataArray = new Float32Array(this.analyser.frequencyBinCount);
@@ -151,8 +192,8 @@ var AudioModule = /** @class */ (function () {
         return dataArray;
     };
     AudioModule.prototype.setupData = function () {
-        this._bufferSource = this.howl._soundById(this.soundId)._node.bufferSource;
-        this.howl._soundById(this.soundId)._node.bufferSource.connect(this.analyser);
+        this._bufferSource = this.songSource._soundById(this.soundId)._node.bufferSource;
+        this.songSource._soundById(this.soundId)._node.bufferSource.connect(this.analyser);
     };
     return AudioModule;
 }());
