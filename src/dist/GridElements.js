@@ -17,12 +17,16 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BeatLine = exports.BPMLine = exports.TimestepLine = exports.CreatableTimestampLine = exports.Timestamp = exports.GridElement = void 0;
 var Transform_1 = require("./Transform");
+var RgbaColor_1 = require("./RgbaColor");
 var Vec2_1 = require("./Vec2");
 var AppSettings_1 = require("./AppSettings");
+var Utils_1 = require("./Utils");
 var GridElement = /** @class */ (function () {
     function GridElement(parent, rgbaColor) {
         this.transform = new Transform_1.Transform();
-        this.isActive = true;
+        this.onDelete = new Utils_1.Event();
+        this._isActive = true;
+        this._isSelected = false;
         this.color = rgbaColor;
         this.transform.parent = parent;
     }
@@ -39,11 +43,34 @@ var GridElement = /** @class */ (function () {
             return;
         }
     };
+    GridElement.prototype.delete = function () {
+        this.onDelete.invoke(this);
+    };
+    Object.defineProperty(GridElement.prototype, "isActive", {
+        get: function () {
+            return this._isActive;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(GridElement.prototype, "isSelected", {
+        get: function () {
+            return this._isSelected;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    GridElement.prototype.select = function () {
+        this._isSelected = true;
+    };
+    GridElement.prototype.deselect = function () {
+        this._isSelected = false;
+    };
     GridElement.prototype.activate = function () {
-        this.isActive = true;
+        this._isActive = true;
     };
     GridElement.prototype.deactivate = function () {
-        this.isActive = false;
+        this._isActive = false;
     };
     return GridElement;
 }());
@@ -62,6 +89,7 @@ var Timestamp = /** @class */ (function (_super) {
     }
     Timestamp.prototype.draw = function (view, canvas) {
         _super.prototype.draw.call(this, view, canvas);
+        var color = this._isSelected ? RgbaColor_1.RgbaColor.White : this.color;
         var ctx = canvas.getContext('2d');
         var pos = new Vec2_1.Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
         var width = this.width + this.transform.scale.x / 5;

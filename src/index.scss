@@ -45,6 +45,12 @@
   }
 
   button {
+    margin: 5px;
+    color: $text-color;
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    background-color: $accent-color;
     border-radius: $block-border-radius;
   }
 
@@ -96,39 +102,6 @@
     transform-origin: center;
     width:  $diamond-width;
   }
-
-  // .prefab-button {
-  //   background-color: $background-main-color;
-  //   margin: 5px;
-  //   max-width: 10px;
-  //   max-height: 10px;
-
-  //   &:selected {
-  //     background-color: $accent-color-second;
-  //   }
-  // }
-  
-  // .diamond {
-  //   width: 0;
-  //   height: 0;
-  //   border: $diamond-width solid transparent;
-  //   border-bottom-color: red;
-  //   position: relative;
-  //   top: -$diamond-width;
-  //   //align-self: center;
-  //   //justify-self: center;
-
-  //   &:after {
-  //     content: '';
-  //     position: absolute;
-  //     left: -$diamond-width;
-  //     top: $diamond-width;
-  //     width: 0;
-  //     height: 0;
-  //     border: $diamond-width solid transparent;
-  //     border-top-color: red;
-  //   }
-  // }
 
   topbar {
     display: flex;
@@ -290,9 +263,6 @@
         flex: 1 10px;
         display: flex;
         flex-direction: column;
-
-        button {
-        }
       }
     }
   }
@@ -348,15 +318,6 @@
   .imports {
     display: flex;
     justify-content: space-around;
-
-    button {
-      margin: 5px;
-      color: $text-color;
-      border: none;
-      text-align: center;
-      text-decoration: none;
-      background-color: $accent-color;
-    }
   }
 
   #drop-zone {

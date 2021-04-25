@@ -3,6 +3,7 @@ import { RgbaColor } from "./RgbaColor";
 import { IViewportModule } from "./Viewport";
 import { Vec2 } from "./Vec2";
 import { editorColorSettings } from "./AppSettings";
+import { Event } from "./Utils";
 
 import $ from 'jquery';
 
@@ -14,11 +15,26 @@ export interface ICompareNumberProvider {
     value: number;
 }
 
-export abstract class GridElement implements IDrawable, ICompareNumberProvider {
+export interface ISelectable {
+    isSelected: boolean;
+    select();
+    deselect();
+}
+
+export interface IDeletable {
+    delete();
+    onDelete: Event<IDeletable>;
+}
+
+export abstract class GridElement implements IDrawable, ICompareNumberProvider, ISelectable, IDeletable {
     
     transform: Transform = new Transform();
-    isActive: boolean = true;
     color: RgbaColor;
+    
+    onDelete = new Event<GridElement>();
+
+    protected _isActive: boolean = true;
+    protected _isSelected: boolean = false;
 
     constructor(parent : Transform, rgbaColor: RgbaColor) {
         this.color = rgbaColor;
@@ -35,12 +51,32 @@ export abstract class GridElement implements IDrawable, ICompareNumberProvider {
         }
     }
 
+    delete() {
+        this.onDelete.invoke(this);
+    }
+
+    get isActive(): boolean {
+        return this._isActive;
+    }
+
+    get isSelected() : boolean {
+        return this._isSelected;
+    }
+
+    select() {
+        this._isSelected = true;
+    }
+
+    deselect() {
+        this._isSelected = false;
+    }
+
     activate() {
-        this.isActive = true;
+        this._isActive = true;
     }
 
     deactivate() {
-        this.isActive = false;
+        this._isActive = false;
     }
 }
 
@@ -63,6 +99,7 @@ export class Timestamp extends GridElement {
     draw(view: IViewportModule, canvas : HTMLCanvasElement) {
         super.draw(view, canvas)
         
+        const color = this._isSelected ? RgbaColor.White: this.color;
         const ctx = canvas.getContext('2d');
         const pos = new Vec2(this.transform.position.x + view.position.x,
         this.transform.position.y + view.position.y);

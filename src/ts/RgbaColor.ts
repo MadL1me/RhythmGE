@@ -17,4 +17,6 @@ export class RgbaColor {
             return 'rgba(' + this.r + ',' + this.g + ',' + this.b + ')';
         return 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + this.a + ')';
     }
+
+    static readonly White = new RgbaColor(255,255,255);
 }

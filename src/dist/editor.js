@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EditorGrid = exports.TimestampsModule = exports.CreatableLinesModule = exports.TimestepLineModule = exports.Editor = exports.EditorData = void 0;
+exports.EditorGrid = exports.ElementSelectorModule = exports.TimestampsModule = exports.CreatableLinesModule = exports.TimestepLineModule = exports.Editor = exports.EditorData = void 0;
 var jquery_1 = __importDefault(require("jquery"));
 var RgbaColor_1 = require("./RgbaColor");
 var Vec2_1 = require("./Vec2");
@@ -250,6 +250,8 @@ var TimestampsModule = /** @class */ (function () {
         this.selectedPrefabId = 0;
         this.idToPrefab = new Map();
         this.timestamps = new Map();
+        //private phantomTimestamp: Timestamp;
+        this.onExistingElementClicked = new Utils_1.Event();
         this.editorGridModule = editorGrid;
         this.createableLinesModule = creatableLines;
         this.canvas = jquery_1.default("#editor-canvas")[0];
@@ -273,6 +275,9 @@ var TimestampsModule = /** @class */ (function () {
                 timestamp.draw(this.editorCore.viewport, this.canvas);
             }
         }
+    };
+    TimestampsModule.prototype.removeTimestamp = function (timestamp) {
+        delete this.timestamps[timestamp.transform.localPosition.x][timestamp.transform.localPosition.y];
     };
     TimestampsModule.prototype.createTimestampPrefab = function (color) {
         var _this = this;
@@ -302,9 +307,9 @@ var TimestampsModule = /** @class */ (function () {
         var click = new Vec2_1.Vec2(clickX, clickY);
         var worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
         worldClickPos = new Vec2_1.Vec2(worldClickPos.x, worldClickPos.y);
-        console.log(click);
-        console.log("World click pos is: " + worldClickPos);
-        console.log(worldClickPos);
+        //console.log(click);
+        //console.log(`World click pos is: ${worldClickPos}`);
+        //console.log(worldClickPos); 
         var closestBeatline = this.editorGridModule.findClosestBeatLine(click);
         var closestObjects = new Array();
         if (!this.editorCore.editorData.hideBpmLines.value && this.editorGridModule.bpmLines.length > 0) {
@@ -313,6 +318,8 @@ var TimestampsModule = /** @class */ (function () {
         if (!this.editorCore.editorData.hideCreatableLines.value && Object.keys(this.createableLinesModule.creatableLines).length > 0) {
             closestObjects.push(this.createableLinesModule.findClosestCreatableLine(worldClickPos.x));
         }
+        if (closestObjects.length < 1)
+            return;
         var min = 100000, index = 0;
         worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
         console.log(worldClickPos);
@@ -324,33 +331,56 @@ var TimestampsModule = /** @class */ (function () {
             }
         }
         var closestObject = closestObjects[index];
-        console.log(closestObjects);
-        console.log(closestObject);
+        //console.log(closestObjects);   
+        //console.log(closestObject);
         var prefab = this.idToPrefab[this.selectedPrefabId];
         var newTimestamp = new GridElements_1.Timestamp(prefab.color, new Vec2_1.Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y), 0.5, this.editorGridModule.transform);
         console.log(newTimestamp);
         if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
             this.timestamps[newTimestamp.transform.localPosition.x] = {};
         }
-        this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
-    };
-    TimestampsModule.prototype.canvasPlacePhantomElementHandler = function () {
-        if (Input_1.Input.keysPressed['Alt']) {
-            var rect = this.canvas.getBoundingClientRect();
-            var clickX = Input_1.Input.mousePosition.x - rect.left;
-            var clickY = Input_1.Input.mousePosition.y - rect.top;
-            var click = new Vec2_1.Vec2(clickX, clickY);
-            var closestBeatline = this.editorGridModule.findClosestBeatLine(click);
-            this.phantomTimestamp = new GridElements_1.Timestamp(new RgbaColor_1.RgbaColor(158, 23, 240, 0.7), new Vec2_1.Vec2(click.x / this.editorGridModule.transform.scale.x, closestBeatline.transform.position.y), 10, this.editorGridModule.transform);
-        }
-        else {
-            this.phantomTimestamp = null;
-        }
+        if (this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] == null)
+            this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
+        else if (Input_1.Input.keysPressed["LeftControl"])
+            this.onExistingElementClicked.invoke(this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y]);
     };
     TimestampsModule.nextPrefabId = 0;
     return TimestampsModule;
 }());
 exports.TimestampsModule = TimestampsModule;
+var SelectArea = /** @class */ (function () {
+    function SelectArea() {
+    }
+    SelectArea.prototype.draw = function (view, canvas) {
+        var ctx = canvas.getContext('2d');
+        var sizeVec = Vec2_1.Vec2.Substract(this.secondPoint, this.firstPoint);
+        ctx.fillStyle = AppSettings_1.editorColorSettings.selectAreaColor.value();
+        ctx.fillRect(this.firstPoint.x, this.firstPoint.y, sizeVec.x, sizeVec.y);
+    };
+    return SelectArea;
+}());
+var ElementSelectorModule = /** @class */ (function () {
+    function ElementSelectorModule() {
+        this.selectedElements = new Array();
+        this.selectArea = new SelectArea();
+    }
+    ElementSelectorModule.prototype.init = function (editorCoreModules) {
+        this.editor = editorCoreModules;
+    };
+    ElementSelectorModule.prototype.updateModule = function () {
+    };
+    ElementSelectorModule.prototype.onElementExistingElementClicked = function (element) {
+        this.selectedElements.push(element);
+        element.select();
+    };
+    ElementSelectorModule.prototype.selectElement = function (element) {
+        this.selectedElements;
+    };
+    ElementSelectorModule.prototype.deselectElement = function (element) {
+    };
+    return ElementSelectorModule;
+}());
+exports.ElementSelectorModule = ElementSelectorModule;
 var EditorGrid = /** @class */ (function () {
     function EditorGrid() {
         this.bpmLines = new Array();

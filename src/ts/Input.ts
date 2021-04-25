@@ -40,6 +40,14 @@ export abstract class Input {
         return this.lastMousePosition == this.mousePosition;
     }
 
+    private static onCanvasMouseButtonDown() {
+
+    }
+
+    private static onCanvasMouseUpButton() {
+
+    }
+
     private static onCanvasHover(event) {
         this.mousePosition = new Vec2(event.clientX, event.clientY);
     }

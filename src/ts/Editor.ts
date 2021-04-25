@@ -28,6 +28,44 @@ export interface IEditorModule {
     updateModule();
 }
 
+interface ICommand {
+    execute();
+    undo();
+}
+
+class CommandsController {
+    
+    private commandsCapacity = 20;
+    private commandIndex = 0;
+    private commands = new Array<ICommand>();
+
+    addCommandToList(executedCommand: ICommand) {
+        if (this.commandIndex != this.commands.length-1) {
+            this.commands = this.commands.slice(0, this.commandIndex);
+        }
+
+        if (this.commands.length > this.commandsCapacity) {
+            this.commands.shift();
+        }
+
+        this.commands.push(executedCommand);
+        this.commandIndex=this.commands.length;
+    }
+
+    undoCommand() {
+        this.commands[this.commandIndex].undo();
+        this.commandIndex--;
+    }
+
+    redoCommand() {
+        if (this.commandIndex == this.commands.length-1) {
+            return;
+        }
+        this.commandIndex++
+        this.commands[this.commandIndex].execute();
+    }
+}
+
 class EventVar<T> {
     private _value: T;
 
@@ -315,13 +353,14 @@ export class TimestampsModule implements IEditorModule {
     private selectedPrefabId = 0;
     private idToPrefab = new Map<number, TimestampPrefab>();
     private timestamps = new Map<number, Map<number, Timestamp>>();
-    private phantomTimestamp: Timestamp;
     private canvas: HTMLCanvasElement;
     
     private editorCore: IEditorCore;
-    
     private editorGridModule: EditorGrid;
     private createableLinesModule: CreatableLinesModule;
+    //private phantomTimestamp: Timestamp;
+
+    onExistingElementClicked = new Event<Timestamp>();
 
     constructor(editorGrid: EditorGrid, creatableLines: CreatableLinesModule) {
         this.editorGridModule = editorGrid;
@@ -347,6 +386,10 @@ export class TimestampsModule implements IEditorModule {
                 (timestamp as Timestamp).draw(this.editorCore.viewport, this.canvas);
             }
         }
+    }
+    
+    removeTimestamp(timestamp: Timestamp) {
+        delete this.timestamps[timestamp.transform.localPosition.x][timestamp.transform.localPosition.y];
     }
 
     createTimestampPrefab(color: RgbaColor) : TimestampPrefab {
@@ -376,9 +419,9 @@ export class TimestampsModule implements IEditorModule {
         let worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
         worldClickPos = new Vec2(worldClickPos.x,worldClickPos.y)
         
-        console.log(click);
-        console.log(`World click pos is: ${worldClickPos}`);
-        console.log(worldClickPos);
+        //console.log(click);
+        //console.log(`World click pos is: ${worldClickPos}`);
+        //console.log(worldClickPos); 
 
         let closestBeatline = this.editorGridModule.findClosestBeatLine(click);
         let closestObjects = new Array<GridElement>();
@@ -390,6 +433,9 @@ export class TimestampsModule implements IEditorModule {
         if (!this.editorCore.editorData.hideCreatableLines.value && Object.keys(this.createableLinesModule.creatableLines).length > 0) {
             closestObjects.push(this.createableLinesModule.findClosestCreatableLine(worldClickPos.x));
         }
+
+        if (closestObjects.length < 1)
+            return;
 
         let min = 100000, index = 0;
         worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
@@ -404,8 +450,8 @@ export class TimestampsModule implements IEditorModule {
         }
         let closestObject = closestObjects[index];
 
-        console.log(closestObjects);   
-        console.log(closestObject);
+        //console.log(closestObjects);   
+        //console.log(closestObject);
         const prefab = this.idToPrefab[this.selectedPrefabId] as TimestampPrefab;
         let newTimestamp =  new Timestamp(prefab.color,
             new Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y), 0.5, this.editorGridModule.transform);
@@ -415,22 +461,67 @@ export class TimestampsModule implements IEditorModule {
             this.timestamps[newTimestamp.transform.localPosition.x] = {};
         }
 
-        this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
+        if (this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] == null)
+            this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
+        else if (Input.keysPressed["LeftControl"])
+            this.onExistingElementClicked.invoke(this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y]);
     }
 
-    canvasPlacePhantomElementHandler() {
-        if (Input.keysPressed['Alt']) {
-            const rect = this.canvas.getBoundingClientRect();
-            const clickX = Input.mousePosition.x - rect.left;
-            const clickY = Input.mousePosition.y - rect.top;
-            const click = new Vec2(clickX, clickY); 
+    // canvasPlacePhantomElementHandler() {
+    //     if (Input.keysPressed['Alt']) {
+    //         const rect = this.canvas.getBoundingClientRect();
+    //         const clickX = Input.mousePosition.x - rect.left;
+    //         const clickY = Input.mousePosition.y - rect.top;
+    //         const click = new Vec2(clickX, clickY); 
 
-            var closestBeatline = this.editorGridModule.findClosestBeatLine(click);
-            this.phantomTimestamp = new Timestamp(new RgbaColor(158, 23, 240, 0.7), new Vec2(click.x / this.editorGridModule.transform.scale.x, closestBeatline.transform.position.y), 10, this.editorGridModule.transform);
-        }
-        else {
-            this.phantomTimestamp = null;
-        }
+    //         var closestBeatline = this.editorGridModule.findClosestBeatLine(click);
+    //         this.phantomTimestamp = new Timestamp(new RgbaColor(158, 23, 240, 0.7), new Vec2(click.x / this.editorGridModule.transform.scale.x, closestBeatline.transform.position.y), 10, this.editorGridModule.transform);
+    //     }
+    //     else {
+    //         this.phantomTimestamp = null;
+    //     }
+    // }
+}
+
+class SelectArea implements IDrawable {
+    private firstPoint: Vec2;
+    private secondPoint: Vec2;
+    
+    draw(view: IViewportModule, canvas: HTMLCanvasElement) {
+        const ctx = canvas.getContext('2d');
+        const sizeVec = Vec2.Substract(this.secondPoint, this.firstPoint);
+        ctx.fillStyle = editorColorSettings.selectAreaColor.value();
+        ctx.fillRect(this.firstPoint.x, this.firstPoint.y, sizeVec.x, sizeVec.y);
+    }
+}
+
+export class ElementSelectorModule implements IEditorModule {
+    transform: Transform;
+    
+    private editor: IEditorCore;
+    private selectedElements = new Array<GridElement>();
+    private selectArea = new SelectArea();
+    
+    init(editorCoreModules: IEditorCore) {
+        this.editor = editorCoreModules;
+    }
+
+    updateModule() {
+        
+
+    }
+
+    onElementExistingElementClicked(element: GridElement) {
+        this.selectedElements.push(element);
+        element.select();
+    }
+
+    private selectElement(element: GridElement) {
+        this.selectedElements
+    }
+
+    private deselectElement(element: GridElement) {
+    
     }
 }
 

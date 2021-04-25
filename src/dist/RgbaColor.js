@@ -14,6 +14,7 @@ var RgbaColor = /** @class */ (function () {
             return 'rgba(' + this.r + ',' + this.g + ',' + this.b + ')';
         return 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + this.a + ')';
     };
+    RgbaColor.White = new RgbaColor(255, 255, 255);
     return RgbaColor;
 }());
 exports.RgbaColor = RgbaColor;

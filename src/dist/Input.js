@@ -27,6 +27,10 @@ var Input = /** @class */ (function () {
     Input.isMouseMoved = function () {
         return this.lastMousePosition == this.mousePosition;
     };
+    Input.onCanvasMouseButtonDown = function () {
+    };
+    Input.onCanvasMouseUpButton = function () {
+    };
     Input.onCanvasHover = function (event) {
         this.mousePosition = new Vec2_1.Vec2(event.clientX, event.clientY);
     };
