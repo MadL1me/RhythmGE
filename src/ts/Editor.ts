@@ -806,7 +806,7 @@ export class VisualiserEditorModule implements IEditorModule {
         //div.setAttribute('style', 'height:' + (h * 0.6).toString() + 'px');
         var info = this.canvas.parentElement.getBoundingClientRect();
 
-        this.canvas.setAttribute('width', (info.width*0.9).toString());
-        this.canvas.setAttribute('height', (info.height*0.5).toString());
+        this.canvas.setAttribute('width', (info.width).toString());
+        this.canvas.setAttribute('height', (info.height*0.7).toString());
     }
 }

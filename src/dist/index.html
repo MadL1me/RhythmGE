@@ -33,8 +33,10 @@
         </div>
         <div class="imports">
           <div id="drop-zone" class="drop-zone">
-            <p>Drag audio files here</p>
-            <input type="file" id="files" name="files[]" />
+            <button id="drop-btn" onclick="document.getElementById('files').click();">
+              <p>Click to import audio file</p>
+            </button>
+            <input type="file" id="files" style="display: none;" name="music" accept=".mp3, .wav" />
           </div>
           <div class="imports">
             <button id="save-beatmap-btn">Save beatmap file</button>
