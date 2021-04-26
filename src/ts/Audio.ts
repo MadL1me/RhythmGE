@@ -4,7 +4,7 @@ import { Vec2 } from "./Vec2";
 import { editorColorSettings } from "./AppSettings";
 import { IDrawable } from "./GridElements";
 
-import $ from 'jquery';
+import $, { data } from 'jquery';
 import { ViewportModule } from "./Viewport";
 import { Transform } from "./Transform";
 import { throws } from "node:assert";
@@ -101,7 +101,8 @@ export interface IAudioModule extends IEditorModule {
     pause();
     seek();
 
-    getDomainData() : Float32Array
+    getDomainData() : Float32Array;
+    getSpectrumData(): Float32Array;
     setMusicFromCanvasPosition(position : Vec2, editor : IEditorCore) 
 }
 
@@ -255,8 +256,14 @@ export class AudioModule implements IAudioModule {
     }
 
     getDomainData() : Float32Array {
-        var dataArray = new Float32Array(this.analyser.frequencyBinCount);
+        let dataArray = new Float32Array(this.analyser.frequencyBinCount);
         this.analyser.getFloatTimeDomainData(dataArray);
+        return dataArray;
+    }
+
+    getSpectrumData(): Float32Array {
+        let dataArray = new Float32Array(this.analyser.frequencyBinCount);
+        this.analyser.getFloatFrequencyData(dataArray);
         return dataArray;
     }
 
@@ -282,7 +289,6 @@ export class AudioAmplitudeViewModule implements IEditorModule {
     private editorCore: IEditorCore;
 
     constructor() {
-        console.log("asdasdasdsad");
         this.canvas = $('#audio-amplitude-canvas')[0] as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d');
     }

@@ -191,6 +191,11 @@ var AudioModule = /** @class */ (function () {
         this.analyser.getFloatTimeDomainData(dataArray);
         return dataArray;
     };
+    AudioModule.prototype.getSpectrumData = function () {
+        var dataArray = new Float32Array(this.analyser.frequencyBinCount);
+        this.analyser.getFloatFrequencyData(dataArray);
+        return dataArray;
+    };
     AudioModule.prototype.setupData = function () {
         this._bufferSource = this.songSource._soundById(this.soundId)._node.bufferSource;
         this.songSource._soundById(this.soundId)._node.bufferSource.connect(this.analyser);
@@ -205,7 +210,6 @@ var AudioAmplitudeViewModule = /** @class */ (function () {
         this.sampleRate = 48000;
         this.divideValue = 20;
         this.samplesPerArrayValue = this.sampleRate / this.divideValue;
-        console.log("asdasdasdsad");
         this.canvas = jquery_1.default('#audio-amplitude-canvas')[0];
         this.ctx = this.canvas.getContext('2d');
     }

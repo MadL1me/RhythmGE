@@ -568,10 +568,10 @@ export class EditorGrid implements IEditorModule {
 
     private onWindowResize() {
         var w = document.documentElement.clientWidth;
-        var h = document.documentElement.clientHeight;
+        var h = document.documentElement.clientHeight - this._canvas.parentElement.offsetTop-10;
 
         var div = this._canvas.parentElement;
-        div.setAttribute('style', 'height:' + (h * 0.6).toString() + 'px');
+        div.setAttribute('style', 'height:' + (h*0.95).toString() + 'px');
         var info = this._canvas.parentElement.getBoundingClientRect();
 
         this._canvas.setAttribute('width', (info.width).toString());
@@ -734,5 +734,79 @@ export class EditorGrid implements IEditorModule {
             return closestBpmSnap;
         else 
             return closestBpm;
+    }
+}
+
+
+export class VisualiserEditorModule implements IEditorModule {
+        
+    transform = new Transform();
+    private editor: IEditorCore;
+    private canvas: HTMLCanvasElement;
+    private ctx: CanvasRenderingContext2D;
+
+    private spectrumData: Float32Array;
+    private displayData = new Float32Array();
+
+    private readonly sampleRate = 48000;
+    private divideValue = 20;
+    private samplesPerArrayValue = this.sampleRate/this.divideValue;
+
+    constructor() {
+        this.canvas = $("#visualiser-canvas")[0] as HTMLCanvasElement;
+        this.ctx = this.canvas.getContext("2d");
+    }
+
+    init(editorCoreModules: IEditorCore) {
+        this.editor = editorCoreModules;
+        Input.onWindowResize.addListener(() => {this.onWindowResize();});
+        this.editor.audio.onPlay.addListener(() => {this.onAudioLoad();});
+    }
+
+    onAudioLoad() {        
+        this.spectrumData = this.editor.audio.getSpectrumData();
+        this.displayData = this.spectrumData;
+        this.calculateDisplayDataArray();
+    }
+
+    private calculateDisplayDataArray() {
+
+    }
+
+    updateModule() {
+        this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = editorColorSettings.editorBackgroundColor.value();
+        this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
+
+        if (this.spectrumData == undefined || this.spectrumData == null)
+            return;
+
+        if (this.displayData == undefined || this.displayData == null)
+            return;
+
+        const view = this.editor.viewport;
+
+        for (var i = 0; i<this.displayData.length; i++) {
+            var interpolated = this.displayData[i]*this.canvas.height;
+            var position = view.position.x + i*this.transform.scale.x/this.divideValue;
+            var width = this.transform.scale.x/this.divideValue;
+            var gap = Math.floor(width/3);
+
+            if (gap < 4)
+                gap = 0;
+
+            this.ctx.fillStyle = editorColorSettings.loudnessBarColor.value();
+            this.ctx.fillRect(position + gap, 0, width - gap, interpolated)
+            this.ctx.fill();
+        }
+    } 
+
+    private onWindowResize() {
+        var div = this.canvas.parentElement;
+        //div.setAttribute('style', 'height:' + (h * 0.6).toString() + 'px');
+        var info = this.canvas.parentElement.getBoundingClientRect();
+
+        this.canvas.setAttribute('width', (info.width*0.9).toString());
+        this.canvas.setAttribute('height', (info.height*0.5).toString());
     }
 }

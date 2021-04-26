@@ -14,12 +14,14 @@ function setupModules() {
     var timestampsModule = new Editor_1.TimestampsModule(grid, cLines);
     var timestampLine = new Editor_1.TimestepLineModule();
     var audio = new Audio_1.AudioAmplitudeViewModule();
+    var visualiser = new Editor_1.VisualiserEditorModule();
     editor.addEditorModule(grid);
     editor.addEditorModule(cLines);
     editor.addEditorModule(topScale);
     editor.addEditorModule(timestampsModule);
     editor.addEditorModule(timestampLine);
     editor.addEditorModule(audio);
+    editor.addEditorModule(visualiser);
 }
 setupModules();
 setInterval(function () { editor.update(); }, 15);

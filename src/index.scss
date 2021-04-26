@@ -8,13 +8,21 @@
   $accent-color-second: #0affce;
   $block-border-radius: 5px;
 
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     //margin: auto;
     padding: 10px;
     padding-top: 6px;
     background-color: $background-main-color;
+    // display: flex;
+    // flex-direction: column;
+    // justify-content: space-around;
   }
+
+  // topbar { 
+  //   flex:1;
+  // }
 
   .holder {
     display: flex;
@@ -75,8 +83,8 @@
   $default-button: #35384a;
 
   .editor-container {
-    margin-left: 5px;
-    margin-right: 5px;
+    margin: 0px;
+    margin-top: 10px;
     max-height: 70%;
 
     canvas {
@@ -116,24 +124,25 @@
   topbar {
     display: flex;
     flex-direction: row;
-    max-height: 30%;
+    //max-height: 20%;
 
     .left-column {
       flex: 3;
       display: flex;
       flex-direction: column;
       justify-content: center;
+      gap: 10px;
 
       .first-row {
         display: flex;
-        flex: 3;
+        flex: 1;
+        gap: 10px;
 
         .audio-player {
-          flex: 2;
+          flex: 4;
           display: flex;
           flex-direction: row;
           background-color: $background-second-color;
-          margin: 5px;
           border-radius: $block-border-radius;
 
           .col-1 {
@@ -178,10 +187,6 @@
                 margin: 0px;
               }
             }
-  
-            .buttons-container {
-  
-            }
             
             p {
               margin-top: 5px;
@@ -205,95 +210,113 @@
           border-radius: $block-border-radius;
           //align-items: center;
           justify-items: center;
-          flex: 1;
-          margin: 5px;
+          flex: 2;
           background-color: $background-second-color;
         }
-      }
-
-      .settings-container {
-        flex: 1;
-        display: flex;
-        flex-shrink: 1;
-        flex-direction: row;
-        justify-content: space-between;
-        margin: 5px;
-        background-color: $background-second-color;     
-        border-radius: $block-border-radius;
-
-        .inputs-block-container {
+    
+        .imports {
           display: flex;
           flex-direction: row;
-          flex: 1;
-
-          .input-block {
-            display: flex;
+          flex: 2;
+          background-color: $background-second-color;
+          border-radius: $block-border-radius;
+    
+          .drop-zone {
             flex: 1;
+            height: 100%;
+          }
+    
+          .imports {
+            flex: 1 10px;
+            display: flex;
             flex-direction: column;
-            justify-content: start;
-  
-            p{
-              text-align: center;
-              user-select: none;
-            }
-  
-            input {
-              margin-left: auto;
-              margin-right: auto;
-              border-radius: $block-border-radius;
-            }
           }
         }
-
-        .buttons-container {
-          display: flex;
-          flex: 1;
-          flex-direction: column;
-          justify-content: space-around;
-  
-          button {
-            min-height: 30px;
-            min-width: 50px;
-            flex-grow: 0;
-          }
-        }
-
-        .sliders {
-           flex: 1;
-           display: flex;
-           flex-direction: column;
-           justify-content: space-between;
-           flex-wrap: wrap;
-        }
-
-        .checkbox-holder {
-          flex: 1;
-          display: flex;
-          flex-wrap: wrap;
-        }
-
-        label {
-          user-select: none;
-        }
-      }
-    }
-
-    .right-column {
-      display: flex;
-      flex-direction: row;
-      flex: 1;
-      background-color: $background-second-color;
-      margin: 5px;
-      border-radius: $block-border-radius;
-
-      .drop-zone {
-        flex: 2;
       }
 
-      .imports {
-        flex: 1 10px;
+      .second-row {
         display: flex;
-        flex-direction: column;
+        flex: 1;
+        gap: 10px;
+
+        .settings-container {
+          flex: 6;
+          display: flex;
+          flex-shrink: 1;
+          flex-direction: row;
+          justify-content: space-between;
+          background-color: $background-second-color;     
+          border-radius: $block-border-radius;
+  
+          .inputs-block-container {
+            display: flex;
+            flex-direction: row;
+            flex: 1;
+  
+            .input-block {
+              display: flex;
+              flex: 1;
+              flex-direction: column;
+              justify-content: start;
+    
+              p{
+                text-align: center;
+                user-select: none;
+              }
+    
+              input {
+                margin-left: auto;
+                margin-right: auto;
+                border-radius: $block-border-radius;
+              }
+            }
+          }
+  
+          .buttons-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            //flex-grow: 0;
+  
+            button {
+              margin-right: 10px;
+              min-height: 40px;
+              max-height: 30%;
+              //max-width: 80%;
+              flex: 1
+            }
+          }
+  
+          .sliders {
+             flex: 1;
+             display: flex;
+             flex-direction: column;
+             justify-content: space-between;
+             flex-wrap: wrap;
+          }
+  
+          .checkbox-holder {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+          }
+  
+          label {
+            user-select: none;
+          }
+        }
+  
+        .visualiser {
+          flex: 2;
+          background-color: $background-second-color;
+          border-radius: $block-border-radius;
+  
+          canvas {
+            margin:0;
+            border-radius: $block-border-radius;
+          }
+        }
       }
     }
   }

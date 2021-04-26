@@ -30,76 +30,88 @@
           </div>
         </div>
         <div id="prefabs-container">
-          <!-- <div class="prefab-button">
-            <div class="diamond-shape"></div>
-          </div> -->
+        </div>
+        <div class="imports">
+          <div id="drop-zone" class="drop-zone">
+            <p>Drag audio files here</p>
+            <input type="file" id="files" name="files[]" />
+          </div>
+          <div class="imports">
+            <button id="save-beatmap-btn">Save beatmap file</button>
+            <button id="import-beatmap-btn">Import beatmap file</button>
+          </div>
         </div>
       </div>
-      <div class="settings-container">
-        <div class="inputs-block-container"> 
-          <div class="input-block">
-            <p>LPB</p>
-            <input value="5" id="beat-lines" type="text">
+      <div class="second-row">
+        <div class="settings-container">
+          <div class="inputs-block-container"> 
+            <div class="input-block">
+              <p>LPB</p>
+              <input value="5" id="beat-lines" type="text">
+            </div>
+    
+            <div class="input-block">
+              <p>BPM</p>
+              <input value="60" id="bpm" type="text">
+            </div>
+    
+            <div class="input-block">
+              <p>Offset</p>
+              <input value="60" id="offset" type="text">
+            </div>
           </div>
   
-          <div class="input-block">
-            <p>BPM</p>
-            <input value="60" id="bpm" type="text">
+          <div class="sliders"> 
+            <div class="slider-container">
+              <p id="snap-lines-text">Snap lines 1/2</p>
+              <input type="range" min="0" max="4" value="0" class="slider" id="snap-lines">
+            </div>
+            <div class="slider-container">
+              <p id="playback-rate-text">Playback rate 1x</p>
+              <input type="range" min="0.25" max="2" value="1" step="0.05" class="slider" id="playback-rate">
+            </div>
+          </div>
+   
+          <div class="checkbox-holder">
+            <label>
+              <input id="use-claps" type='checkbox'>
+              <span></span>
+              Claps
+            </label>
+    
+            <label>
+              <input id="follow-line" type='checkbox'>
+              <span></span>
+              Follow Line
+            </label>
+    
+            <label>
+              <input id="hide-bpm" type='checkbox'>
+              <span></span>
+              Hide bpm lines
+            </label>
+    
+            <label>
+              <input id="hide-creatable" type='checkbox'>
+              <span></span>
+              Hide creatable lines
+            </label>
           </div>
   
-          <div class="input-block">
-            <p>Offset</p>
-            <input value="60" id="offset" type="text">
+          <div class="buttons-container">
+            <button id="clear-timestamps">
+              Clear timestamps
+            </button>
+            <button id="clear-creatable-lines">
+              Clear creatable-lines
+            </button>
           </div>
         </div>
-
-        <div class="sliders"> 
-          <div class="slider-container">
-            <p id="snap-lines-text">Snap lines 1/2</p>
-            <input type="range" min="0" max="4" value="0" class="slider" id="snap-lines">
-          </div>
-          <div class="slider-container">
-            <p id="playback-rate-text">Playback rate 1x</p>
-            <input type="range" min="0.25" max="2" value="1" step="0.05" class="slider" id="playback-rate">
-          </div>
-        </div>
- 
-        <div class="checkbox-holder">
-          <label>
-            <input id="use-claps" type='checkbox'>
-            <span></span>
-            Claps
-          </label>
-  
-          <label>
-            <input id="follow-line" type='checkbox'>
-            <span></span>
-            Follow Line
-          </label>
-  
-          <label>
-            <input id="hide-bpm" type='checkbox'>
-            <span></span>
-            Hide bpm lines
-          </label>
-  
-          <label>
-            <input id="hide-creatable" type='checkbox'>
-            <span></span>
-            Hide creatable lines
-          </label>
+        <div class="visualiser">
+          <canvas height="100" id='visualiser-canvas'></canvas>
         </div>
       </div>
-    </div>
-    <div class="right-column">
-      <div id="drop-zone" class="drop-zone">
-        <p>Drag audio files here</p>
-        <input type="file" id="files" name="files[]" />
-      </div>
-      <div class="imports">
-        <button id="save-beatmap-btn">Save beatmap file</button>
-        <button id="import-beatmap-btn">Import beatmap file</button>
-      </div>
+    
     </div>
   </topbar>
   <div class="editor-container">
