@@ -15,6 +15,195 @@ import { Input } from "./Input";
 import { Slider, Utils, Event } from "./Utils";
 import { AudioAmplitudeViewModule, AudioModule, IAudioModule } from "./Audio";
 
+
+class TreeNode {
+    left: TreeNode = null;
+    right: TreeNode = null;
+
+    constructor(
+        public value: number, public object: any
+    ) { }
+}
+
+class BinarySearchTree {
+    public root: TreeNode = null;
+
+    add(node: TreeNode): void {
+        if (this.isEmpty()) {
+            this.root = node;
+            console.log(`root node value is ${this.root.value}`)
+        } else {
+            console.log("ADD METHOD");
+            console.log("ADDING VALUE");
+            console.log(node.value);
+            let currentNode: TreeNode = this.root;
+
+            while (currentNode) {
+                console.log(`root node value is ${this.root.value}`)
+                if (node.value > currentNode.value) {
+                    if (currentNode.right === null) {
+                        currentNode.right = node;
+                        console.log(`node is on right`)
+                        return;
+                    }
+
+                    currentNode = currentNode.right;
+                } else {
+                    if (currentNode.left === null) {
+                        currentNode.left = node;
+                        console.log(`node is on left`)
+                        return;
+                    }
+
+                    currentNode = currentNode.left;
+                }
+            }
+        }
+    }
+
+    search(value: number): TreeNode {
+        let currentNode: TreeNode = this.root;
+
+        while (currentNode) {
+            
+            if (value === currentNode.value) {
+                return currentNode;
+            } else if (value > currentNode.value) {
+                currentNode = currentNode.right;
+            } else {
+                currentNode = currentNode.left;
+            }
+        }
+
+        return null;
+    }
+
+    nearestSearch(value: number): TreeNode {
+        let currentNode: TreeNode = this.root;
+        let closestNode: TreeNode = this.root;
+        let minValue = Infinity;
+
+        const checkForClosestNode = (node: TreeNode) => {
+            if (node == null)
+                return;
+            let diff = Math.abs(node.value-closestNode.value);
+            if (diff < minValue) {
+                closestNode = currentNode;
+                minValue = diff; 
+            }
+        }
+
+        while (currentNode) {
+            checkForClosestNode(currentNode.left);
+            checkForClosestNode(currentNode.right);
+
+            if (value === currentNode.value) {
+                return currentNode;
+            } 
+            else if (value > currentNode.value) {
+                currentNode = currentNode.right;
+            } 
+            else {
+                currentNode = currentNode.left;
+            }
+        }
+
+        return closestNode;
+    }
+
+    delete(value: number): void {
+        this.root = this.deleteRecursively(this.root, value);
+    }
+
+    private deleteRecursively(root: TreeNode, value: number): TreeNode {
+        if (root === null) {
+            return null;
+        }
+
+        if (root.value === value) {
+            // eliminamos
+            root = this.deleteNode(root); // -> devuelve la misma estructura con el nodo eliminado
+        } else if (value < root.value) {
+            // nos movemos a la izquierda
+            root.left = this.deleteRecursively(root.left, value);
+        } else {
+            // derecha
+            root.right = this.deleteRecursively(root.right, value);
+        }
+
+        return root;
+    }
+
+    private deleteNode(root: TreeNode): TreeNode {
+        if (root.left === null && root.right === null) {
+            // es hoja
+            return null;
+        } else if (root.left !== null && root.right !== null) {
+            // tiene dos hijos
+            const successorNode = this.getSuccessor(root.left);
+            const successorValue = successorNode.value;
+
+            root = this.deleteRecursively(root, successorValue);
+            root.value = successorValue;
+
+            return root;
+        } else if (root.left !== null) {
+            // tiene izquierdo
+            return root.left;
+        }
+
+        // derecho
+        return root.right;
+    }
+
+    private getSuccessor(node: TreeNode): TreeNode {
+        let currentNode: TreeNode = node;
+
+        while (currentNode) {
+            if (currentNode.right === null) {
+                break;
+            }
+
+            currentNode = currentNode.right;
+        }
+
+        return currentNode;
+    }
+
+    isEmpty(): boolean {
+        return this.root === null;
+    }
+}
+
+
+// const bst = new BinarySearchTree();
+
+// const obj = ["abc","abcc"];
+
+// bst.add(new TreeNode(20.2233224, obj));
+// bst.add(new TreeNode(25, obj));
+// bst.add(new TreeNode(0, obj));
+// bst.add(new TreeNode(18, obj));
+// bst.add(new TreeNode(14, obj));
+
+// console.log(bst.root);
+
+// console.log('FIND 30:', bst.search(30));
+// console.log('FIND 18:', bst.search(18));
+// console.log('FIND 25:', bst.search(25));
+// console.log('FIND 15:', bst.search(15));
+// console.log('FIND 20:', bst.search(20));
+// console.log('NEAR FIND 21:', bst.nearestSearch(21));
+// console.log('NEAR FIND 24:', bst.nearestSearch(24));
+// console.log('NEAR FIND 16:', bst.nearestSearch(16));
+// console.log('NEAR FIND 17:', bst.nearestSearch(17));
+// console.log('NEAR FIND 18:', bst.nearestSearch(18));
+// console.log(bst.root.value);
+// console.log(bst.root.value);
+// bst.delete(20);
+// console.log(bst.root.value);
+
+
 export interface IEditorCore {
     transform: Transform;
     audio : IAudioModule;

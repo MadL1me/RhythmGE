@@ -14,6 +14,172 @@ var AppSettings_1 = require("./AppSettings");
 var Input_1 = require("./Input");
 var Utils_1 = require("./Utils");
 var Audio_1 = require("./Audio");
+var TreeNode = /** @class */ (function () {
+    function TreeNode(value, object) {
+        this.value = value;
+        this.object = object;
+        this.left = null;
+        this.right = null;
+    }
+    return TreeNode;
+}());
+var BinarySearchTree = /** @class */ (function () {
+    function BinarySearchTree() {
+        this.root = null;
+    }
+    BinarySearchTree.prototype.add = function (node) {
+        if (this.isEmpty()) {
+            this.root = node;
+            console.log("root node value is " + this.root.value);
+        }
+        else {
+            console.log("ADD METHOD");
+            console.log("ADDING VALUE");
+            console.log(node.value);
+            var currentNode = this.root;
+            while (currentNode) {
+                console.log("root node value is " + this.root.value);
+                if (node.value > currentNode.value) {
+                    if (currentNode.right === null) {
+                        currentNode.right = node;
+                        console.log("node is on right");
+                        return;
+                    }
+                    currentNode = currentNode.right;
+                }
+                else {
+                    if (currentNode.left === null) {
+                        currentNode.left = node;
+                        console.log("node is on left");
+                        return;
+                    }
+                    currentNode = currentNode.left;
+                }
+            }
+        }
+    };
+    BinarySearchTree.prototype.search = function (value) {
+        var currentNode = this.root;
+        while (currentNode) {
+            if (value === currentNode.value) {
+                return currentNode;
+            }
+            else if (value > currentNode.value) {
+                currentNode = currentNode.right;
+            }
+            else {
+                currentNode = currentNode.left;
+            }
+        }
+        return null;
+    };
+    BinarySearchTree.prototype.nearestSearch = function (value) {
+        var currentNode = this.root;
+        var closestNode = this.root;
+        var minValue = Infinity;
+        var checkForClosestNode = function (node) {
+            if (node == null)
+                return;
+            var diff = Math.abs(node.value - closestNode.value);
+            if (diff < minValue) {
+                closestNode = currentNode;
+                minValue = diff;
+            }
+        };
+        while (currentNode) {
+            checkForClosestNode(currentNode.left);
+            checkForClosestNode(currentNode.right);
+            if (value === currentNode.value) {
+                return currentNode;
+            }
+            else if (value > currentNode.value) {
+                currentNode = currentNode.right;
+            }
+            else {
+                currentNode = currentNode.left;
+            }
+        }
+        return closestNode;
+    };
+    BinarySearchTree.prototype.delete = function (value) {
+        this.root = this.deleteRecursively(this.root, value);
+    };
+    BinarySearchTree.prototype.deleteRecursively = function (root, value) {
+        if (root === null) {
+            return null;
+        }
+        if (root.value === value) {
+            // eliminamos
+            root = this.deleteNode(root); // -> devuelve la misma estructura con el nodo eliminado
+        }
+        else if (value < root.value) {
+            // nos movemos a la izquierda
+            root.left = this.deleteRecursively(root.left, value);
+        }
+        else {
+            // derecha
+            root.right = this.deleteRecursively(root.right, value);
+        }
+        return root;
+    };
+    BinarySearchTree.prototype.deleteNode = function (root) {
+        if (root.left === null && root.right === null) {
+            // es hoja
+            return null;
+        }
+        else if (root.left !== null && root.right !== null) {
+            // tiene dos hijos
+            var successorNode = this.getSuccessor(root.left);
+            var successorValue = successorNode.value;
+            root = this.deleteRecursively(root, successorValue);
+            root.value = successorValue;
+            return root;
+        }
+        else if (root.left !== null) {
+            // tiene izquierdo
+            return root.left;
+        }
+        // derecho
+        return root.right;
+    };
+    BinarySearchTree.prototype.getSuccessor = function (node) {
+        var currentNode = node;
+        while (currentNode) {
+            if (currentNode.right === null) {
+                break;
+            }
+            currentNode = currentNode.right;
+        }
+        return currentNode;
+    };
+    BinarySearchTree.prototype.isEmpty = function () {
+        return this.root === null;
+    };
+    return BinarySearchTree;
+}());
+var bst = new BinarySearchTree();
+var obj = ["abc", "abcc"];
+bst.add(new TreeNode(20.2233224, obj));
+bst.add(new TreeNode(25, obj));
+bst.add(new TreeNode(0, obj));
+bst.add(new TreeNode(18, obj));
+bst.add(new TreeNode(14, obj));
+console.log(bst.root);
+console.log('FIND 30:', bst.search(30));
+console.log('FIND 18:', bst.search(18));
+console.log('FIND 25:', bst.search(25));
+console.log('FIND 15:', bst.search(15));
+console.log('FIND 20:', bst.search(20));
+console.log('NEAR FIND 21:', bst.nearestSearch(21));
+console.log('NEAR FIND 24:', bst.nearestSearch(24));
+console.log('NEAR FIND 16:', bst.nearestSearch(16));
+console.log('NEAR FIND 17:', bst.nearestSearch(17));
+console.log('NEAR FIND 18:', bst.nearestSearch(18));
+console.log(bst.root.value);
+bst.delete(20.2233224);
+console.log(bst.root.value);
+bst.delete(20);
+console.log(bst.root.value);
 var CommandsController = /** @class */ (function () {
     function CommandsController() {
         this.commandsCapacity = 20;
