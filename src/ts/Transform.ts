@@ -30,7 +30,7 @@ export class Transform {
     
     canvasToWorld(canvasCoords: Vec2) : Vec2 { 
         const pos = this.position;
-        return new Vec2((canvasCoords.x - pos.x), 1);
+        return new Vec2((canvasCoords.x - pos.x), canvasCoords.y - pos.y);
     }
 
     get localPosition() : Vec2 {

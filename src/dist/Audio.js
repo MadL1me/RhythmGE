@@ -116,7 +116,7 @@ var AudioModule = /** @class */ (function () {
         var _this = this;
         this.songSource = new Howl({ src: [soundPath] });
         this.analyser = Howler.ctx.createAnalyser();
-        this.analyser.fftSize = 256;
+        this.analyser.fftSize = 64;
         this.songSource.on('load', function () {
             _this.audioLoaded = true;
             _this.view.onAudioLoad(fileName, _this.songSource.duration());
@@ -128,6 +128,7 @@ var AudioModule = /** @class */ (function () {
         });
         this.songSource.on('seek', function (id) {
             _this.onSeek.invoke(id);
+            console.log("FUUU");
         });
         this.songSource.on('stop', function (id) {
             _this.onStop.invoke(id);
@@ -168,11 +169,6 @@ var AudioModule = /** @class */ (function () {
         this.soundId = this.songSource.play();
     };
     AudioModule.prototype.playClapSound = function () {
-        //console.log("PLAYED CLAP SOUND");
-        // if(this.clapSource.playing()) {
-        //     this.clapSource.seek([0]);
-        // }
-        // else
         this.clapSource.stop();
         this.clapSoundId = this.clapSource.play();
     };
@@ -182,9 +178,10 @@ var AudioModule = /** @class */ (function () {
     AudioModule.prototype.seek = function () {
         return this.songSource.seek();
     };
-    AudioModule.prototype.setMusicFromCanvasPosition = function (position, editor) {
-        var second = editor.viewport.canvasToSongTime(position).x / editor.transform.scale.x;
+    AudioModule.prototype.setMusicFromCanvasPosition = function (position) {
+        var second = this.editorCore.viewport.canvasToSongTime(position).x / this.editorCore.transform.scale.x;
         this.songSource.seek([second]);
+        this.setupData();
     };
     AudioModule.prototype.getDomainData = function () {
         var dataArray = new Float32Array(this.analyser.frequencyBinCount);
@@ -192,8 +189,10 @@ var AudioModule = /** @class */ (function () {
         return dataArray;
     };
     AudioModule.prototype.getSpectrumData = function () {
-        var dataArray = new Float32Array(this.analyser.frequencyBinCount);
-        this.analyser.getFloatFrequencyData(dataArray);
+        if (this.analyser == undefined)
+            return new Uint8Array(0);
+        var dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+        this.analyser.getByteFrequencyData(dataArray);
         return dataArray;
     };
     AudioModule.prototype.setupData = function () {

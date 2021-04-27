@@ -165,6 +165,7 @@ export class Editor implements IEditorCore {
         setInterval(() => {this.audio.checkForClaps();}, 5);
 
         Input.onCanvasWheel.addListener((event) => {this.onChangeScale(event.deltaY);});
+        Input.onMainCanvasMouseClick.addListener((event) => {this.onCanvasClick(event);});
 
         this.update();
     }
@@ -185,7 +186,14 @@ export class Editor implements IEditorCore {
         }
     }
 
-    onChangeScale(mouseDelta: number) {
+    private onCanvasClick(event: JQuery.MouseDownEvent) {
+        const clickPos = new Vec2(event.offsetX, event.offsetY);
+        if (clickPos.y < 10) {
+            this.audio.setMusicFromCanvasPosition(clickPos);
+        }
+    }
+
+    private onChangeScale(mouseDelta: number) {
         if (!Input.keysPressed["ControlLeft"])
             return;
         
@@ -441,7 +449,6 @@ export class TimestampsModule implements IEditorModule {
             return;
 
         let min = 100000, index = 0;
-        worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
         //console.log(worldClickPos);
 
         for (let i = 0; i<closestObjects.length; i++) {
@@ -456,6 +463,15 @@ export class TimestampsModule implements IEditorModule {
         //console.log(closestObjects);   
         //console.log(closestObject);
         const prefab = this.idToPrefab[this.selectedPrefabId] as TimestampPrefab;
+        const placeDistance = 30;
+
+        console.log(closestObject.transform.position);
+        console.log(worldClickPos);
+
+        if (Math.abs(closestObject.transform.position.x - worldClickPos.x) > placeDistance ||
+            Math.abs(closestBeatline.transform.position.y - worldClickPos.y) > placeDistance )
+            return;
+        
         let newTimestamp =  new Timestamp(prefab.color,
             new Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y), 0.5, this.editorGridModule.transform);
         //console.log(newTimestamp); 
@@ -745,8 +761,8 @@ export class VisualiserEditorModule implements IEditorModule {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
 
-    private spectrumData: Float32Array;
-    private displayData = new Float32Array();
+    private spectrumData: Uint8Array;
+    private displayData = new Uint8Array();
 
     private readonly sampleRate = 48000;
     private divideValue = 20;
@@ -764,8 +780,8 @@ export class VisualiserEditorModule implements IEditorModule {
     }
 
     onAudioLoad() {        
-        this.spectrumData = this.editor.audio.getSpectrumData();
-        this.displayData = this.spectrumData;
+        //this.spectrumData = this.editor.audio.getSpectrumData();
+        this.displayData = this.editor.audio.getSpectrumData();
         this.calculateDisplayDataArray();
     }
 
@@ -778,27 +794,39 @@ export class VisualiserEditorModule implements IEditorModule {
         this.ctx.fillStyle = editorColorSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);
 
-        if (this.spectrumData == undefined || this.spectrumData == null)
-            return;
-
         if (this.displayData == undefined || this.displayData == null)
             return;
+            
+        if (this.spectrumData == undefined || this.spectrumData == null){
+            this.spectrumData = this.displayData;
+            return;
+        }
 
         const view = this.editor.viewport;
 
-        for (var i = 0; i<this.displayData.length; i++) {
-            var interpolated = this.displayData[i]*this.canvas.height;
-            var position = view.position.x + i*this.transform.scale.x/this.divideValue;
-            var width = this.transform.scale.x/this.divideValue;
-            var gap = Math.floor(width/3);
+        this.onAudioLoad();
 
-            if (gap < 4)
-                gap = 0;
+        //console.log(this.displayData[0]);
 
-            this.ctx.fillStyle = editorColorSettings.loudnessBarColor.value();
-            this.ctx.fillRect(position + gap, 0, width - gap, interpolated)
-            this.ctx.fill();
+        let barHeight;
+        let gap = 1; //- gap * this.displayData.length
+        let barWidth = ((this.canvas.width) / (this.displayData.length-10)) * 1;
+        let x = 0;
+
+        //console.log(this.displayData[0]);
+
+        for (var i = 0; i<this.displayData.length-10; i++) {
+            barHeight = this.displayData[i]/600*this.canvas.height + 2*(this.displayData[i]-this.spectrumData[i]);
+
+            //console.log(barHeight);
+
+            this.ctx.fillStyle = editorColorSettings.creatableTimestampLineColor.value();
+            this.ctx.fillRect(x, this.canvas.height,barWidth,-barHeight);
+
+            x += barWidth + gap;
         }
+
+        this.spectrumData = this.displayData;
     } 
 
     private onWindowResize() {

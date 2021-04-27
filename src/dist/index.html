@@ -33,7 +33,7 @@
         </div>
         <div class="imports">
           <div id="drop-zone" class="drop-zone">
-            <button id="drop-btn" onclick="document.getElementById('files').click();">
+            <button id="drop-btn" ondrop="document.getElementById('files').click();" onclick="document.getElementById('files').click();">
               <p>Click to import audio file</p>
             </button>
             <input type="file" id="files" style="display: none;" name="music" accept=".mp3, .wav" />

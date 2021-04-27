@@ -126,6 +126,7 @@ var Editor = /** @class */ (function () {
         this.audio.transform.parent = this.transform;
         setInterval(function () { _this.audio.checkForClaps(); }, 5);
         Input_1.Input.onCanvasWheel.addListener(function (event) { _this.onChangeScale(event.deltaY); });
+        Input_1.Input.onMainCanvasMouseClick.addListener(function (event) { _this.onCanvasClick(event); });
         this.update();
     }
     Editor.prototype.addEditorModule = function (element) {
@@ -139,6 +140,12 @@ var Editor = /** @class */ (function () {
         this.viewport.updateModule();
         for (var i = 0; i < this._editorModules.length; i++) {
             this._editorModules[i].updateModule();
+        }
+    };
+    Editor.prototype.onCanvasClick = function (event) {
+        var clickPos = new Vec2_1.Vec2(event.offsetX, event.offsetY);
+        if (clickPos.y < 10) {
+            this.audio.setMusicFromCanvasPosition(clickPos);
         }
     };
     Editor.prototype.onChangeScale = function (mouseDelta) {
@@ -351,7 +358,6 @@ var TimestampsModule = /** @class */ (function () {
         if (closestObjects.length < 1)
             return;
         var min = 100000, index = 0;
-        worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
         //console.log(worldClickPos);
         for (var i = 0; i < closestObjects.length; i++) {
             var diff = Math.abs(worldClickPos.x - closestObjects[i].transform.position.x);
@@ -364,6 +370,12 @@ var TimestampsModule = /** @class */ (function () {
         //console.log(closestObjects);   
         //console.log(closestObject);
         var prefab = this.idToPrefab[this.selectedPrefabId];
+        var placeDistance = 30;
+        console.log(closestObject.transform.position);
+        console.log(worldClickPos);
+        if (Math.abs(closestObject.transform.position.x - worldClickPos.x) > placeDistance ||
+            Math.abs(closestBeatline.transform.position.y - worldClickPos.y) > placeDistance)
+            return;
         var newTimestamp = new GridElements_1.Timestamp(prefab.color, new Vec2_1.Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y), 0.5, this.editorGridModule.transform);
         //console.log(newTimestamp); 
         if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
@@ -595,7 +607,7 @@ exports.EditorGrid = EditorGrid;
 var VisualiserEditorModule = /** @class */ (function () {
     function VisualiserEditorModule() {
         this.transform = new Transform_1.Transform();
-        this.displayData = new Float32Array();
+        this.displayData = new Uint8Array();
         this.sampleRate = 48000;
         this.divideValue = 20;
         this.samplesPerArrayValue = this.sampleRate / this.divideValue;
@@ -609,8 +621,8 @@ var VisualiserEditorModule = /** @class */ (function () {
         this.editor.audio.onPlay.addListener(function () { _this.onAudioLoad(); });
     };
     VisualiserEditorModule.prototype.onAudioLoad = function () {
-        this.spectrumData = this.editor.audio.getSpectrumData();
-        this.displayData = this.spectrumData;
+        //this.spectrumData = this.editor.audio.getSpectrumData();
+        this.displayData = this.editor.audio.getSpectrumData();
         this.calculateDisplayDataArray();
     };
     VisualiserEditorModule.prototype.calculateDisplayDataArray = function () {
@@ -619,22 +631,28 @@ var VisualiserEditorModule = /** @class */ (function () {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = AppSettings_1.editorColorSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        if (this.spectrumData == undefined || this.spectrumData == null)
-            return;
         if (this.displayData == undefined || this.displayData == null)
             return;
-        var view = this.editor.viewport;
-        for (var i = 0; i < this.displayData.length; i++) {
-            var interpolated = this.displayData[i] * this.canvas.height;
-            var position = view.position.x + i * this.transform.scale.x / this.divideValue;
-            var width = this.transform.scale.x / this.divideValue;
-            var gap = Math.floor(width / 3);
-            if (gap < 4)
-                gap = 0;
-            this.ctx.fillStyle = AppSettings_1.editorColorSettings.loudnessBarColor.value();
-            this.ctx.fillRect(position + gap, 0, width - gap, interpolated);
-            this.ctx.fill();
+        if (this.spectrumData == undefined || this.spectrumData == null) {
+            this.spectrumData = this.displayData;
+            return;
         }
+        var view = this.editor.viewport;
+        this.onAudioLoad();
+        //console.log(this.displayData[0]);
+        var barHeight;
+        var gap = 1; //- gap * this.displayData.length
+        var barWidth = ((this.canvas.width) / (this.displayData.length - 10)) * 1;
+        var x = 0;
+        //console.log(this.displayData[0]);
+        for (var i = 0; i < this.displayData.length - 10; i++) {
+            barHeight = this.displayData[i] / 600 * this.canvas.height + 2 * (this.displayData[i] - this.spectrumData[i]);
+            //console.log(barHeight);
+            this.ctx.fillStyle = AppSettings_1.editorColorSettings.creatableTimestampLineColor.value();
+            this.ctx.fillRect(x, this.canvas.height, barWidth, -barHeight);
+            x += barWidth + gap;
+        }
+        this.spectrumData = this.displayData;
     };
     VisualiserEditorModule.prototype.onWindowResize = function () {
         var div = this.canvas.parentElement;

@@ -102,7 +102,7 @@ export interface IAudioModule extends IEditorModule {
     seek();
 
     getDomainData() : Float32Array;
-    getSpectrumData(): Float32Array;
+    getSpectrumData(): Uint8Array;
     setMusicFromCanvasPosition(position : Vec2, editor : IEditorCore) 
 }
 
@@ -172,7 +172,7 @@ export class AudioModule implements IAudioModule {
         this.songSource = new Howl({src:[soundPath]});
 
         this.analyser = Howler.ctx.createAnalyser();
-        this.analyser.fftSize = 256;
+        this.analyser.fftSize = 64;
 
         this.songSource.on('load', () => {
             this.audioLoaded = true;
@@ -187,6 +187,7 @@ export class AudioModule implements IAudioModule {
 
         this.songSource.on('seek', (id) => {
             this.onSeek.invoke(id);
+            console.log("FUUU");
         });
 
         this.songSource.on('stop', (id) => {
@@ -233,13 +234,8 @@ export class AudioModule implements IAudioModule {
     }
     
     playClapSound() {
-        //console.log("PLAYED CLAP SOUND");
-        // if(this.clapSource.playing()) {
-        //     this.clapSource.seek([0]);
-        // }
-        // else
         this.clapSource.stop();
-            this.clapSoundId = this.clapSource.play();
+        this.clapSoundId = this.clapSource.play();
     }
     
     pause() {
@@ -250,9 +246,10 @@ export class AudioModule implements IAudioModule {
         return this.songSource.seek();
     }   
 
-    setMusicFromCanvasPosition(position : Vec2, editor : IEditorCore) {
-        var second = editor.viewport.canvasToSongTime(position).x/editor.transform.scale.x;
+    setMusicFromCanvasPosition(position : Vec2) {
+        var second = this.editorCore.viewport.canvasToSongTime(position).x/this.editorCore.transform.scale.x;
         this.songSource.seek([second]);
+        this.setupData();
     }
 
     getDomainData() : Float32Array {
@@ -261,9 +258,11 @@ export class AudioModule implements IAudioModule {
         return dataArray;
     }
 
-    getSpectrumData(): Float32Array {
-        let dataArray = new Float32Array(this.analyser.frequencyBinCount);
-        this.analyser.getFloatFrequencyData(dataArray);
+    getSpectrumData(): Uint8Array {
+        if (this.analyser == undefined)
+            return new Uint8Array(0);
+        let dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+        this.analyser.getByteFrequencyData(dataArray);
         return dataArray;
     }
 
