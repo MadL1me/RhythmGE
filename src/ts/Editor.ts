@@ -15,20 +15,35 @@ import { Input } from "./Input";
 import { Slider, Utils, Event } from "./Utils";
 import { AudioAmplitudeViewModule, AudioModule, IAudioModule } from "./Audio";
 
+class TreeNode<T> {
+    left: TreeNode<T> = null;
+    right: TreeNode<T> = null;
 
-class TreeNode {
-    left: TreeNode = null;
-    right: TreeNode = null;
+    get value() {
+        return this._value;
+    }
 
-    constructor(
-        public value: number, public object: any
-    ) { }
+    set value(value) {
+        this._value = value;
+    }
+
+    constructor(protected _value) { }
 }
 
-class BinarySearchTree {
-    public root: TreeNode = null;
+class GridTreeNode extends TreeNode<GridElement> {
+    constructor(value, public object: GridElement) {
+        super(value);
+    }
+    
+    get value() {
+        return this.object.transform.position.x;
+    }
+}
 
-    add(node: TreeNode): void {
+class BinarySearchTree<T> {
+    public root: TreeNode<T> = null;
+
+    add(node: TreeNode<T>): void {
         if (this.isEmpty()) {
             this.root = node;
             console.log(`root node value is ${this.root.value}`)
@@ -36,7 +51,7 @@ class BinarySearchTree {
             console.log("ADD METHOD");
             console.log("ADDING VALUE");
             console.log(node.value);
-            let currentNode: TreeNode = this.root;
+            let currentNode: TreeNode<T> = this.root;
 
             while (currentNode) {
                 console.log(`root node value is ${this.root.value}`)
@@ -61,11 +76,19 @@ class BinarySearchTree {
         }
     }
 
-    search(value: number): TreeNode {
-        let currentNode: TreeNode = this.root;
+    traverseInOrder(node: TreeNode<T>, arr: Array<TreeNode<T>>) {
+        if (node == null)
+            return;
+
+        this.traverseInOrder(node.left, arr);
+        arr.push(node); 
+        this.traverseInOrder(node.right, arr);
+    }
+
+    search(value: number): TreeNode<T> {
+        let currentNode: TreeNode<T> = this.root;
 
         while (currentNode) {
-            
             if (value === currentNode.value) {
                 return currentNode;
             } else if (value > currentNode.value) {
@@ -78,18 +101,30 @@ class BinarySearchTree {
         return null;
     }
 
-    nearestSearch(value: number): TreeNode {
-        let currentNode: TreeNode = this.root;
-        let closestNode: TreeNode = this.root;
-        let minValue = Infinity;
+    nearestSearch(value: number): TreeNode<T> {
+        console.log(`NEAREST SEARCH FOR VALUE: ${value}`)
+        if (this.root == null)
+            return null;
+        
+        let currentNode: TreeNode<T> = this.root;
+        let closestNode: TreeNode<T> = this.root;
+        let minValue = Math.abs(currentNode.value-value)
 
-        const checkForClosestNode = (node: TreeNode) => {
+        const checkForClosestNode = (node: TreeNode<T>) => {
             if (node == null)
                 return;
-            let diff = Math.abs(node.value-closestNode.value);
+                
+            console.log("Checking node: ");
+            console.log(node);
+
+            let diff = Math.abs(node.value-value);
+            console.log(`diff is ${diff}`)
+
             if (diff < minValue) {
-                closestNode = currentNode;
+                closestNode = node;
                 minValue = diff; 
+                console.log("New nearest node: ");
+                console.log(node);
             }
         }
 
@@ -108,6 +143,7 @@ class BinarySearchTree {
             }
         }
 
+        console.log(`RETURNING NODE WITH VALUE: ${closestNode.value}`)
         return closestNode;
     }
 
@@ -115,7 +151,7 @@ class BinarySearchTree {
         this.root = this.deleteRecursively(this.root, value);
     }
 
-    private deleteRecursively(root: TreeNode, value: number): TreeNode {
+    private deleteRecursively(root: TreeNode<T>, value: number): TreeNode<T> {
         if (root === null) {
             return null;
         }
@@ -134,7 +170,7 @@ class BinarySearchTree {
         return root;
     }
 
-    private deleteNode(root: TreeNode): TreeNode {
+    private deleteNode(root: TreeNode<T>): TreeNode<T> {
         if (root.left === null && root.right === null) {
             // es hoja
             return null;
@@ -156,8 +192,8 @@ class BinarySearchTree {
         return root.right;
     }
 
-    private getSuccessor(node: TreeNode): TreeNode {
-        let currentNode: TreeNode = node;
+    private getSuccessor(node: TreeNode<T>): TreeNode<T> {
+        let currentNode: TreeNode<T> = node;
 
         while (currentNode) {
             if (currentNode.right === null) {
@@ -230,7 +266,7 @@ class CommandsController {
 
     addCommandToList(executedCommand: ICommand) {
         if (this.commandIndex != this.commands.length-1) {
-            this.commands = this.commands.slice(0, this.commandIndex);
+            this.commands.splice(this.commandIndex);
         }
 
         if (this.commands.length > this.commandsCapacity) {
@@ -444,7 +480,8 @@ export class TimestepLineModule implements IEditorModule {
 export class CreatableLinesModule implements IEditorModule {
     
     transform = new Transform();
-    creatableLines = new Map<number, CreatableTimestampLine>();
+    creatableLines = new BinarySearchTree<GridTreeNode>();
+    //creatableLines = new Map<number, CreatableTimestampLine>();
 
     private editor: IEditorCore;
     private canvas: HTMLCanvasElement;
@@ -462,21 +499,30 @@ export class CreatableLinesModule implements IEditorModule {
         if(this.editor.editorData.hideCreatableLines.value)
             return;
 
-        Object.values(this.creatableLines).forEach(element => {
-            element.draw(this.editor.viewport, this.canvas);
+        let array = new Array<TreeNode<GridTreeNode>>();
+        this.creatableLines.traverseInOrder(this.creatableLines.root, array);
+        array.forEach(element => {
+            (element as GridTreeNode).object.draw(this.editor.viewport, this.canvas);
         });
+        // Object.values(this.creatableLines).forEach(element => {
+        //     element.draw(this.editor.viewport, this.canvas);
+        // });
     }
 
-    findClosestCreatableLine(positionX: number) {
-        const objectsArr = Object.values(this.creatableLines);
+    findClosestCreatableLine(positionX: number) : GridElement {
         // objectsArr.forEach(el => {
         //     console.log(el);   
         // })
-        if (objectsArr.length < 1)
-            return;
-        const indexOfElement = Utils.binaryNearestSearch(objectsArr, positionX);
-        const closestCreatable = objectsArr[indexOfElement];
-        return closestCreatable; 
+        let result = this.creatableLines.nearestSearch(positionX);
+        return (result as GridTreeNode)?.object;
+
+        //const objectsArr = Object.values(this.creatableLines);
+
+        // if (objectsArr.length < 1)
+        //     return;
+        // const indexOfElement = Utils.binaryNearestSearch(objectsArr, positionX);
+        // const closestCreatable = objectsArr[indexOfElement];
+        // return closestCreatable; 
     }
 
     private handleInput() {
@@ -488,7 +534,8 @@ export class CreatableLinesModule implements IEditorModule {
     private createCustomBpmLine() {
         let xPos = this.editor.audio.seek();
         let line = new CreatableTimestampLine(xPos, this.transform, editorColorSettings.creatableTimestampLineColor);
-        this.creatableLines[line.transform.localPosition.x] = line;
+        this.creatableLines.add(new GridTreeNode(line.transform.position.x, line));
+        //this.creatableLines[line.transform.localPosition.x] = line;
     }
 
 }
@@ -630,7 +677,7 @@ export class TimestampsModule implements IEditorModule {
             closestObjects.push(this.editorGridModule.findClosestBpmLine(worldClickPos.x));
         }
 
-        if (!this.editorCore.editorData.hideCreatableLines.value && Object.keys(this.createableLinesModule.creatableLines).length > 0) {
+        if (!this.editorCore.editorData.hideCreatableLines.value && this.createableLinesModule.creatableLines.root != null) {
             closestObjects.push(this.createableLinesModule.findClosestCreatableLine(worldClickPos.x));
         }
 
@@ -693,42 +740,79 @@ export class TimestampsModule implements IEditorModule {
 class SelectArea implements IDrawable {
     private firstPoint: Vec2;
     private secondPoint: Vec2;
-    
+    private isActive: boolean;
+
+    onSelect = new Event<[Vec2,Vec2]>();
+
+    constructor() {
+        Input.onMouseDown.addListener((event) => {this.onMouseDown(event);});
+        Input.onMouseUp.addListener((event) => {this.onMouseUp(event);});
+        Input.onCanvasHover.addListener((event) => {this.onMouseMove(event);});
+    }
+
     draw(view: IViewportModule, canvas: HTMLCanvasElement) {
+        if (!this.isActive)
+            return;
+        console.log("draw");
         const ctx = canvas.getContext('2d');
         const sizeVec = Vec2.Substract(this.secondPoint, this.firstPoint);
         ctx.fillStyle = editorColorSettings.selectAreaColor.value();
         ctx.fillRect(this.firstPoint.x, this.firstPoint.y, sizeVec.x, sizeVec.y);
     }
+
+    onMouseDown(event: JQuery.MouseDownEvent) {
+        console.log(event);
+        this.isActive = true;
+        this.firstPoint = new Vec2(event.offsetX, event.offsetY);
+        this.secondPoint = new Vec2(event.offsetX, event.offsetY);
+    }
+
+    onMouseMove(event: JQuery.MouseMoveEvent) {
+        console.log(event);
+        this.secondPoint = new Vec2(event.offsetX, event.offsetY);
+    }
+
+    onMouseUp(event: JQuery.MouseUpEvent) {
+        console.log(event);
+        this.isActive = false;
+        this.onSelect.invoke([this.firstPoint, this.secondPoint]);
+    }
 }
 
 export class ElementSelectorModule implements IEditorModule {
-    transform: Transform;
+    transform = new Transform();
     
     private editor: IEditorCore;
     private selectedElements = new Array<GridElement>();
     private selectArea = new SelectArea();
-    
+    private timestamps: TimestampsModule;
+    private creatable: CreatableLinesModule;
+    private canvas: HTMLCanvasElement;
+        
+    constructor(creatable: CreatableLinesModule, timestamps: TimestampsModule) {
+        this.creatable = creatable;
+        this.timestamps = timestamps;
+        this.canvas = $("#editor-canvas")[0] as HTMLCanvasElement;
+    }
+
     init(editorCoreModules: IEditorCore) {
         this.editor = editorCoreModules;
     }
 
     updateModule() {
-        
-
+        this.selectArea.draw(this.editor.viewport, this.canvas);
     }
 
-    onElementExistingElementClicked(element: GridElement) {
+    onExistingElementClicked(element: GridElement) {
         this.selectedElements.push(element);
         element.select();
     }
 
     private selectElement(element: GridElement) {
-        this.selectedElements
+        this.selectedElements.push()
     }
 
     private deselectElement(element: GridElement) {
-    
     }
 }
 

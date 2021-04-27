@@ -1,4 +1,19 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -15,14 +30,39 @@ var Input_1 = require("./Input");
 var Utils_1 = require("./Utils");
 var Audio_1 = require("./Audio");
 var TreeNode = /** @class */ (function () {
-    function TreeNode(value, object) {
-        this.value = value;
-        this.object = object;
+    function TreeNode(_value) {
+        this._value = _value;
         this.left = null;
         this.right = null;
     }
+    Object.defineProperty(TreeNode.prototype, "value", {
+        get: function () {
+            return this._value;
+        },
+        set: function (value) {
+            this._value = value;
+        },
+        enumerable: false,
+        configurable: true
+    });
     return TreeNode;
 }());
+var GridTreeNode = /** @class */ (function (_super) {
+    __extends(GridTreeNode, _super);
+    function GridTreeNode(value, object) {
+        var _this = _super.call(this, value) || this;
+        _this.object = object;
+        return _this;
+    }
+    Object.defineProperty(GridTreeNode.prototype, "value", {
+        get: function () {
+            return this.object.transform.position.x;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return GridTreeNode;
+}(TreeNode));
 var BinarySearchTree = /** @class */ (function () {
     function BinarySearchTree() {
         this.root = null;
@@ -58,6 +98,13 @@ var BinarySearchTree = /** @class */ (function () {
             }
         }
     };
+    BinarySearchTree.prototype.traverseInOrder = function (node, arr) {
+        if (node == null)
+            return;
+        this.traverseInOrder(node.left, arr);
+        arr.push(node);
+        this.traverseInOrder(node.right, arr);
+    };
     BinarySearchTree.prototype.search = function (value) {
         var currentNode = this.root;
         while (currentNode) {
@@ -74,16 +121,24 @@ var BinarySearchTree = /** @class */ (function () {
         return null;
     };
     BinarySearchTree.prototype.nearestSearch = function (value) {
+        console.log("NEAREST SEARCH FOR VALUE: " + value);
+        if (this.root == null)
+            return null;
         var currentNode = this.root;
         var closestNode = this.root;
-        var minValue = Infinity;
+        var minValue = Math.abs(currentNode.value - value);
         var checkForClosestNode = function (node) {
             if (node == null)
                 return;
-            var diff = Math.abs(node.value - closestNode.value);
+            console.log("Checking node: ");
+            console.log(node);
+            var diff = Math.abs(node.value - value);
+            console.log("diff is " + diff);
             if (diff < minValue) {
-                closestNode = currentNode;
+                closestNode = node;
                 minValue = diff;
+                console.log("New nearest node: ");
+                console.log(node);
             }
         };
         while (currentNode) {
@@ -99,6 +154,7 @@ var BinarySearchTree = /** @class */ (function () {
                 currentNode = currentNode.left;
             }
         }
+        console.log("RETURNING NODE WITH VALUE: " + closestNode.value);
         return closestNode;
     };
     BinarySearchTree.prototype.delete = function (value) {
@@ -157,29 +213,6 @@ var BinarySearchTree = /** @class */ (function () {
     };
     return BinarySearchTree;
 }());
-var bst = new BinarySearchTree();
-var obj = ["abc", "abcc"];
-bst.add(new TreeNode(20.2233224, obj));
-bst.add(new TreeNode(25, obj));
-bst.add(new TreeNode(0, obj));
-bst.add(new TreeNode(18, obj));
-bst.add(new TreeNode(14, obj));
-console.log(bst.root);
-console.log('FIND 30:', bst.search(30));
-console.log('FIND 18:', bst.search(18));
-console.log('FIND 25:', bst.search(25));
-console.log('FIND 15:', bst.search(15));
-console.log('FIND 20:', bst.search(20));
-console.log('NEAR FIND 21:', bst.nearestSearch(21));
-console.log('NEAR FIND 24:', bst.nearestSearch(24));
-console.log('NEAR FIND 16:', bst.nearestSearch(16));
-console.log('NEAR FIND 17:', bst.nearestSearch(17));
-console.log('NEAR FIND 18:', bst.nearestSearch(18));
-console.log(bst.root.value);
-bst.delete(20.2233224);
-console.log(bst.root.value);
-bst.delete(20);
-console.log(bst.root.value);
 var CommandsController = /** @class */ (function () {
     function CommandsController() {
         this.commandsCapacity = 20;
@@ -188,7 +221,7 @@ var CommandsController = /** @class */ (function () {
     }
     CommandsController.prototype.addCommandToList = function (executedCommand) {
         if (this.commandIndex != this.commands.length - 1) {
-            this.commands = this.commands.slice(0, this.commandIndex);
+            this.commands.splice(this.commandIndex);
         }
         if (this.commands.length > this.commandsCapacity) {
             this.commands.shift();
@@ -363,7 +396,7 @@ exports.TimestepLineModule = TimestepLineModule;
 var CreatableLinesModule = /** @class */ (function () {
     function CreatableLinesModule() {
         this.transform = new Transform_1.Transform();
-        this.creatableLines = new Map();
+        this.creatableLines = new BinarySearchTree();
         this.canvas = jquery_1.default("#editor-canvas")[0];
     }
     CreatableLinesModule.prototype.init = function (editorCoreModules) {
@@ -375,20 +408,28 @@ var CreatableLinesModule = /** @class */ (function () {
         var _this = this;
         if (this.editor.editorData.hideCreatableLines.value)
             return;
-        Object.values(this.creatableLines).forEach(function (element) {
-            element.draw(_this.editor.viewport, _this.canvas);
+        var array = new Array();
+        this.creatableLines.traverseInOrder(this.creatableLines.root, array);
+        array.forEach(function (element) {
+            element.object.draw(_this.editor.viewport, _this.canvas);
         });
+        // Object.values(this.creatableLines).forEach(element => {
+        //     element.draw(this.editor.viewport, this.canvas);
+        // });
     };
     CreatableLinesModule.prototype.findClosestCreatableLine = function (positionX) {
-        var objectsArr = Object.values(this.creatableLines);
+        var _a;
         // objectsArr.forEach(el => {
         //     console.log(el);   
         // })
-        if (objectsArr.length < 1)
-            return;
-        var indexOfElement = Utils_1.Utils.binaryNearestSearch(objectsArr, positionX);
-        var closestCreatable = objectsArr[indexOfElement];
-        return closestCreatable;
+        var result = this.creatableLines.nearestSearch(positionX);
+        return (_a = result) === null || _a === void 0 ? void 0 : _a.object;
+        //const objectsArr = Object.values(this.creatableLines);
+        // if (objectsArr.length < 1)
+        //     return;
+        // const indexOfElement = Utils.binaryNearestSearch(objectsArr, positionX);
+        // const closestCreatable = objectsArr[indexOfElement];
+        // return closestCreatable; 
     };
     CreatableLinesModule.prototype.handleInput = function () {
         if (Input_1.Input.keysPressed["Space"] == true) {
@@ -398,7 +439,8 @@ var CreatableLinesModule = /** @class */ (function () {
     CreatableLinesModule.prototype.createCustomBpmLine = function () {
         var xPos = this.editor.audio.seek();
         var line = new GridElements_1.CreatableTimestampLine(xPos, this.transform, AppSettings_1.editorColorSettings.creatableTimestampLineColor);
-        this.creatableLines[line.transform.localPosition.x] = line;
+        this.creatableLines.add(new GridTreeNode(line.transform.position.x, line));
+        //this.creatableLines[line.transform.localPosition.x] = line;
     };
     return CreatableLinesModule;
 }());
@@ -518,7 +560,7 @@ var TimestampsModule = /** @class */ (function () {
         if (!this.editorCore.editorData.hideBpmLines.value && this.editorGridModule.bpmLines.length > 0) {
             closestObjects.push(this.editorGridModule.findClosestBpmLine(worldClickPos.x));
         }
-        if (!this.editorCore.editorData.hideCreatableLines.value && Object.keys(this.createableLinesModule.creatableLines).length > 0) {
+        if (!this.editorCore.editorData.hideCreatableLines.value && this.createableLinesModule.creatableLines.root != null) {
             closestObjects.push(this.createableLinesModule.findClosestCreatableLine(worldClickPos.x));
         }
         if (closestObjects.length < 1)
@@ -570,31 +612,59 @@ var TimestampsModule = /** @class */ (function () {
 exports.TimestampsModule = TimestampsModule;
 var SelectArea = /** @class */ (function () {
     function SelectArea() {
+        var _this = this;
+        this.onSelect = new Utils_1.Event();
+        Input_1.Input.onMouseDown.addListener(function (event) { _this.onMouseDown(event); });
+        Input_1.Input.onMouseUp.addListener(function (event) { _this.onMouseUp(event); });
+        Input_1.Input.onCanvasHover.addListener(function (event) { _this.onMouseMove(event); });
     }
     SelectArea.prototype.draw = function (view, canvas) {
+        if (!this.isActive)
+            return;
+        console.log("draw");
         var ctx = canvas.getContext('2d');
         var sizeVec = Vec2_1.Vec2.Substract(this.secondPoint, this.firstPoint);
         ctx.fillStyle = AppSettings_1.editorColorSettings.selectAreaColor.value();
         ctx.fillRect(this.firstPoint.x, this.firstPoint.y, sizeVec.x, sizeVec.y);
     };
+    SelectArea.prototype.onMouseDown = function (event) {
+        console.log(event);
+        this.isActive = true;
+        this.firstPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
+        this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
+    };
+    SelectArea.prototype.onMouseMove = function (event) {
+        console.log(event);
+        this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
+    };
+    SelectArea.prototype.onMouseUp = function (event) {
+        console.log(event);
+        this.isActive = false;
+        this.onSelect.invoke([this.firstPoint, this.secondPoint]);
+    };
     return SelectArea;
 }());
 var ElementSelectorModule = /** @class */ (function () {
-    function ElementSelectorModule() {
+    function ElementSelectorModule(creatable, timestamps) {
+        this.transform = new Transform_1.Transform();
         this.selectedElements = new Array();
         this.selectArea = new SelectArea();
+        this.creatable = creatable;
+        this.timestamps = timestamps;
+        this.canvas = jquery_1.default("#editor-canvas")[0];
     }
     ElementSelectorModule.prototype.init = function (editorCoreModules) {
         this.editor = editorCoreModules;
     };
     ElementSelectorModule.prototype.updateModule = function () {
+        this.selectArea.draw(this.editor.viewport, this.canvas);
     };
-    ElementSelectorModule.prototype.onElementExistingElementClicked = function (element) {
+    ElementSelectorModule.prototype.onExistingElementClicked = function (element) {
         this.selectedElements.push(element);
         element.select();
     };
     ElementSelectorModule.prototype.selectElement = function (element) {
-        this.selectedElements;
+        this.selectedElements.push();
     };
     ElementSelectorModule.prototype.deselectElement = function (element) {
     };

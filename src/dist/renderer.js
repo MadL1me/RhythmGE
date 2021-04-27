@@ -15,6 +15,7 @@ function setupModules() {
     var timestampLine = new Editor_1.TimestepLineModule();
     var audio = new Audio_1.AudioAmplitudeViewModule();
     var visualiser = new Editor_1.VisualiserEditorModule();
+    var selectorModule = new Editor_1.ElementSelectorModule(cLines, timestampsModule);
     editor.addEditorModule(grid);
     editor.addEditorModule(cLines);
     editor.addEditorModule(topScale);
@@ -22,6 +23,7 @@ function setupModules() {
     editor.addEditorModule(timestampLine);
     editor.addEditorModule(audio);
     editor.addEditorModule(visualiser);
+    editor.addEditorModule(selectorModule);
 }
 setupModules();
 setInterval(function () { editor.update(); }, 15);

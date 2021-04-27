@@ -428,20 +428,19 @@
     &::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 10px;
+      width: 15px;
       height: 15px;
-      border-radius: 20%; 
+      border-radius: 80%; 
       background: $accent-color;
       cursor: pointer;
     }
 
-    &::-moz-range-thumb {
-      width: 10px;
-      height: 15px;
-      border-radius: 20%;
-      background: $accent-color;
-      cursor: pointer;
+    &:focus {
+      outline: none;
+      border: none;
     }
+
+    
   }
 
   .play-button {

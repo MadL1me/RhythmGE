@@ -196,7 +196,7 @@ export class AudioModule implements IAudioModule {
     }
 
     setVolume(value: number) {
-        this.songSource.volume([value]);
+        this.songSource?.volume([value]);
     }
 
     init(editorCoreModules: IEditorCore) {
@@ -216,7 +216,7 @@ export class AudioModule implements IAudioModule {
     }
 
     setPlaybackRate(value: number) {
-        this.songSource.rate([value]);
+        this.songSource?.rate([value]);
     }
 
     isAudioLoaded() : boolean {
@@ -230,23 +230,25 @@ export class AudioModule implements IAudioModule {
     }
 
     play() {
-        this.soundId = this.songSource.play();
+        this.soundId = this.songSource?.play();
     }
     
     playClapSound() {
-        this.clapSource.stop();
-        this.clapSoundId = this.clapSource.play();
+        this.clapSource?.stop();
+        this.clapSoundId = this.clapSource?.play();
     }
     
     pause() {
-        this.songSource.pause();
+        this.songSource?.pause();
     }
 
     seek() : number {
-        return this.songSource.seek();
+        return this.songSource?.seek();
     }   
 
     setMusicFromCanvasPosition(position : Vec2) {
+        if (this.songSource == null || this.songSource == undefined)
+            return;
         var second = this.editorCore.viewport.canvasToSongTime(position).x/this.editorCore.transform.scale.x;
         this.songSource.seek([second]);
         this.setupData();

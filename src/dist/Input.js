@@ -17,9 +17,15 @@ var Input = /** @class */ (function () {
         jquery_1.default(window).on('resize', function (event) { Input.onWindowResize.invoke(event); });
         jquery_1.default(window).on('keydown', function (event) { Input.onCanvasKeyDown(event); });
         jquery_1.default(window).on('keyup', function (event) { Input.onCanvasKeyUp(event); });
+        jquery_1.default(window).on('mouseup', function (event) { Input.onMouseUp.invoke(event); });
+        //$(window).on('mousedown', (event) => { Input.onMouseDown.invoke(event);});
+        //$(window).on('mouseup', (event) => {Input.onMouseUp.invoke(event)});
         jquery_1.default('#editor-canvas').on('wheel', function (event) { Input.onCanvasWheel.invoke(event.originalEvent); })
             .on('click', function (event) { Input.onMainCanvasMouseClick.invoke(event); })
-            .on('mousemove', function (event) { Input.onCanvasHover(event); });
+            .on('mousemove', function (event) { Input.onCanvHover(event); })
+            //.on('mouseup', (event) => {Input.onMouseUp.invoke(event)})
+            .on('mousedown', function (event) { Input.onMouseDown.invoke(event); })
+            .on('mouseover', function (event) { Input.onMouseOver.invoke(event); });
     };
     Input.update = function () {
         this.lastMousePosition = this.mousePosition;
@@ -31,8 +37,9 @@ var Input = /** @class */ (function () {
     };
     Input.onCanvasMouseUpButton = function () {
     };
-    Input.onCanvasHover = function (event) {
+    Input.onCanvHover = function (event) {
         this.mousePosition = new Vec2_1.Vec2(event.clientX, event.clientY);
+        this.onCanvasHover.invoke(event);
     };
     Input.onCanvasKeyDown = function (event) {
         if (event.key == 'Alt') {
@@ -54,9 +61,13 @@ var Input = /** @class */ (function () {
     Input.keysPressed = {};
     Input.onKeyUp = new Utils_1.Event();
     Input.onKeyDown = new Utils_1.Event();
+    Input.onMouseDown = new Utils_1.Event();
+    Input.onMouseUp = new Utils_1.Event();
+    Input.onMouseOver = new Utils_1.Event();
     Input.onWindowResize = new Utils_1.Event();
     Input.onCanvasWheel = new Utils_1.Event();
     Input.onMainCanvasMouseClick = new Utils_1.Event();
+    Input.onCanvasHover = new Utils_1.Event();
     return Input;
 }());
 exports.Input = Input;
