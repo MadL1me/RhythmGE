@@ -11,12 +11,8 @@ var Utils = /** @class */ (function () {
     Utils.binaryNearestSearch = function (array, searchValue, useFlooring) {
         if (useFlooring === void 0) { useFlooring = false; }
         var left = 0, right = array.length - 1;
-        // console.log(`Seaching closest for ${searchValue}`)
         while (right - left > 1) {
             var middle = Math.floor((right + left) / 2);
-            // console.log(`left: ${left} right: ${right}`);
-            // console.log(`middle is ${middle}`);
-            // console.log(array[middle])
             if (array[middle].value < searchValue) {
                 left = middle;
             }
@@ -27,6 +23,23 @@ var Utils = /** @class */ (function () {
         if (!useFlooring)
             return Math.abs(searchValue - array[left].value)
                 < Math.abs(searchValue - array[right].value) ? left : right;
+        return left;
+    };
+    Utils.binaryNearestSearchNumber = function (array, searchValue, useFlooring) {
+        if (useFlooring === void 0) { useFlooring = false; }
+        var left = 0, right = array.length - 1;
+        while (right - left > 1) {
+            var middle = Math.floor((right + left) / 2);
+            if (array[middle] < searchValue) {
+                left = middle;
+            }
+            else {
+                right = middle;
+            }
+        }
+        if (!useFlooring)
+            return Math.abs(searchValue - array[left])
+                < Math.abs(searchValue - array[right]) ? left : right;
         return left;
     };
     return Utils;

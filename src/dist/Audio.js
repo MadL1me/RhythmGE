@@ -89,14 +89,16 @@ var AudioModule = /** @class */ (function () {
         this.clappingTimings = array;
         var seek = this.seek();
         //console.log(array);
-        for (var i = 0; i < array.length; i++) {
-            console.log(array[i]);
-            if (array[i] > seek) {
-                console.log(i);
-                //this.clapTimingId = i;
-                return;
-            }
-        }
+        this.clapTimingId = Utils_1.Utils.binaryNearestSearchNumber(array, seek);
+        console.log(this.clapTimingId);
+        // for(let i = 0; i<array.length;i++) {
+        //     console.log(array[i]);
+        //     if (array[i] > seek) {
+        //         console.log(i);
+        //         this.clapTimingId = i;
+        //         return;
+        //     }
+        // }
     };
     AudioModule.prototype.checkForClaps = function () {
         if (this.songSource == null || this.clappingTimings.length < 1 || !this.editorCore.editorData.useClaps.value)
@@ -116,7 +118,7 @@ var AudioModule = /** @class */ (function () {
         var _this = this;
         this.songSource = new Howl({ src: [soundPath] });
         this.analyser = Howler.ctx.createAnalyser();
-        this.analyser.fftSize = 64;
+        this.analyser.fftSize = 128;
         this.songSource.on('load', function () {
             _this.audioLoaded = true;
             _this.view.onAudioLoad(fileName, _this.songSource.duration());
@@ -135,7 +137,8 @@ var AudioModule = /** @class */ (function () {
         });
     };
     AudioModule.prototype.setVolume = function (value) {
-        this.songSource.volume([value]);
+        var _a;
+        (_a = this.songSource) === null || _a === void 0 ? void 0 : _a.volume([value]);
     };
     AudioModule.prototype.init = function (editorCoreModules) {
         var _this = this;
@@ -155,7 +158,8 @@ var AudioModule = /** @class */ (function () {
         //this.checkForClaps();
     };
     AudioModule.prototype.setPlaybackRate = function (value) {
-        this.songSource.rate([value]);
+        var _a;
+        (_a = this.songSource) === null || _a === void 0 ? void 0 : _a.rate([value]);
     };
     AudioModule.prototype.isAudioLoaded = function () {
         return this.audioLoaded;
@@ -166,19 +170,25 @@ var AudioModule = /** @class */ (function () {
         return this.songSource.playing([this.soundId]);
     };
     AudioModule.prototype.play = function () {
-        this.soundId = this.songSource.play();
+        var _a;
+        this.soundId = (_a = this.songSource) === null || _a === void 0 ? void 0 : _a.play();
     };
     AudioModule.prototype.playClapSound = function () {
-        this.clapSource.stop();
-        this.clapSoundId = this.clapSource.play();
+        var _a, _b;
+        (_a = this.clapSource) === null || _a === void 0 ? void 0 : _a.stop();
+        this.clapSoundId = (_b = this.clapSource) === null || _b === void 0 ? void 0 : _b.play();
     };
     AudioModule.prototype.pause = function () {
-        this.songSource.pause();
+        var _a;
+        (_a = this.songSource) === null || _a === void 0 ? void 0 : _a.pause();
     };
     AudioModule.prototype.seek = function () {
-        return this.songSource.seek();
+        var _a;
+        return (_a = this.songSource) === null || _a === void 0 ? void 0 : _a.seek();
     };
     AudioModule.prototype.setMusicFromCanvasPosition = function (position) {
+        if (this.songSource == null || this.songSource == undefined)
+            return;
         var second = this.editorCore.viewport.canvasToSongTime(position).x / this.editorCore.transform.scale.x;
         this.songSource.seek([second]);
         this.setupData();

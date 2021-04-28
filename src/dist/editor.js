@@ -192,12 +192,10 @@ var TimestepLineModule = /** @class */ (function () {
     return TimestepLineModule;
 }());
 exports.TimestepLineModule = TimestepLineModule;
-// class PhantomTimestampModule implements IEditorModule {
-// }
 var CreatableLinesModule = /** @class */ (function () {
     function CreatableLinesModule() {
         this.transform = new Transform_1.Transform();
-        this.creatableLines = new Map();
+        this.creatableLines = new Array();
         this.canvas = jquery_1.default("#editor-canvas")[0];
     }
     CreatableLinesModule.prototype.init = function (editorCoreModules) {
@@ -209,15 +207,13 @@ var CreatableLinesModule = /** @class */ (function () {
         var _this = this;
         if (this.editor.editorData.hideCreatableLines.value)
             return;
-        Object.values(this.creatableLines).forEach(function (element) {
+        this.creatableLines.forEach(function (element) {
             element.draw(_this.editor.viewport, _this.canvas);
         });
     };
     CreatableLinesModule.prototype.findClosestCreatableLine = function (positionX) {
-        var objectsArr = Object.values(this.creatableLines);
-        // objectsArr.forEach(el => {
-        //     console.log(el);   
-        // })
+        //this.creatableLines.sort((a,b) => { return a.transform.position.x-b.transform.position.x; });
+        var objectsArr = this.creatableLines;
         if (objectsArr.length < 1)
             return;
         var indexOfElement = Utils_1.Utils.binaryNearestSearch(objectsArr, positionX);
@@ -232,7 +228,8 @@ var CreatableLinesModule = /** @class */ (function () {
     CreatableLinesModule.prototype.createCustomBpmLine = function () {
         var xPos = this.editor.audio.seek();
         var line = new GridElements_1.CreatableTimestampLine(xPos, this.transform, AppSettings_1.editorColorSettings.creatableTimestampLineColor);
-        this.creatableLines[line.transform.localPosition.x] = line;
+        this.creatableLines.push(line);
+        this.creatableLines.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
     };
     return CreatableLinesModule;
 }());
@@ -287,6 +284,7 @@ var TimestampsModule = /** @class */ (function () {
         this.selectedPrefabId = 0;
         this.idToPrefab = new Map();
         this.timestamps = new Map();
+        this.clapTimings = new Array();
         this.onExistingElementClicked = new Utils_1.Event();
         this.editorGridModule = editorGrid;
         this.createableLinesModule = creatableLines;
@@ -381,22 +379,15 @@ var TimestampsModule = /** @class */ (function () {
         if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
             this.timestamps[newTimestamp.transform.localPosition.x] = {};
         }
-        if (this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] == null)
+        if (this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] == null) {
             this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
+            this.clapTimings.push(newTimestamp.transform.localPosition.x);
+            this.clapTimings.sort(function (a, b) { return a - b; });
+        }
         else if (Input_1.Input.keysPressed["LeftControl"])
             this.onExistingElementClicked.invoke(this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y]);
         if (this.editorCore.editorData.useClaps.value)
-            this.editorCore.audio.setClapTimings(this.getClapTimings());
-    };
-    TimestampsModule.prototype.getClapTimings = function () {
-        var obj = Object.keys(this.timestamps);
-        var result = new Array();
-        for (var i = 0; i < obj.length; i++) {
-            result[i] = parseFloat(obj[i]);
-        }
-        return result.sort(function (a, b) {
-            return a - b;
-        });
+            this.editorCore.audio.setClapTimings(this.clapTimings);
     };
     TimestampsModule.nextPrefabId = 0;
     return TimestampsModule;
@@ -404,31 +395,59 @@ var TimestampsModule = /** @class */ (function () {
 exports.TimestampsModule = TimestampsModule;
 var SelectArea = /** @class */ (function () {
     function SelectArea() {
+        var _this = this;
+        this.onSelect = new Utils_1.Event();
+        Input_1.Input.onMouseDown.addListener(function (event) { _this.onMouseDown(event); });
+        Input_1.Input.onMouseUp.addListener(function (event) { _this.onMouseUp(event); });
+        Input_1.Input.onCanvasHover.addListener(function (event) { _this.onMouseMove(event); });
     }
     SelectArea.prototype.draw = function (view, canvas) {
+        if (!this.isActive)
+            return;
+        console.log("draw");
         var ctx = canvas.getContext('2d');
         var sizeVec = Vec2_1.Vec2.Substract(this.secondPoint, this.firstPoint);
         ctx.fillStyle = AppSettings_1.editorColorSettings.selectAreaColor.value();
         ctx.fillRect(this.firstPoint.x, this.firstPoint.y, sizeVec.x, sizeVec.y);
     };
+    SelectArea.prototype.onMouseDown = function (event) {
+        console.log(event);
+        this.isActive = true;
+        this.firstPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
+        this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
+    };
+    SelectArea.prototype.onMouseMove = function (event) {
+        console.log(event);
+        this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
+    };
+    SelectArea.prototype.onMouseUp = function (event) {
+        console.log(event);
+        this.isActive = false;
+        this.onSelect.invoke([this.firstPoint, this.secondPoint]);
+    };
     return SelectArea;
 }());
 var ElementSelectorModule = /** @class */ (function () {
-    function ElementSelectorModule() {
+    function ElementSelectorModule(creatable, timestamps) {
+        this.transform = new Transform_1.Transform();
         this.selectedElements = new Array();
         this.selectArea = new SelectArea();
+        this.creatable = creatable;
+        this.timestamps = timestamps;
+        this.canvas = jquery_1.default("#editor-canvas")[0];
     }
     ElementSelectorModule.prototype.init = function (editorCoreModules) {
         this.editor = editorCoreModules;
     };
     ElementSelectorModule.prototype.updateModule = function () {
+        this.selectArea.draw(this.editor.viewport, this.canvas);
     };
-    ElementSelectorModule.prototype.onElementExistingElementClicked = function (element) {
+    ElementSelectorModule.prototype.onExistingElementClicked = function (element) {
         this.selectedElements.push(element);
         element.select();
     };
     ElementSelectorModule.prototype.selectElement = function (element) {
-        this.selectedElements;
+        this.selectedElements.push();
     };
     ElementSelectorModule.prototype.deselectElement = function (element) {
     };
@@ -639,15 +658,12 @@ var VisualiserEditorModule = /** @class */ (function () {
         }
         var view = this.editor.viewport;
         this.onAudioLoad();
-        //console.log(this.displayData[0]);
         var barHeight;
         var gap = 1; //- gap * this.displayData.length
         var barWidth = ((this.canvas.width) / (this.displayData.length - 10)) * 1;
         var x = 0;
-        //console.log(this.displayData[0]);
         for (var i = 0; i < this.displayData.length - 10; i++) {
             barHeight = this.displayData[i] / 600 * this.canvas.height + 2 * (this.displayData[i] - this.spectrumData[i]);
-            //console.log(barHeight);
             this.ctx.fillStyle = AppSettings_1.editorColorSettings.creatableTimestampLineColor.value();
             this.ctx.fillRect(x, this.canvas.height, barWidth, -barHeight);
             x += barWidth + gap;
