@@ -89,14 +89,16 @@ var AudioModule = /** @class */ (function () {
         this.clappingTimings = array;
         var seek = this.seek();
         //console.log(array);
-        for (var i = 0; i < array.length; i++) {
-            console.log(array[i]);
-            if (array[i] > seek) {
-                console.log(i);
-                //this.clapTimingId = i;
-                return;
-            }
-        }
+        this.clapTimingId = Utils_1.Utils.binaryNearestSearchNumber(array, seek);
+        console.log(this.clapTimingId);
+        // for(let i = 0; i<array.length;i++) {
+        //     console.log(array[i]);
+        //     if (array[i] > seek) {
+        //         console.log(i);
+        //         this.clapTimingId = i;
+        //         return;
+        //     }
+        // }
     };
     AudioModule.prototype.checkForClaps = function () {
         if (this.songSource == null || this.clappingTimings.length < 1 || !this.editorCore.editorData.useClaps.value)

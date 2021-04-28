@@ -430,17 +430,18 @@
       appearance: none;
       width: 15px;
       height: 15px;
-      border-radius: 80%; 
+      border-radius: 80%;
       background: $accent-color;
       cursor: pointer;
     }
 
-    &:focus {
-      outline: none;
-      border: none;
+    &::-moz-range-thumb {
+      width: 10px;
+      height: 15px;
+      border-radius: 20%;
+      background: $accent-color;
+      cursor: pointer;
     }
-
-    
   }
 
   .play-button {

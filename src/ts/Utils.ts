@@ -5,15 +5,10 @@ export abstract class Utils {
     
     static binaryNearestSearch(array : Array<ICompareNumberProvider>, searchValue: number, useFlooring=false): number {
         let left = 0, right = array.length-1;
-        // console.log(`Seaching closest for ${searchValue}`)
 
         while(right - left > 1) {
             let middle = Math.floor((right + left) / 2);
     
-            // console.log(`left: ${left} right: ${right}`);
-            // console.log(`middle is ${middle}`);
-            // console.log(array[middle])
-
             if (array[middle].value < searchValue) {
                 left = middle;
             }
@@ -25,6 +20,27 @@ export abstract class Utils {
         if (!useFlooring)
             return Math.abs(searchValue - array[left].value)
             < Math.abs(searchValue - array[right].value) ? left : right;
+        
+        return left;
+    }
+
+    static binaryNearestSearchNumber(array : Array<number>, searchValue: number, useFlooring=false): number {
+        let left = 0, right = array.length-1;
+
+        while(right - left > 1) {
+            let middle = Math.floor((right + left) / 2);
+    
+            if (array[middle] < searchValue) {
+                left = middle;
+            }
+            else {
+                right = middle;
+            }
+        }
+        
+        if (!useFlooring)
+            return Math.abs(searchValue - array[left])
+            < Math.abs(searchValue - array[right]) ? left : right;
         
         return left;
     }

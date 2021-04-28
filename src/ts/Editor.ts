@@ -15,269 +15,6 @@ import { Input } from "./Input";
 import { Slider, Utils, Event } from "./Utils";
 import { AudioAmplitudeViewModule, AudioModule, IAudioModule } from "./Audio";
 
-class TreeNode<T> {
-    left: TreeNode<T> = null;
-    right: TreeNode<T> = null;
-
-    get value(): T {
-        return this._value;
-    }
-
-    set value(value) {
-        this._value = value;
-    }
-
-    get compareValue(): any {
-        return this._value;
-    }
-    
-    constructor(protected _value: T) { }
-}
-
-class GridTreeNode extends TreeNode<GridElement> {    
-    get compareValue() {
-        return this._value.transform.position.x;
-    }
-}
-
-class GridTreeArray<T> extends TreeNode<T> {    
-    constructor(private posX: number, protected _value: T) {
-        super(_value);
-    }
-   
-    get compareValue() {
-        return this.posX;
-    }
-}
-
-class BinarySearchTree<T> {
-    public root: TreeNode<T> = null;
-
-    add(node: TreeNode<T>): void {
-        if (this.isEmpty()) {
-            this.root = node;
-            console.log(`root node value is ${this.root.value}`)
-        } else {
-            console.log("ADD METHOD");
-            console.log("ADDING VALUE");
-            console.log(node.value);
-            let currentNode: TreeNode<T> = this.root;
-
-            while (currentNode) {
-                console.log(`root node value is ${this.root.value}`)
-                if (node.value > currentNode.value) {
-                    if (currentNode.right === null) {
-                        currentNode.right = node;
-                        console.log(`node is on right`)
-                        return;
-                    }
-
-                    currentNode = currentNode.right;
-                } else {
-                    if (currentNode.left === null) {
-                        currentNode.left = node;
-                        console.log(`node is on left`)
-                        return;
-                    }
-
-                    currentNode = currentNode.left;
-                }
-            }
-        }
-    }
-
-    traverseInOrder(node: TreeNode<T>, arr: Array<TreeNode<T>>) {
-        if (node == null)
-            return;
-
-        this.traverseInOrder(node.left, arr);
-        arr.push(node); 
-        this.traverseInOrder(node.right, arr);
-    }
-
-    search(value: number): TreeNode<T> {
-        let currentNode: TreeNode<T> = this.root;
-
-        while (currentNode) {
-            if (value === currentNode.compareValue) {
-                return currentNode;
-            } else if (value > currentNode.compareValue) {
-                currentNode = currentNode.right;
-            } else {
-                currentNode = currentNode.left;
-            }
-        }
-
-        return null;
-    }
-    
-    searchForRange(min: number, max: number, node: TreeNode<T>, arr: Array<TreeNode<T>>) {
-        if (node == null)
-            return;
-        
-        if (node.compareValue > min) {
-            this.searchForRange(min, max, node.left, arr);
-        }
-
-        if (node.compareValue >= min && node.compareValue <= max) {
-            arr.push(node);
-        }
-
-        if (node.compareValue < max) {
-            this.searchForRange(min, max, node.right, arr);
-        }
-    }
-
-    private findMin() {
-
-    }
-
-    private findMax() {
-
-    }
-
-    nearestSearch(value: number): TreeNode<T> {
-        console.log(`NEAREST SEARCH FOR VALUE: ${value}`)
-        if (this.root == null)
-            return null;
-        
-        let currentNode: TreeNode<T> = this.root;
-        let closestNode: TreeNode<T> = this.root;
-        let minValue = Math.abs(currentNode.compareValue-value)
-
-        const checkForClosestNode = (node: TreeNode<T>) => {
-            if (node == null)
-                return;
-                
-            console.log("Checking node: ");
-            console.log(node);
-
-            let diff = Math.abs(node.compareValue-value);
-            console.log(`diff is ${diff}`)
-
-            if (diff < minValue) {
-                closestNode = node;
-                minValue = diff; 
-                console.log("New nearest node: ");
-                console.log(node);
-            }
-        }
-
-        while (currentNode) {
-            checkForClosestNode(currentNode.left);
-            checkForClosestNode(currentNode.right);
-
-            if (value === currentNode.compareValue) {
-                return currentNode;
-            } 
-            else if (value > currentNode.compareValue) {
-                currentNode = currentNode.right;
-            } 
-            else {
-                currentNode = currentNode.left;
-            }
-        }
-
-        console.log(`RETURNING NODE WITH VALUE: ${closestNode.value}`)
-        return closestNode;
-    }
-
-    delete(value: number): void {
-        this.root = this.deleteRecursively(this.root, value);
-    }
-
-    private deleteRecursively(root: TreeNode<T>, value: number): TreeNode<T> {
-        if (root === null) {
-            return null;
-        }
-
-        if (root.compareValue === value) {
-            // eliminamos
-            root = this.deleteNode(root); // -> devuelve la misma estructura con el nodo eliminado
-        } else if (value < root.compareValue) {
-            // nos movemos a la izquierda
-            root.left = this.deleteRecursively(root.left, value);
-        } else {
-            // derecha
-            root.right = this.deleteRecursively(root.right, value);
-        }
-
-        return root;
-    }
-
-    private deleteNode(root: TreeNode<T>): TreeNode<T> {
-        if (root.left === null && root.right === null) {
-            // es hoja
-            return null;
-        } else if (root.left !== null && root.right !== null) {
-            // tiene dos hijos
-            const successorNode = this.getSuccessor(root.left);
-            const successorValue = successorNode.compareValue;
-
-            root = this.deleteRecursively(root, successorValue);
-            root.value = successorValue;
-
-            return root;
-        } else if (root.left !== null) {
-            // tiene izquierdo
-            return root.left;
-        }
-
-        // derecho
-        return root.right;
-    }
-
-    private getSuccessor(node: TreeNode<T>): TreeNode<T> {
-        let currentNode: TreeNode<T> = node;
-
-        while (currentNode) {
-            if (currentNode.right === null) {
-                break;
-            }
-
-            currentNode = currentNode.right;
-        }
-
-        return currentNode;
-    }
-
-    isEmpty(): boolean {
-        return this.root === null;
-    }
-}
-
-
-const bst = new BinarySearchTree<number>();
-
-bst.add(new TreeNode(20.2233224));
-bst.add(new TreeNode(25));
-bst.add(new TreeNode(0));
-bst.add(new TreeNode(18));
-bst.add(new TreeNode(14));
-
-let arr = new Array<TreeNode<number>>();
-bst.searchForRange(14, 20.1, bst.root, arr);
-
-console.log(arr);
-
-// console.log(bst.root);
-
-// console.log('FIND 30:', bst.search(30));
-// console.log('FIND 18:', bst.search(18));
-// console.log('FIND 25:', bst.search(25));
-// console.log('FIND 15:', bst.search(15));
-// console.log('FIND 20:', bst.search(20));
-// console.log('NEAR FIND 21:', bst.nearestSearch(21));
-// console.log('NEAR FIND 24:', bst.nearestSearch(24));
-// console.log('NEAR FIND 16:', bst.nearestSearch(16));
-// console.log('NEAR FIND 17:', bst.nearestSearch(17));
-// console.log('NEAR FIND 18:', bst.nearestSearch(18));
-// console.log(bst.root.value);
-// console.log(bst.root.value);
-// bst.delete(20);
-// console.log(bst.root.value);
-
-
 export interface IEditorCore {
     transform: Transform;
     audio : IAudioModule;
@@ -304,7 +41,7 @@ class CommandsController {
 
     addCommandToList(executedCommand: ICommand) {
         if (this.commandIndex != this.commands.length-1) {
-            this.commands.splice(this.commandIndex);
+            this.commands = this.commands.slice(0, this.commandIndex);
         }
 
         if (this.commands.length > this.commandsCapacity) {
@@ -511,15 +248,10 @@ export class TimestepLineModule implements IEditorModule {
     }
 }
 
-// class PhantomTimestampModule implements IEditorModule {
-
-// }
-
 export class CreatableLinesModule implements IEditorModule {
     
     transform = new Transform();
-    creatableLines = new BinarySearchTree<GridElement>();
-    //creatableLines = new Map<number, CreatableTimestampLine>();
+    creatableLines = new Array<CreatableTimestampLine>();
 
     private editor: IEditorCore;
     private canvas: HTMLCanvasElement;
@@ -537,16 +269,20 @@ export class CreatableLinesModule implements IEditorModule {
         if(this.editor.editorData.hideCreatableLines.value)
             return;
 
-        let array = new Array<TreeNode<GridElement>>();
-        this.creatableLines.traverseInOrder(this.creatableLines.root, array);
-        array.forEach(element => {
-            element.value.draw(this.editor.viewport, this.canvas);
+        this.creatableLines.forEach(element => {
+            element.draw(this.editor.viewport, this.canvas);
         });
     }
 
-    findClosestCreatableLine(positionX: number) : GridElement {
-        let result = this.creatableLines.nearestSearch(positionX);
-        return result.value;
+    findClosestCreatableLine(positionX: number) {
+        //this.creatableLines.sort((a,b) => { return a.transform.position.x-b.transform.position.x; });
+        const objectsArr = this.creatableLines;
+                              
+        if (objectsArr.length < 1)
+            return;
+        const indexOfElement = Utils.binaryNearestSearch(objectsArr, positionX);
+        const closestCreatable = objectsArr[indexOfElement];
+        return closestCreatable; 
     }
 
     private handleInput() {
@@ -558,8 +294,8 @@ export class CreatableLinesModule implements IEditorModule {
     private createCustomBpmLine() {
         let xPos = this.editor.audio.seek();
         let line = new CreatableTimestampLine(xPos, this.transform, editorColorSettings.creatableTimestampLineColor);
-        this.creatableLines.add(new GridTreeNode(line));
-        //this.creatableLines[line.transform.localPosition.x] = line;
+        this.creatableLines.push(line);
+        this.creatableLines.sort((a,b) => { return a.transform.position.x-b.transform.position.x; });
     }
 
 }
@@ -622,8 +358,8 @@ export class TimestampsModule implements IEditorModule {
     private static nextPrefabId = 0;
     private selectedPrefabId = 0;
     private idToPrefab = new Map<number, TimestampPrefab>();
-    //private timestamps = new Map<number, Map<number, Timestamp>>();
-    private timestamps = new BinarySearchTree<Timestamp[]>();
+    private timestamps = new Map<number, Map<number, Timestamp>>();
+    private clapTimings = new Array<number>();
     private canvas: HTMLCanvasElement;
     
     private editorCore: IEditorCore;
@@ -653,25 +389,15 @@ export class TimestampsModule implements IEditorModule {
     }
 
     updateModule() {
-        let xArray = new Array<GridTreeArray<Timestamp[]>>();
-        this.timestamps.traverseInOrder(this.timestamps.root, xArray);
-
-        for (let i = 0; i<xArray.length; i++) {
-            xArray[i].value.forEach(val => {
-                val.draw(this.editorCore.viewport, this.canvas);
-            });
+        for (const [i, value] of Object.entries(this.timestamps)) {
+            for (const [j, timestamp] of Object.entries(value)) {
+                (timestamp as Timestamp).draw(this.editorCore.viewport, this.canvas);
+            }
         }
-
-        // for (const [i, value] of Object.entries(this.timestamps)) {
-        //     for (const [j, timestamp] of Object.entries(value)) {
-        //         (timestamp as Timestamp).draw(this.editorCore.viewport, this.canvas);
-        //     }
-        // }
     }
     
     removeTimestamp(timestamp: Timestamp) {
-        let xArr = this.timestamps.search(timestamp.transform.position.x);
-        delete xArr[timestamp.transform.localPosition.y];
+        delete this.timestamps[timestamp.transform.localPosition.x][timestamp.transform.localPosition.y];
     }
 
     createTimestampPrefab(color: RgbaColor) : TimestampPrefab {
@@ -712,7 +438,7 @@ export class TimestampsModule implements IEditorModule {
             closestObjects.push(this.editorGridModule.findClosestBpmLine(worldClickPos.x));
         }
 
-        if (!this.editorCore.editorData.hideCreatableLines.value && this.createableLinesModule.creatableLines.root != null) {
+        if (!this.editorCore.editorData.hideCreatableLines.value && Object.keys(this.createableLinesModule.creatableLines).length > 0) {
             closestObjects.push(this.createableLinesModule.findClosestCreatableLine(worldClickPos.x));
         }
 
@@ -745,36 +471,22 @@ export class TimestampsModule implements IEditorModule {
         
         let newTimestamp =  new Timestamp(prefab.color,
             new Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y), 0.5, this.editorGridModule.transform);
+        //console.log(newTimestamp); 
         
-        console.log(newTimestamp); 
-        
-        let searched = this.timestamps.search(newTimestamp.transform.position.x);
-
-        if (searched == null) {
-            searched = new GridTreeArray(newTimestamp.transform.position.x, new Array<Timestamp>());
-            this.timestamps.add(searched);
+        if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
+            this.timestamps[newTimestamp.transform.localPosition.x] = {};
         }
-        
-        console.log(searched);
 
-        if (searched.value[newTimestamp.transform.localPosition.y] == null)
-            searched.value[newTimestamp.transform.localPosition.y] = newTimestamp;
+        if (this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] == null) {
+            this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
+            this.clapTimings.push(newTimestamp.transform.localPosition.x);
+            this.clapTimings.sort((a,b) => {return a-b;});
+        }
         else if (Input.keysPressed["LeftControl"])
-            this.onExistingElementClicked.invoke(searched.value[newTimestamp.transform.localPosition.y] as Timestamp);
+            this.onExistingElementClicked.invoke(this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y]);
 
         if(this.editorCore.editorData.useClaps.value)
-            this.editorCore.audio.setClapTimings(this.getClapTimings());
-    }
-
-    private getClapTimings(): number[] {
-        const obj = Object.keys(this.timestamps);
-        const result = new Array<number>();
-        for (let i = 0; i<obj.length; i++) {
-            result[i] = parseFloat(obj[i]);
-        }
-        return result.sort((a, b) => {
-            return a - b;
-        });
+            this.editorCore.audio.setClapTimings(this.clapTimings);
     }
 }
 
@@ -802,16 +514,19 @@ class SelectArea implements IDrawable {
     }
 
     onMouseDown(event: JQuery.MouseDownEvent) {
+        console.log(event);
         this.isActive = true;
         this.firstPoint = new Vec2(event.offsetX, event.offsetY);
         this.secondPoint = new Vec2(event.offsetX, event.offsetY);
     }
 
     onMouseMove(event: JQuery.MouseMoveEvent) {
+        console.log(event);
         this.secondPoint = new Vec2(event.offsetX, event.offsetY);
     }
 
     onMouseUp(event: JQuery.MouseUpEvent) {
+        console.log(event);
         this.isActive = false;
         this.onSelect.invoke([this.firstPoint, this.secondPoint]);
     }
@@ -853,6 +568,7 @@ export class ElementSelectorModule implements IEditorModule {
     private deselectElement(element: GridElement) {
     }
 }
+
 
 export class EditorGrid implements IEditorModule {
 
@@ -1117,19 +833,13 @@ export class VisualiserEditorModule implements IEditorModule {
 
         this.onAudioLoad();
 
-        //console.log(this.displayData[0]);
-
         let barHeight;
         let gap = 1; //- gap * this.displayData.length
         let barWidth = ((this.canvas.width) / (this.displayData.length-10)) * 1;
         let x = 0;
 
-        //console.log(this.displayData[0]);
-
         for (var i = 0; i<this.displayData.length-10; i++) {
-            barHeight = this.displayData[i]/512*this.canvas.height + 1.5*(this.displayData[i]-this.spectrumData[i]);
-
-            //console.log(barHeight);
+            barHeight = this.displayData[i]/600*this.canvas.height + 2*(this.displayData[i]-this.spectrumData[i]);
 
             this.ctx.fillStyle = editorColorSettings.creatableTimestampLineColor.value();
             this.ctx.fillRect(x, this.canvas.height,barWidth,-barHeight);

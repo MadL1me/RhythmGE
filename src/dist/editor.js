@@ -1,19 +1,4 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -29,238 +14,6 @@ var AppSettings_1 = require("./AppSettings");
 var Input_1 = require("./Input");
 var Utils_1 = require("./Utils");
 var Audio_1 = require("./Audio");
-var TreeNode = /** @class */ (function () {
-    function TreeNode(_value) {
-        this._value = _value;
-        this.left = null;
-        this.right = null;
-    }
-    Object.defineProperty(TreeNode.prototype, "value", {
-        get: function () {
-            return this._value;
-        },
-        set: function (value) {
-            this._value = value;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(TreeNode.prototype, "compareValue", {
-        get: function () {
-            return this._value;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return TreeNode;
-}());
-var GridTreeNode = /** @class */ (function (_super) {
-    __extends(GridTreeNode, _super);
-    function GridTreeNode() {
-        return _super !== null && _super.apply(this, arguments) || this;
-    }
-    Object.defineProperty(GridTreeNode.prototype, "compareValue", {
-        get: function () {
-            return this._value.transform.position.x;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return GridTreeNode;
-}(TreeNode));
-var GridTreeArray = /** @class */ (function (_super) {
-    __extends(GridTreeArray, _super);
-    function GridTreeArray(posX, _value) {
-        var _this = _super.call(this, _value) || this;
-        _this.posX = posX;
-        _this._value = _value;
-        return _this;
-    }
-    Object.defineProperty(GridTreeArray.prototype, "compareValue", {
-        get: function () {
-            return this.posX;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return GridTreeArray;
-}(TreeNode));
-var BinarySearchTree = /** @class */ (function () {
-    function BinarySearchTree() {
-        this.root = null;
-    }
-    BinarySearchTree.prototype.add = function (node) {
-        if (this.isEmpty()) {
-            this.root = node;
-            console.log("root node value is " + this.root.value);
-        }
-        else {
-            console.log("ADD METHOD");
-            console.log("ADDING VALUE");
-            console.log(node.value);
-            var currentNode = this.root;
-            while (currentNode) {
-                console.log("root node value is " + this.root.value);
-                if (node.value > currentNode.value) {
-                    if (currentNode.right === null) {
-                        currentNode.right = node;
-                        console.log("node is on right");
-                        return;
-                    }
-                    currentNode = currentNode.right;
-                }
-                else {
-                    if (currentNode.left === null) {
-                        currentNode.left = node;
-                        console.log("node is on left");
-                        return;
-                    }
-                    currentNode = currentNode.left;
-                }
-            }
-        }
-    };
-    BinarySearchTree.prototype.traverseInOrder = function (node, arr) {
-        if (node == null)
-            return;
-        this.traverseInOrder(node.left, arr);
-        arr.push(node);
-        this.traverseInOrder(node.right, arr);
-    };
-    BinarySearchTree.prototype.search = function (value) {
-        var currentNode = this.root;
-        while (currentNode) {
-            if (value === currentNode.compareValue) {
-                return currentNode;
-            }
-            else if (value > currentNode.compareValue) {
-                currentNode = currentNode.right;
-            }
-            else {
-                currentNode = currentNode.left;
-            }
-        }
-        return null;
-    };
-    BinarySearchTree.prototype.searchForRange = function (min, max, node, arr) {
-        if (node == null)
-            return;
-        if (node.compareValue > min) {
-            this.searchForRange(min, max, node.left, arr);
-        }
-        if (node.compareValue >= min && node.compareValue <= max) {
-            arr.push(node);
-        }
-        if (node.compareValue < max) {
-            this.searchForRange(min, max, node.right, arr);
-        }
-    };
-    BinarySearchTree.prototype.findMin = function () {
-    };
-    BinarySearchTree.prototype.findMax = function () {
-    };
-    BinarySearchTree.prototype.nearestSearch = function (value) {
-        console.log("NEAREST SEARCH FOR VALUE: " + value);
-        if (this.root == null)
-            return null;
-        var currentNode = this.root;
-        var closestNode = this.root;
-        var minValue = Math.abs(currentNode.compareValue - value);
-        var checkForClosestNode = function (node) {
-            if (node == null)
-                return;
-            console.log("Checking node: ");
-            console.log(node);
-            var diff = Math.abs(node.compareValue - value);
-            console.log("diff is " + diff);
-            if (diff < minValue) {
-                closestNode = node;
-                minValue = diff;
-                console.log("New nearest node: ");
-                console.log(node);
-            }
-        };
-        while (currentNode) {
-            checkForClosestNode(currentNode.left);
-            checkForClosestNode(currentNode.right);
-            if (value === currentNode.compareValue) {
-                return currentNode;
-            }
-            else if (value > currentNode.compareValue) {
-                currentNode = currentNode.right;
-            }
-            else {
-                currentNode = currentNode.left;
-            }
-        }
-        console.log("RETURNING NODE WITH VALUE: " + closestNode.value);
-        return closestNode;
-    };
-    BinarySearchTree.prototype.delete = function (value) {
-        this.root = this.deleteRecursively(this.root, value);
-    };
-    BinarySearchTree.prototype.deleteRecursively = function (root, value) {
-        if (root === null) {
-            return null;
-        }
-        if (root.compareValue === value) {
-            // eliminamos
-            root = this.deleteNode(root); // -> devuelve la misma estructura con el nodo eliminado
-        }
-        else if (value < root.compareValue) {
-            // nos movemos a la izquierda
-            root.left = this.deleteRecursively(root.left, value);
-        }
-        else {
-            // derecha
-            root.right = this.deleteRecursively(root.right, value);
-        }
-        return root;
-    };
-    BinarySearchTree.prototype.deleteNode = function (root) {
-        if (root.left === null && root.right === null) {
-            // es hoja
-            return null;
-        }
-        else if (root.left !== null && root.right !== null) {
-            // tiene dos hijos
-            var successorNode = this.getSuccessor(root.left);
-            var successorValue = successorNode.compareValue;
-            root = this.deleteRecursively(root, successorValue);
-            root.value = successorValue;
-            return root;
-        }
-        else if (root.left !== null) {
-            // tiene izquierdo
-            return root.left;
-        }
-        // derecho
-        return root.right;
-    };
-    BinarySearchTree.prototype.getSuccessor = function (node) {
-        var currentNode = node;
-        while (currentNode) {
-            if (currentNode.right === null) {
-                break;
-            }
-            currentNode = currentNode.right;
-        }
-        return currentNode;
-    };
-    BinarySearchTree.prototype.isEmpty = function () {
-        return this.root === null;
-    };
-    return BinarySearchTree;
-}());
-var bst = new BinarySearchTree();
-bst.add(new TreeNode(20.2233224));
-bst.add(new TreeNode(25));
-bst.add(new TreeNode(0));
-bst.add(new TreeNode(18));
-bst.add(new TreeNode(14));
-var arr = new Array();
-bst.searchForRange(14, 20.1, bst.root, arr);
-console.log(arr);
 var CommandsController = /** @class */ (function () {
     function CommandsController() {
         this.commandsCapacity = 20;
@@ -269,7 +22,7 @@ var CommandsController = /** @class */ (function () {
     }
     CommandsController.prototype.addCommandToList = function (executedCommand) {
         if (this.commandIndex != this.commands.length - 1) {
-            this.commands.splice(this.commandIndex);
+            this.commands = this.commands.slice(0, this.commandIndex);
         }
         if (this.commands.length > this.commandsCapacity) {
             this.commands.shift();
@@ -439,12 +192,10 @@ var TimestepLineModule = /** @class */ (function () {
     return TimestepLineModule;
 }());
 exports.TimestepLineModule = TimestepLineModule;
-// class PhantomTimestampModule implements IEditorModule {
-// }
 var CreatableLinesModule = /** @class */ (function () {
     function CreatableLinesModule() {
         this.transform = new Transform_1.Transform();
-        this.creatableLines = new BinarySearchTree();
+        this.creatableLines = new Array();
         this.canvas = jquery_1.default("#editor-canvas")[0];
     }
     CreatableLinesModule.prototype.init = function (editorCoreModules) {
@@ -456,15 +207,18 @@ var CreatableLinesModule = /** @class */ (function () {
         var _this = this;
         if (this.editor.editorData.hideCreatableLines.value)
             return;
-        var array = new Array();
-        this.creatableLines.traverseInOrder(this.creatableLines.root, array);
-        array.forEach(function (element) {
-            element.value.draw(_this.editor.viewport, _this.canvas);
+        this.creatableLines.forEach(function (element) {
+            element.draw(_this.editor.viewport, _this.canvas);
         });
     };
     CreatableLinesModule.prototype.findClosestCreatableLine = function (positionX) {
-        var result = this.creatableLines.nearestSearch(positionX);
-        return result.value;
+        //this.creatableLines.sort((a,b) => { return a.transform.position.x-b.transform.position.x; });
+        var objectsArr = this.creatableLines;
+        if (objectsArr.length < 1)
+            return;
+        var indexOfElement = Utils_1.Utils.binaryNearestSearch(objectsArr, positionX);
+        var closestCreatable = objectsArr[indexOfElement];
+        return closestCreatable;
     };
     CreatableLinesModule.prototype.handleInput = function () {
         if (Input_1.Input.keysPressed["Space"] == true) {
@@ -474,8 +228,8 @@ var CreatableLinesModule = /** @class */ (function () {
     CreatableLinesModule.prototype.createCustomBpmLine = function () {
         var xPos = this.editor.audio.seek();
         var line = new GridElements_1.CreatableTimestampLine(xPos, this.transform, AppSettings_1.editorColorSettings.creatableTimestampLineColor);
-        this.creatableLines.add(new GridTreeNode(line));
-        //this.creatableLines[line.transform.localPosition.x] = line;
+        this.creatableLines.push(line);
+        this.creatableLines.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
     };
     return CreatableLinesModule;
 }());
@@ -529,8 +283,8 @@ var TimestampsModule = /** @class */ (function () {
         this.transform = new Transform_1.Transform();
         this.selectedPrefabId = 0;
         this.idToPrefab = new Map();
-        //private timestamps = new Map<number, Map<number, Timestamp>>();
-        this.timestamps = new BinarySearchTree();
+        this.timestamps = new Map();
+        this.clapTimings = new Array();
         this.onExistingElementClicked = new Utils_1.Event();
         this.editorGridModule = editorGrid;
         this.createableLinesModule = creatableLines;
@@ -549,23 +303,16 @@ var TimestampsModule = /** @class */ (function () {
         Input_1.Input.onMainCanvasMouseClick.addListener(function (event) { _this.onCanvasClick(event); });
     };
     TimestampsModule.prototype.updateModule = function () {
-        var _this = this;
-        var xArray = new Array();
-        this.timestamps.traverseInOrder(this.timestamps.root, xArray);
-        for (var i = 0; i < xArray.length; i++) {
-            xArray[i].value.forEach(function (val) {
-                val.draw(_this.editorCore.viewport, _this.canvas);
-            });
+        for (var _i = 0, _a = Object.entries(this.timestamps); _i < _a.length; _i++) {
+            var _b = _a[_i], i = _b[0], value = _b[1];
+            for (var _c = 0, _d = Object.entries(value); _c < _d.length; _c++) {
+                var _e = _d[_c], j = _e[0], timestamp = _e[1];
+                timestamp.draw(this.editorCore.viewport, this.canvas);
+            }
         }
-        // for (const [i, value] of Object.entries(this.timestamps)) {
-        //     for (const [j, timestamp] of Object.entries(value)) {
-        //         (timestamp as Timestamp).draw(this.editorCore.viewport, this.canvas);
-        //     }
-        // }
     };
     TimestampsModule.prototype.removeTimestamp = function (timestamp) {
-        var xArr = this.timestamps.search(timestamp.transform.position.x);
-        delete xArr[timestamp.transform.localPosition.y];
+        delete this.timestamps[timestamp.transform.localPosition.x][timestamp.transform.localPosition.y];
     };
     TimestampsModule.prototype.createTimestampPrefab = function (color) {
         var _this = this;
@@ -603,7 +350,7 @@ var TimestampsModule = /** @class */ (function () {
         if (!this.editorCore.editorData.hideBpmLines.value && this.editorGridModule.bpmLines.length > 0) {
             closestObjects.push(this.editorGridModule.findClosestBpmLine(worldClickPos.x));
         }
-        if (!this.editorCore.editorData.hideCreatableLines.value && this.createableLinesModule.creatableLines.root != null) {
+        if (!this.editorCore.editorData.hideCreatableLines.value && Object.keys(this.createableLinesModule.creatableLines).length > 0) {
             closestObjects.push(this.createableLinesModule.findClosestCreatableLine(worldClickPos.x));
         }
         if (closestObjects.length < 1)
@@ -628,29 +375,19 @@ var TimestampsModule = /** @class */ (function () {
             Math.abs(closestBeatline.transform.position.y - worldClickPos.y) > placeDistance)
             return;
         var newTimestamp = new GridElements_1.Timestamp(prefab.color, new Vec2_1.Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y), 0.5, this.editorGridModule.transform);
-        console.log(newTimestamp);
-        var searched = this.timestamps.search(newTimestamp.transform.position.x);
-        if (searched == null) {
-            searched = new GridTreeArray(newTimestamp.transform.position.x, new Array());
-            this.timestamps.add(searched);
+        //console.log(newTimestamp); 
+        if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
+            this.timestamps[newTimestamp.transform.localPosition.x] = {};
         }
-        console.log(searched);
-        if (searched.value[newTimestamp.transform.localPosition.y] == null)
-            searched.value[newTimestamp.transform.localPosition.y] = newTimestamp;
+        if (this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] == null) {
+            this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
+            this.clapTimings.push(newTimestamp.transform.localPosition.x);
+            this.clapTimings.sort(function (a, b) { return a - b; });
+        }
         else if (Input_1.Input.keysPressed["LeftControl"])
-            this.onExistingElementClicked.invoke(searched.value[newTimestamp.transform.localPosition.y]);
+            this.onExistingElementClicked.invoke(this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y]);
         if (this.editorCore.editorData.useClaps.value)
-            this.editorCore.audio.setClapTimings(this.getClapTimings());
-    };
-    TimestampsModule.prototype.getClapTimings = function () {
-        var obj = Object.keys(this.timestamps);
-        var result = new Array();
-        for (var i = 0; i < obj.length; i++) {
-            result[i] = parseFloat(obj[i]);
-        }
-        return result.sort(function (a, b) {
-            return a - b;
-        });
+            this.editorCore.audio.setClapTimings(this.clapTimings);
     };
     TimestampsModule.nextPrefabId = 0;
     return TimestampsModule;
@@ -674,14 +411,17 @@ var SelectArea = /** @class */ (function () {
         ctx.fillRect(this.firstPoint.x, this.firstPoint.y, sizeVec.x, sizeVec.y);
     };
     SelectArea.prototype.onMouseDown = function (event) {
+        console.log(event);
         this.isActive = true;
         this.firstPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
         this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
     };
     SelectArea.prototype.onMouseMove = function (event) {
+        console.log(event);
         this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
     };
     SelectArea.prototype.onMouseUp = function (event) {
+        console.log(event);
         this.isActive = false;
         this.onSelect.invoke([this.firstPoint, this.secondPoint]);
     };
@@ -918,15 +658,12 @@ var VisualiserEditorModule = /** @class */ (function () {
         }
         var view = this.editor.viewport;
         this.onAudioLoad();
-        //console.log(this.displayData[0]);
         var barHeight;
         var gap = 1; //- gap * this.displayData.length
         var barWidth = ((this.canvas.width) / (this.displayData.length - 10)) * 1;
         var x = 0;
-        //console.log(this.displayData[0]);
         for (var i = 0; i < this.displayData.length - 10; i++) {
-            barHeight = this.displayData[i] / 512 * this.canvas.height + 1.5 * (this.displayData[i] - this.spectrumData[i]);
-            //console.log(barHeight);
+            barHeight = this.displayData[i] / 600 * this.canvas.height + 2 * (this.displayData[i] - this.spectrumData[i]);
             this.ctx.fillStyle = AppSettings_1.editorColorSettings.creatableTimestampLineColor.value();
             this.ctx.fillRect(x, this.canvas.height, barWidth, -barHeight);
             x += barWidth + gap;
