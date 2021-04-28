@@ -19,7 +19,7 @@ class TreeNode<T> {
     left: TreeNode<T> = null;
     right: TreeNode<T> = null;
 
-    get value() {
+    get value(): T {
         return this._value;
     }
 
@@ -27,16 +27,26 @@ class TreeNode<T> {
         this._value = value;
     }
 
-    constructor(protected _value) { }
-}
-
-class GridTreeNode extends TreeNode<GridElement> {
-    constructor(value, public object: GridElement) {
-        super(value);
+    get compareValue(): any {
+        return this._value;
     }
     
-    get value() {
-        return this.object.transform.position.x;
+    constructor(protected _value: T) { }
+}
+
+class GridTreeNode extends TreeNode<GridElement> {    
+    get compareValue() {
+        return this._value.transform.position.x;
+    }
+}
+
+class GridTreeArray<T> extends TreeNode<T> {    
+    constructor(private posX: number, protected _value: T) {
+        super(_value);
+    }
+   
+    get compareValue() {
+        return this.posX;
     }
 }
 
@@ -89,9 +99,9 @@ class BinarySearchTree<T> {
         let currentNode: TreeNode<T> = this.root;
 
         while (currentNode) {
-            if (value === currentNode.value) {
+            if (value === currentNode.compareValue) {
                 return currentNode;
-            } else if (value > currentNode.value) {
+            } else if (value > currentNode.compareValue) {
                 currentNode = currentNode.right;
             } else {
                 currentNode = currentNode.left;
@@ -105,15 +115,15 @@ class BinarySearchTree<T> {
         if (node == null)
             return;
         
-        if (node.value > min) {
+        if (node.compareValue > min) {
             this.searchForRange(min, max, node.left, arr);
         }
 
-        if (node.value >= min && node.value <= max) {
+        if (node.compareValue >= min && node.compareValue <= max) {
             arr.push(node);
         }
 
-        if (node.value < max) {
+        if (node.compareValue < max) {
             this.searchForRange(min, max, node.right, arr);
         }
     }
@@ -133,7 +143,7 @@ class BinarySearchTree<T> {
         
         let currentNode: TreeNode<T> = this.root;
         let closestNode: TreeNode<T> = this.root;
-        let minValue = Math.abs(currentNode.value-value)
+        let minValue = Math.abs(currentNode.compareValue-value)
 
         const checkForClosestNode = (node: TreeNode<T>) => {
             if (node == null)
@@ -142,7 +152,7 @@ class BinarySearchTree<T> {
             console.log("Checking node: ");
             console.log(node);
 
-            let diff = Math.abs(node.value-value);
+            let diff = Math.abs(node.compareValue-value);
             console.log(`diff is ${diff}`)
 
             if (diff < minValue) {
@@ -157,10 +167,10 @@ class BinarySearchTree<T> {
             checkForClosestNode(currentNode.left);
             checkForClosestNode(currentNode.right);
 
-            if (value === currentNode.value) {
+            if (value === currentNode.compareValue) {
                 return currentNode;
             } 
-            else if (value > currentNode.value) {
+            else if (value > currentNode.compareValue) {
                 currentNode = currentNode.right;
             } 
             else {
@@ -181,10 +191,10 @@ class BinarySearchTree<T> {
             return null;
         }
 
-        if (root.value === value) {
+        if (root.compareValue === value) {
             // eliminamos
             root = this.deleteNode(root); // -> devuelve la misma estructura con el nodo eliminado
-        } else if (value < root.value) {
+        } else if (value < root.compareValue) {
             // nos movemos a la izquierda
             root.left = this.deleteRecursively(root.left, value);
         } else {
@@ -202,7 +212,7 @@ class BinarySearchTree<T> {
         } else if (root.left !== null && root.right !== null) {
             // tiene dos hijos
             const successorNode = this.getSuccessor(root.left);
-            const successorValue = successorNode.value;
+            const successorValue = successorNode.compareValue;
 
             root = this.deleteRecursively(root, successorValue);
             root.value = successorValue;
@@ -508,7 +518,7 @@ export class TimestepLineModule implements IEditorModule {
 export class CreatableLinesModule implements IEditorModule {
     
     transform = new Transform();
-    creatableLines = new BinarySearchTree<GridTreeNode>();
+    creatableLines = new BinarySearchTree<GridElement>();
     //creatableLines = new Map<number, CreatableTimestampLine>();
 
     private editor: IEditorCore;
@@ -527,16 +537,16 @@ export class CreatableLinesModule implements IEditorModule {
         if(this.editor.editorData.hideCreatableLines.value)
             return;
 
-        let array = new Array<TreeNode<GridTreeNode>>();
+        let array = new Array<TreeNode<GridElement>>();
         this.creatableLines.traverseInOrder(this.creatableLines.root, array);
         array.forEach(element => {
-            (element as GridTreeNode).object.draw(this.editor.viewport, this.canvas);
+            element.value.draw(this.editor.viewport, this.canvas);
         });
     }
 
     findClosestCreatableLine(positionX: number) : GridElement {
         let result = this.creatableLines.nearestSearch(positionX);
-        return (result as GridTreeNode)?.object;
+        return result.value;
     }
 
     private handleInput() {
@@ -548,7 +558,7 @@ export class CreatableLinesModule implements IEditorModule {
     private createCustomBpmLine() {
         let xPos = this.editor.audio.seek();
         let line = new CreatableTimestampLine(xPos, this.transform, editorColorSettings.creatableTimestampLineColor);
-        this.creatableLines.add(new GridTreeNode(line.transform.position.x, line));
+        this.creatableLines.add(new GridTreeNode(line));
         //this.creatableLines[line.transform.localPosition.x] = line;
     }
 
@@ -612,7 +622,8 @@ export class TimestampsModule implements IEditorModule {
     private static nextPrefabId = 0;
     private selectedPrefabId = 0;
     private idToPrefab = new Map<number, TimestampPrefab>();
-    private timestamps = new Map<number, Map<number, Timestamp>>();
+    //private timestamps = new Map<number, Map<number, Timestamp>>();
+    private timestamps = new BinarySearchTree<Timestamp[]>();
     private canvas: HTMLCanvasElement;
     
     private editorCore: IEditorCore;
@@ -642,15 +653,25 @@ export class TimestampsModule implements IEditorModule {
     }
 
     updateModule() {
-        for (const [i, value] of Object.entries(this.timestamps)) {
-            for (const [j, timestamp] of Object.entries(value)) {
-                (timestamp as Timestamp).draw(this.editorCore.viewport, this.canvas);
-            }
+        let xArray = new Array<GridTreeArray<Timestamp[]>>();
+        this.timestamps.traverseInOrder(this.timestamps.root, xArray);
+
+        for (let i = 0; i<xArray.length; i++) {
+            xArray[i].value.forEach(val => {
+                val.draw(this.editorCore.viewport, this.canvas);
+            });
         }
+
+        // for (const [i, value] of Object.entries(this.timestamps)) {
+        //     for (const [j, timestamp] of Object.entries(value)) {
+        //         (timestamp as Timestamp).draw(this.editorCore.viewport, this.canvas);
+        //     }
+        // }
     }
     
     removeTimestamp(timestamp: Timestamp) {
-        delete this.timestamps[timestamp.transform.localPosition.x][timestamp.transform.localPosition.y];
+        let xArr = this.timestamps.search(timestamp.transform.position.x);
+        delete xArr[timestamp.transform.localPosition.y];
     }
 
     createTimestampPrefab(color: RgbaColor) : TimestampPrefab {
@@ -724,16 +745,22 @@ export class TimestampsModule implements IEditorModule {
         
         let newTimestamp =  new Timestamp(prefab.color,
             new Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y), 0.5, this.editorGridModule.transform);
-        //console.log(newTimestamp); 
         
-        if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
-            this.timestamps[newTimestamp.transform.localPosition.x] = {};
-        }
+        console.log(newTimestamp); 
+        
+        let searched = this.timestamps.search(newTimestamp.transform.position.x);
 
-        if (this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] == null)
-            this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
+        if (searched == null) {
+            searched = new GridTreeArray(newTimestamp.transform.position.x, new Array<Timestamp>());
+            this.timestamps.add(searched);
+        }
+        
+        console.log(searched);
+
+        if (searched.value[newTimestamp.transform.localPosition.y] == null)
+            searched.value[newTimestamp.transform.localPosition.y] = newTimestamp;
         else if (Input.keysPressed["LeftControl"])
-            this.onExistingElementClicked.invoke(this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y]);
+            this.onExistingElementClicked.invoke(searched.value[newTimestamp.transform.localPosition.y] as Timestamp);
 
         if(this.editorCore.editorData.useClaps.value)
             this.editorCore.audio.setClapTimings(this.getClapTimings());
