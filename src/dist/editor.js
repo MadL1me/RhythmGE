@@ -120,6 +120,23 @@ var BinarySearchTree = /** @class */ (function () {
         }
         return null;
     };
+    BinarySearchTree.prototype.searchForRange = function (min, max, node, arr) {
+        if (node == null)
+            return;
+        if (node.value > min) {
+            this.searchForRange(min, max, node.left, arr);
+        }
+        if (node.value >= min && node.value <= max) {
+            arr.push(node);
+        }
+        if (node.value < max) {
+            this.searchForRange(min, max, node.right, arr);
+        }
+    };
+    BinarySearchTree.prototype.findMin = function () {
+    };
+    BinarySearchTree.prototype.findMax = function () {
+    };
     BinarySearchTree.prototype.nearestSearch = function (value) {
         console.log("NEAREST SEARCH FOR VALUE: " + value);
         if (this.root == null)
@@ -213,6 +230,15 @@ var BinarySearchTree = /** @class */ (function () {
     };
     return BinarySearchTree;
 }());
+var bst = new BinarySearchTree();
+bst.add(new TreeNode(20.2233224));
+bst.add(new TreeNode(25));
+bst.add(new TreeNode(0));
+bst.add(new TreeNode(18));
+bst.add(new TreeNode(14));
+var arr = new Array();
+bst.searchForRange(14, 20.1, bst.root, arr);
+console.log(arr);
 var CommandsController = /** @class */ (function () {
     function CommandsController() {
         this.commandsCapacity = 20;
@@ -628,17 +654,14 @@ var SelectArea = /** @class */ (function () {
         ctx.fillRect(this.firstPoint.x, this.firstPoint.y, sizeVec.x, sizeVec.y);
     };
     SelectArea.prototype.onMouseDown = function (event) {
-        console.log(event);
         this.isActive = true;
         this.firstPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
         this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
     };
     SelectArea.prototype.onMouseMove = function (event) {
-        console.log(event);
         this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
     };
     SelectArea.prototype.onMouseUp = function (event) {
-        console.log(event);
         this.isActive = false;
         this.onSelect.invoke([this.firstPoint, this.secondPoint]);
     };
@@ -882,7 +905,7 @@ var VisualiserEditorModule = /** @class */ (function () {
         var x = 0;
         //console.log(this.displayData[0]);
         for (var i = 0; i < this.displayData.length - 10; i++) {
-            barHeight = this.displayData[i] / 600 * this.canvas.height + 2 * (this.displayData[i] - this.spectrumData[i]);
+            barHeight = this.displayData[i] / 512 * this.canvas.height + 1.5 * (this.displayData[i] - this.spectrumData[i]);
             //console.log(barHeight);
             this.ctx.fillStyle = AppSettings_1.editorColorSettings.creatableTimestampLineColor.value();
             this.ctx.fillRect(x, this.canvas.height, barWidth, -barHeight);

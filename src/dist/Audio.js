@@ -116,7 +116,7 @@ var AudioModule = /** @class */ (function () {
         var _this = this;
         this.songSource = new Howl({ src: [soundPath] });
         this.analyser = Howler.ctx.createAnalyser();
-        this.analyser.fftSize = 64;
+        this.analyser.fftSize = 128;
         this.songSource.on('load', function () {
             _this.audioLoaded = true;
             _this.view.onAudioLoad(fileName, _this.songSource.duration());

@@ -100,6 +100,31 @@ class BinarySearchTree<T> {
 
         return null;
     }
+    
+    searchForRange(min: number, max: number, node: TreeNode<T>, arr: Array<TreeNode<T>>) {
+        if (node == null)
+            return;
+        
+        if (node.value > min) {
+            this.searchForRange(min, max, node.left, arr);
+        }
+
+        if (node.value >= min && node.value <= max) {
+            arr.push(node);
+        }
+
+        if (node.value < max) {
+            this.searchForRange(min, max, node.right, arr);
+        }
+    }
+
+    private findMin() {
+
+    }
+
+    private findMax() {
+
+    }
 
     nearestSearch(value: number): TreeNode<T> {
         console.log(`NEAREST SEARCH FOR VALUE: ${value}`)
@@ -212,15 +237,18 @@ class BinarySearchTree<T> {
 }
 
 
-// const bst = new BinarySearchTree();
+const bst = new BinarySearchTree<number>();
 
-// const obj = ["abc","abcc"];
+bst.add(new TreeNode(20.2233224));
+bst.add(new TreeNode(25));
+bst.add(new TreeNode(0));
+bst.add(new TreeNode(18));
+bst.add(new TreeNode(14));
 
-// bst.add(new TreeNode(20.2233224, obj));
-// bst.add(new TreeNode(25, obj));
-// bst.add(new TreeNode(0, obj));
-// bst.add(new TreeNode(18, obj));
-// bst.add(new TreeNode(14, obj));
+let arr = new Array<TreeNode<number>>();
+bst.searchForRange(14, 20.1, bst.root, arr);
+
+console.log(arr);
 
 // console.log(bst.root);
 
@@ -504,25 +532,11 @@ export class CreatableLinesModule implements IEditorModule {
         array.forEach(element => {
             (element as GridTreeNode).object.draw(this.editor.viewport, this.canvas);
         });
-        // Object.values(this.creatableLines).forEach(element => {
-        //     element.draw(this.editor.viewport, this.canvas);
-        // });
     }
 
     findClosestCreatableLine(positionX: number) : GridElement {
-        // objectsArr.forEach(el => {
-        //     console.log(el);   
-        // })
         let result = this.creatableLines.nearestSearch(positionX);
         return (result as GridTreeNode)?.object;
-
-        //const objectsArr = Object.values(this.creatableLines);
-
-        // if (objectsArr.length < 1)
-        //     return;
-        // const indexOfElement = Utils.binaryNearestSearch(objectsArr, positionX);
-        // const closestCreatable = objectsArr[indexOfElement];
-        // return closestCreatable; 
     }
 
     private handleInput() {
@@ -761,19 +775,16 @@ class SelectArea implements IDrawable {
     }
 
     onMouseDown(event: JQuery.MouseDownEvent) {
-        console.log(event);
         this.isActive = true;
         this.firstPoint = new Vec2(event.offsetX, event.offsetY);
         this.secondPoint = new Vec2(event.offsetX, event.offsetY);
     }
 
     onMouseMove(event: JQuery.MouseMoveEvent) {
-        console.log(event);
         this.secondPoint = new Vec2(event.offsetX, event.offsetY);
     }
 
     onMouseUp(event: JQuery.MouseUpEvent) {
-        console.log(event);
         this.isActive = false;
         this.onSelect.invoke([this.firstPoint, this.secondPoint]);
     }
@@ -1089,7 +1100,7 @@ export class VisualiserEditorModule implements IEditorModule {
         //console.log(this.displayData[0]);
 
         for (var i = 0; i<this.displayData.length-10; i++) {
-            barHeight = this.displayData[i]/600*this.canvas.height + 2*(this.displayData[i]-this.spectrumData[i]);
+            barHeight = this.displayData[i]/512*this.canvas.height + 1.5*(this.displayData[i]-this.spectrumData[i]);
 
             //console.log(barHeight);
 
