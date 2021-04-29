@@ -220,9 +220,11 @@ var CreatableLinesModule = /** @class */ (function () {
         startPos = tmpStartPos;
         var startIndex = Utils_1.Utils.binaryNearestSearch(this.creatableLines, startPos.x, Utils_1.Func.Ceil);
         var endIndex = Utils_1.Utils.binaryNearestSearch(this.creatableLines, endPos.x, Utils_1.Func.Floor);
+        console.log(startIndex);
+        console.log(endIndex);
         if ((startPos.y < this.canvas.height && endPos.y > this.canvas.height - 10)
             || (endPos.y < this.canvas.height && startPos.y > this.canvas.height - 10))
-            return this.creatableLines.slice(startIndex, endIndex);
+            return this.creatableLines.slice(startIndex, endIndex + 1);
         return null;
     };
     CreatableLinesModule.prototype.getClosestLine = function (posX) {

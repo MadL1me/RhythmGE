@@ -12,6 +12,11 @@ export abstract class Utils {
     static binaryNearestSearch(array : Array<ICompareNumberProvider>, searchValue: number, func=Func.Default): number {
         let left = 0, right = array.length-1;
 
+        if (array[0].value > searchValue)
+            return 0;
+        if (array[array.length-1].value < searchValue)
+            return array.length-1
+
         while(right - left > 1) {
             let middle = Math.floor((right + left) / 2);
     
@@ -34,6 +39,11 @@ export abstract class Utils {
 
     static binaryNearestSearchNumber(array : Array<number>, searchValue: number, func=Func.Default): number {
         let left = 0, right = array.length-1;
+
+        if (array[0] > searchValue)
+            return 0;
+        if (array[array.length-1] < searchValue)
+            return array.length-1
 
         while(right - left > 1) {
             let middle = Math.floor((right + left) / 2);

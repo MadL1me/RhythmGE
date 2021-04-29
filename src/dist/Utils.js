@@ -17,6 +17,10 @@ var Utils = /** @class */ (function () {
     Utils.binaryNearestSearch = function (array, searchValue, func) {
         if (func === void 0) { func = Func.Default; }
         var left = 0, right = array.length - 1;
+        if (array[0].value > searchValue)
+            return 0;
+        if (array[array.length - 1].value < searchValue)
+            return array.length - 1;
         while (right - left > 1) {
             var middle = Math.floor((right + left) / 2);
             if (array[middle].value < searchValue) {
@@ -37,6 +41,10 @@ var Utils = /** @class */ (function () {
     Utils.binaryNearestSearchNumber = function (array, searchValue, func) {
         if (func === void 0) { func = Func.Default; }
         var left = 0, right = array.length - 1;
+        if (array[0] > searchValue)
+            return 0;
+        if (array[array.length - 1] < searchValue)
+            return array.length - 1;
         while (right - left > 1) {
             var middle = Math.floor((right + left) / 2);
             if (array[middle] < searchValue) {

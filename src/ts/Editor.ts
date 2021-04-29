@@ -284,16 +284,19 @@ export class CreatableLinesModule implements IEditorModule {
         if (this.creatableLines.length < 1)
             return;
 
-        let tmpStartPos = new Vec2(Math.max(startPos.x, endPos.x),Math.min(startPos.y, endPos.y))
-        endPos = new Vec2(Math.min(startPos.x, endPos.x),Math.max(startPos.y, endPos.y))
+        let tmpStartPos = new Vec2(Math.min(startPos.x, endPos.x),Math.min(startPos.y, endPos.y))
+        endPos = new Vec2(Math.max(startPos.x, endPos.x),Math.max(startPos.y, endPos.y))
         startPos = tmpStartPos;
 
         let startIndex = Utils.binaryNearestSearch(this.creatableLines, startPos.x, Func.Ceil);
         let endIndex = Utils.binaryNearestSearch(this.creatableLines, endPos.x, Func.Floor);
 
+        console.log(startIndex);
+        console.log(endIndex);
+
         if ((startPos.y < this.canvas.height && endPos.y > this.canvas.height-10)
             || (endPos.y < this.canvas.height && startPos.y > this.canvas.height-10))
-            return this.creatableLines.slice(startIndex, endIndex);
+            return this.creatableLines.slice(startIndex, endIndex+1);
         return null;
     }
 
