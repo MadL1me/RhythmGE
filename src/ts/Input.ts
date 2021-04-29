@@ -11,16 +11,20 @@ export abstract class Input {
     static mousePosition = new Vec2(0,0);
     static keysPressed = {};
 
-    static onKeyUp = new Event<any>();
-    static onKeyDown = new Event<any>();
-    static onMouseDown = new Event<any>();
-    static onMouseUp = new Event<any>();
-    static onMouseOver = new Event<any>();
+    static onKeyUp = new Event<JQuery.KeyUpEvent>();
+    static onKeyDown = new Event<JQuery.KeyDownEvent>();
+    
+    static onMouseUp = new Event<JQuery.MouseUpEvent>();
+    static onMouseDown = new Event<JQuery.MouseDownEvent>();
 
-    static onWindowResize = new Event<any>();
-    static onCanvasWheel = new Event<any>();
-    static onMainCanvasMouseClick = new Event<any>();
-    static onCanvasHover = new Event<any>();
+    static onMouseOverCanvas = new Event<JQuery.MouseOverEvent>();
+    static onMouseDownCanvas = new Event<JQuery.MouseDownEvent>();
+    static onMouseClickCanvas = new Event<JQuery.ClickEvent>();
+    static onHoverCanvas = new Event<JQuery.MouseMoveEvent>();
+    static onWheelCanvas = new Event<any>();
+   
+    static onHoverWindow = new Event<JQuery.MouseMoveEvent>();
+    static onWindowResize = new Event<JQuery.ResizeEvent>();
 
     static init() {
         if (Input.initialized)
@@ -28,21 +32,22 @@ export abstract class Input {
         
         Input.initialized = true;
 
-        $(window).on('resize', (event) => { Input.onWindowResize.invoke(event); });
-        $(window).on('keydown', (event) => { Input.onCanvasKeyDown(event);});
-        $(window).on('keyup', (event) => { Input.onCanvasKeyUp(event);});
-
-        $(window).on('mouseup', (event) => {Input.onMouseUp.invoke(event)});
+        $(window).on('resize', (event) => { Input.onWindowResize.invoke(event); })
+        .on('keydown', (event) => { Input.onCanvasKeyDown(event);})
+        .on('keyup', (event) => { Input.onCanvasKeyUp(event);})
+        .on('mouseup', (event) => {Input.onMouseUp.invoke(event)})
+        .on('mousemove', (event) => {Input.onHoverWindow.invoke(event);});
+        
         //$(window).on('mousedown', (event) => { Input.onMouseDown.invoke(event);});
         //$(window).on('mouseup', (event) => {Input.onMouseUp.invoke(event)});
 
-        $('#editor-canvas').on('wheel', (event) => { Input.onCanvasWheel.invoke(event.originalEvent);})
-        .on('click', (event) => { Input.onMainCanvasMouseClick.invoke(event);})
+        $('#editor-canvas').on('wheel', (event) => { Input.onWheelCanvas.invoke(event.originalEvent);})
+        .on('click', (event) => { Input.onMouseClickCanvas.invoke(event);})
         .on('mousemove', (event) => { Input.onCanvHover(event);})
 
         //.on('mouseup', (event) => {Input.onMouseUp.invoke(event)})
-        .on('mousedown', (event) => { Input.onMouseDown.invoke(event);})
-        .on('mouseover', (event) => { Input.onMouseOver.invoke(event);});
+        .on('mousedown', (event) => { Input.onMouseDownCanvas.invoke(event);})
+        .on('mouseover', (event) => { Input.onMouseOverCanvas.invoke(event);});
     }
 
     static update() {
@@ -63,7 +68,7 @@ export abstract class Input {
 
     private static onCanvHover(event) {
         this.mousePosition = new Vec2(event.clientX, event.clientY);
-        this.onCanvasHover.invoke(event);
+        this.onHoverCanvas.invoke(event);
     }
 
     private static onCanvasKeyDown(event) {

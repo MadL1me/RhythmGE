@@ -112,7 +112,7 @@ export class Timestamp extends GridElement {
         if (width < this.minWidth)
             width = this.minWidth;
 
-        ctx.fillStyle = this.color.value();
+        ctx.fillStyle = color.value();
         ctx.beginPath();
         ctx.moveTo(pos.x - width, pos.y);
         ctx.lineTo(pos.x, pos.y - width);
@@ -138,15 +138,16 @@ export class CreatableTimestampLine extends GridElement {
         
         var x = this.transform.position.x + view.position.x;
         const ctx = canvas.getContext('2d');
+        const color = this._isSelected ? editorColorSettings.selectedCreatableLineColor : this.color
 
         ctx.beginPath();
-        ctx.fillStyle = this.color.value();
+        ctx.fillStyle = color.value();
         ctx.moveTo((x), canvas.height-10);
         ctx.lineTo((x-5), canvas.height);
         ctx.lineTo((x+5), canvas.height);
         ctx.fill();
 
-        ctx.strokeStyle = this.color.value();
+        ctx.strokeStyle = color.value();
         ctx.moveTo(x,0);
         ctx.lineTo(x, canvas.height);
         ctx.stroke();

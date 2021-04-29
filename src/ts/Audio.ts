@@ -36,6 +36,7 @@ class AudioPlayerView {
         this.audioCurrentTime = $('#current-audio-time')[0] as  HTMLParagraphElement;
         this.audioDuration = $('#audio-duration')[0] as HTMLParagraphElement;
 
+        this.volumeSlider.value = 1;
         this.volumeSlider.onValueChange.addListener((value) => {this.onVolumeSliderChange.invoke(value)})
         $('#play-button').on('click', (event) => { this.onPlayClick(event.target)})
     }

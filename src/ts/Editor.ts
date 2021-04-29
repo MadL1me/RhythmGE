@@ -12,8 +12,10 @@ import { BPMLine, CreatableTimestampLine, Timestamp, TimestepLine, BeatLine, Gri
 import { ViewportModule, IViewportModule } from "./Viewport";
 import { editorColorSettings } from "./AppSettings";
 import { Input } from "./Input";
-import { Slider, Utils, Event } from "./Utils";
+import { Slider, Utils, Event, Func } from "./Utils";
 import { AudioAmplitudeViewModule, AudioModule, IAudioModule } from "./Audio";
+import { timeStamp } from 'node:console';
+import { start } from 'node:repl';
 
 export interface IEditorCore {
     transform: Transform;
@@ -95,7 +97,7 @@ export class EditorData {
     readonly hideCreatableLines = new EventVar<boolean>(false);
     
     readonly scrollingSpeed = new EventVar<number>(0.2);
-    readonly resizingSpeed = new EventVar<number>(0.01);
+    readonly resizingSpeed = new EventVar<number>(3);
     readonly fastScrollingSpeed = new EventVar<number>(5);
     readonly offset = new EventVar<number>(0);
     readonly bpmValue = new EventVar<number>(60);
@@ -117,7 +119,7 @@ export class EditorData {
         $('#offset').on('change', (event) => { this.offset.value = parseInt((event.target as HTMLInputElement).value);})
     
         this._playbackSpeedSlider.value = 1;
-        this._snapSlider.value = 1;
+        this._snapSlider.value = 0;
         
         this._playbackSpeedSlider.onValueChange.addListener((value) => { this.onPlaybackRateValueChange(value); });
         this._snapSlider.onValueChange.addListener((value) => { this.onSnapSliderValueChange(value); });
@@ -164,8 +166,8 @@ export class Editor implements IEditorCore {
 
         setInterval(() => {this.audio.checkForClaps();}, 5);
 
-        Input.onCanvasWheel.addListener((event) => {this.onChangeScale(event.deltaY);});
-        Input.onMainCanvasMouseClick.addListener((event) => {this.onCanvasClick(event);});
+        Input.onWheelCanvas.addListener((event) => {this.onChangeScale((event.deltaY));});
+        Input.onMouseClickCanvas.addListener((event) => {this.onCanvasClick(event);});
 
         this.update();
     }
@@ -186,7 +188,7 @@ export class Editor implements IEditorCore {
         }
     }
 
-    private onCanvasClick(event: JQuery.MouseDownEvent) {
+    private onCanvasClick(event: JQuery.ClickEvent) {
         const clickPos = new Vec2(event.offsetX, event.offsetY);
         if (clickPos.y < 10) {
             this.audio.setMusicFromCanvasPosition(clickPos);
@@ -197,7 +199,9 @@ export class Editor implements IEditorCore {
         if (!Input.keysPressed["ControlLeft"])
             return;
         
-        let resultedDelta = mouseDelta * this.editorData.resizingSpeed.value;
+        mouseDelta = mouseDelta > 0 ? 1 : -1;
+
+        let resultedDelta = mouseDelta * Math.log(this.transform.scale.x / this.editorData.resizingSpeed.value);
         let oldScale = this.transform.scale.x;
 
         const canvCenter = this.viewport.canvasToSongTime(new Vec2(this._editorCanvas.width / 2, 0));
@@ -274,6 +278,31 @@ export class CreatableLinesModule implements IEditorModule {
         this.creatableLines.forEach(element => {
             element.draw(this.editor.viewport, this.canvas);
         });
+    }
+
+    getLinesInRange(startPos: Vec2, endPos: Vec2) : CreatableTimestampLine[] {
+        if (this.creatableLines.length < 1)
+            return;
+
+        let tmpStartPos = new Vec2(Math.max(startPos.x, endPos.x),Math.min(startPos.y, endPos.y))
+        endPos = new Vec2(Math.min(startPos.x, endPos.x),Math.max(startPos.y, endPos.y))
+        startPos = tmpStartPos;
+
+        let startIndex = Utils.binaryNearestSearch(this.creatableLines, startPos.x, Func.Ceil);
+        let endIndex = Utils.binaryNearestSearch(this.creatableLines, endPos.x, Func.Floor);
+
+        if ((startPos.y < this.canvas.height && endPos.y > this.canvas.height-10)
+            || (endPos.y < this.canvas.height && startPos.y > this.canvas.height-10))
+            return this.creatableLines.slice(startIndex, endIndex);
+        return null;
+    }
+
+    getClosestLine(posX) : CreatableTimestampLine   {
+        if (this.creatableLines.length < 1)
+            return;
+
+        let index = Utils.binaryNearestSearch(this.creatableLines, posX);
+        return this.creatableLines[index];
     }
 
     findClosestCreatableLine(positionX: number) {
@@ -395,11 +424,9 @@ export class TimestampsModule implements IEditorModule {
 
     init(editorCoreModules: IEditorCore) {
         this.editorCore = editorCoreModules;
-        Input.onMainCanvasMouseClick.addListener((event) => {this.onCanvasClick(event);});
+        Input.onMouseClickCanvas.addListener((event) => {this.onCanvasClick(event);});
         CreatableLinesModule.onCreateLineEvent.addListener(([line, key]) => 
         {
-            console.log("CREATING STUFF 228");
-
             if (!key.includes("Digit"))
                 return;
 
@@ -436,6 +463,59 @@ export class TimestampsModule implements IEditorModule {
             prefab.deselect();
         });
         this.selectedPrefab.select();
+    }
+
+    getTimestampsAtRange(startPos: Vec2, endPos: Vec2) {
+        if (this.timestamps.keys.length < 1 || this.timestamps.values.length < 1)
+            return;
+        
+        if (startPos.x > endPos.x)  {
+            let tmp = startPos;
+            startPos = endPos;
+            endPos = tmp;
+        }
+
+        let startIndex = Utils.binaryNearestSearchNumber(this.clapTimings, startPos.x, Func.Ceil);
+        let endIndex = Utils.binaryNearestSearchNumber(this.clapTimings, endPos.x, Func.Floor);
+        let xValues =  this.clapTimings.slice(startIndex, endIndex);
+        let resultTimestamps = new Array<Timestamp>();
+        
+        xValues.forEach((value) => {
+            let yArray = this.timestamps[value] as Map<number, Timestamp>;
+            for (const [key, value] of Object.entries(yArray)) {
+                if ((value as Timestamp).transform.localPosition.y > startPos.y 
+                && (value as Timestamp).transform.localPosition.y < endPos.y){
+                    resultTimestamps.push(value as Timestamp);
+                }
+            }
+        });
+
+        return resultTimestamps;
+    }
+
+    getClosestTimestamp(position: Vec2): Timestamp {
+        if (this.timestamps.keys.length < 1 || this.timestamps.values.length < 1)
+            return;
+
+        console.log("try get closest timestamps");
+
+        let index = Utils.binaryNearestSearchNumber(this.clapTimings, position.x);
+        let yArray = this.timestamps[this.clapTimings[index]].values as Timestamp[];
+        
+        console.log(`index is ${index}`)
+        console.log(`yLenght: ${yArray.length}`)
+
+        let result = null;
+        let min = 10000;
+        yArray.forEach(timestamp => {
+            let distance = Math.abs(timestamp.transform.position.y - position.y);
+            if (distance < min) {
+                min = distance;
+                result = timestamp;
+            }
+        });
+
+        return result;
     }
 
     private get selectedPrefab() : TimestampPrefab {
@@ -508,22 +588,24 @@ export class TimestampsModule implements IEditorModule {
 }
 
 class SelectArea implements IDrawable {
-    private firstPoint: Vec2;
-    private secondPoint: Vec2;
+    private firstPoint = new Vec2(0,0);
+    private secondPoint = new Vec2(0,0);
     private isActive: boolean;
-
+    private canvas: HTMLCanvasElement;
+    
     onSelect = new Event<[Vec2,Vec2]>();
 
     constructor() {
-        Input.onMouseDown.addListener((event) => {this.onMouseDown(event);});
+        this.canvas = $("#editor-canvas")[0] as HTMLCanvasElement;
+
+        Input.onMouseDownCanvas.addListener((event) => {this.onMouseDown(event);});
         Input.onMouseUp.addListener((event) => {this.onMouseUp(event);});
-        Input.onCanvasHover.addListener((event) => {this.onMouseMove(event);});
+        Input.onHoverWindow.addListener((event) => {this.onMouseMove(event);});
     }
 
     draw(view: IViewportModule, canvas: HTMLCanvasElement) {
         if (!this.isActive)
             return;
-        console.log("draw");
         const ctx = canvas.getContext('2d');
         const sizeVec = Vec2.Substract(this.secondPoint, this.firstPoint);
         ctx.fillStyle = editorColorSettings.selectAreaColor.value();
@@ -538,8 +620,12 @@ class SelectArea implements IDrawable {
     }
 
     onMouseMove(event: JQuery.MouseMoveEvent) {
-        //console.log(event);
-        this.secondPoint = new Vec2(event.offsetX, event.offsetY);
+        //if (this.isActive)
+        //    console.log(event);
+
+        const rect = this.canvas.getBoundingClientRect();
+        //console.log(rect);
+        this.secondPoint = new Vec2(event.clientX - rect.left,event.clientY- rect.top);
     }
 
     onMouseUp(event: JQuery.MouseUpEvent) {
@@ -554,12 +640,14 @@ export class ElementSelectorModule implements IEditorModule {
     
     private editor: IEditorCore;
     private selectedElements = new Array<GridElement>();
-    private selectArea = new SelectArea();
+    private selectArea;
+    private grid: EditorGrid;
     private timestamps: TimestampsModule;
     private creatable: CreatableLinesModule;
     private canvas: HTMLCanvasElement;
         
-    constructor(creatable: CreatableLinesModule, timestamps: TimestampsModule) {
+    constructor(grid: EditorGrid, creatable: CreatableLinesModule, timestamps: TimestampsModule) {
+        this.grid = grid;
         this.creatable = creatable;
         this.timestamps = timestamps;
         this.canvas = $("#editor-canvas")[0] as HTMLCanvasElement;
@@ -567,22 +655,131 @@ export class ElementSelectorModule implements IEditorModule {
 
     init(editorCoreModules: IEditorCore) {
         this.editor = editorCoreModules;
+        Input.onMouseClickCanvas.addListener((event) => {this.onCanvasClick(event);});
+        this.selectArea = new SelectArea();
+        this.selectArea.onSelect.addListener(([a,b]) => {this.onAreaSelect(a,b)});
+        //CreatableLinesModule.onLineClickEvent.addListener((line) => {this.onElementClicked(line);});
+        //this.timestamps.onExistingElementClicked.addListener((element) => {this.onElementClicked(element)});
     }
 
     updateModule() {
         this.selectArea.draw(this.editor.viewport, this.canvas);
     }
 
-    onExistingElementClicked(element: GridElement) {
-        this.selectedElements.push(element);
-        element.select();
+    private onAreaSelect(pointA: Vec2, pointB: Vec2) {
+        if (Vec2.Distance(pointA, pointB) < 30) { 
+            console.log("area is too smol");
+            return;
+        }
+        
+        //Input.onMouseUp.preventFiringEvent();
+        Input.onMouseClickCanvas.preventFiringEvent();
+
+        pointA = this.editor.viewport.transform.canvasToWorld(pointA);
+        pointB = this.editor.viewport.transform.canvasToWorld(pointB);
+        
+        let selectedLines = this.creatable.getLinesInRange(pointA, pointB);
+        let selectedTimestamps = this.timestamps.getTimestampsAtRange(pointA, pointB);
+    
+        if (!Input.keysPressed["ShiftLeft"])
+            this.deselectAll();
+
+        selectedLines?.forEach((line) => {
+            this.onElementSelect(line);
+        })
+
+        selectedTimestamps?.forEach((timestamp) => {
+            this.onElementSelect(timestamp);
+        })
+    
+        console.log(`selected timestamps count: ${selectedTimestamps?.length}`)
+        console.log(`selected lines count: ${selectedLines?.length}`)
+    }
+
+    private onCanvasClick(event: JQuery.ClickEvent) {
+        
+        if (Input.keysPressed["ShiftLeft"] == true)
+            Input.onMouseClickCanvas.preventFiringEvent();
+        else {
+            if (this.selectedElements.length>0) {
+                Input.onMouseClickCanvas.preventFiringEvent();
+            }
+            this.deselectAll();
+            return;
+        }
+
+        let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
+        
+        let clickedElemenet = null;
+        let closestLine = this.creatable.getClosestLine(worldClickPos.x);
+        let closestTimestamp = this.timestamps.getClosestTimestamp(worldClickPos);
+
+        if(closestLine != null) {
+            var lineDist = Vec2.Distance(new Vec2(closestLine.transform.position.x, this.canvas.height-5), worldClickPos);
+            console.log(`Ditstance to closest line: ${lineDist}`);
+
+            if (lineDist < 10)
+                clickedElemenet = closestLine;
+        }
+
+        if (closestTimestamp != null) {
+            var timestampDist = Vec2.Distance(closestTimestamp.transform.position, worldClickPos);
+            console.log(`Ditstance to closest timestamp: ${timestampDist}`);
+
+            if (timestampDist < 20)
+                clickedElemenet = closestLine;
+        }
+        
+        if (clickedElemenet == null) {
+            return;
+        }
+
+        if (lineDist > timestampDist) {
+            clickedElemenet = closestTimestamp;
+        }
+        else {
+            clickedElemenet = closestLine;
+        }
+
+        this.onElementSelect(clickedElemenet);
+    }
+
+    private onElementSelect(element: GridElement) {
+        if (element == null || element == undefined)
+            return;
+        
+        if (element.isSelected)
+            this.deselectElement(element);
+        else   
+            this.selectElement(element);
+
+        console.log("Selected elements: ") 
+        console.log(this.selectedElements.length);
     }
 
     private selectElement(element: GridElement) {
-        this.selectedElements.push()
+        console.log("element selected");
+        this.selectedElements.push(element);
+        this.selectedElements.sort((a,b) => { return a.transform.position.x-b.transform.position.x; });
+        element.select();
     }
 
     private deselectElement(element: GridElement) {
+        console.log("element deselected");
+        const index = Utils.binaryNearestSearch(this.selectedElements, element.transform.position.x);
+        console.log(this.selectedElements);
+        this.selectedElements.splice(index, 1);
+        this.selectedElements.sort((a,b) => { return a.transform.position.x-b.transform.position.x; });
+        console.log(this.selectedElements);
+        element.deselect();
+    }
+
+    private deselectAll() {
+        this.selectedElements.forEach(element => {
+            element.deselect()
+        });
+
+        this.selectedElements = [];
     }
 }
 
@@ -776,7 +973,7 @@ export class EditorGrid implements IEditorModule {
                 closestBpm = this.bpmLines[closestBpmIndex+1];    
         };
 
-        let closestBpmIndex = Utils.binaryNearestSearch(this.bpmLines, worldPos, true);
+        let closestBpmIndex = Utils.binaryNearestSearch(this.bpmLines, worldPos, Func.Floor);
         let closestBpm = this.bpmLines[closestBpmIndex];
         
         if (closestBpm.snapLines.length < 1) {

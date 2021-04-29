@@ -23,7 +23,7 @@ export class ViewportModule implements IViewportModule {
         this._canvas = $("#editor-canvas")[0] as HTMLCanvasElement;
         this.transform.parent = parent;
         this.transform.position = new Vec2(100, 0);
-        Input.onCanvasWheel.addListener((event) => { this.onCanvasScroll(event);});
+        Input.onWheelCanvas.addListener((event) => { this.onCanvasScroll(event);});
     }
 
     private onCanvasScroll(event) {
@@ -52,6 +52,7 @@ export class ViewportModule implements IViewportModule {
     }
 
     init(editorCore: IEditorCore) { this.editor = editorCore; }
+    
     updateModule() {
        //console.log(this.transform.position);
     }

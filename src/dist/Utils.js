@@ -3,13 +3,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Slider = exports.Event = exports.Utils = void 0;
+exports.Slider = exports.Event = exports.Utils = exports.Func = void 0;
 var jquery_1 = __importDefault(require("jquery"));
+var Func;
+(function (Func) {
+    Func[Func["Ceil"] = 0] = "Ceil";
+    Func[Func["Floor"] = 1] = "Floor";
+    Func[Func["Default"] = 2] = "Default";
+})(Func = exports.Func || (exports.Func = {}));
 var Utils = /** @class */ (function () {
     function Utils() {
     }
-    Utils.binaryNearestSearch = function (array, searchValue, useFlooring) {
-        if (useFlooring === void 0) { useFlooring = false; }
+    Utils.binaryNearestSearch = function (array, searchValue, func) {
+        if (func === void 0) { func = Func.Default; }
         var left = 0, right = array.length - 1;
         while (right - left > 1) {
             var middle = Math.floor((right + left) / 2);
@@ -20,13 +26,16 @@ var Utils = /** @class */ (function () {
                 right = middle;
             }
         }
-        if (!useFlooring)
+        if (func == Func.Default)
             return Math.abs(searchValue - array[left].value)
                 < Math.abs(searchValue - array[right].value) ? left : right;
-        return left;
+        else if (func == Func.Floor)
+            return left;
+        else
+            return right;
     };
-    Utils.binaryNearestSearchNumber = function (array, searchValue, useFlooring) {
-        if (useFlooring === void 0) { useFlooring = false; }
+    Utils.binaryNearestSearchNumber = function (array, searchValue, func) {
+        if (func === void 0) { func = Func.Default; }
         var left = 0, right = array.length - 1;
         while (right - left > 1) {
             var middle = Math.floor((right + left) / 2);
@@ -37,10 +46,13 @@ var Utils = /** @class */ (function () {
                 right = middle;
             }
         }
-        if (!useFlooring)
+        if (func == Func.Default)
             return Math.abs(searchValue - array[left])
                 < Math.abs(searchValue - array[right]) ? left : right;
-        return left;
+        else if (func == Func.Floor)
+            return left;
+        else
+            return right;
     };
     return Utils;
 }());
@@ -48,6 +60,7 @@ exports.Utils = Utils;
 var Event = /** @class */ (function () {
     function Event() {
         this.listeners = new Array();
+        this._preventEvent = false;
     }
     Event.prototype.addListener = function (listener) {
         this.listeners.push(listener);
@@ -57,9 +70,20 @@ var Event = /** @class */ (function () {
         this.listeners.slice(index, index);
     };
     Event.prototype.invoke = function (data) {
+        var _this = this;
         this.listeners.forEach(function (listener) {
+            if (_this._preventEvent) {
+                _this._preventEvent = false;
+                return;
+            }
             listener(data);
         });
+    };
+    Event.prototype.preventFiringEvent = function () {
+        this._preventEvent = true;
+    };
+    Event.prototype.allowEventFiring = function () {
+        this._preventEvent = false;
     };
     return Event;
 }());

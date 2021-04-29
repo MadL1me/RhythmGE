@@ -1,9 +1,15 @@
 import $ from 'jquery';
 import { GridElement, ICompareNumberProvider } from './GridElements';
 
+export enum Func{ 
+    Ceil,
+    Floor,
+    Default
+}
+
 export abstract class Utils {
     
-    static binaryNearestSearch(array : Array<ICompareNumberProvider>, searchValue: number, useFlooring=false): number {
+    static binaryNearestSearch(array : Array<ICompareNumberProvider>, searchValue: number, func=Func.Default): number {
         let left = 0, right = array.length-1;
 
         while(right - left > 1) {
@@ -17,14 +23,16 @@ export abstract class Utils {
             }
         }
         
-        if (!useFlooring)
+        if (func == Func.Default)
             return Math.abs(searchValue - array[left].value)
             < Math.abs(searchValue - array[right].value) ? left : right;
-        
-        return left;
+        else if (func == Func.Floor)
+            return left;
+        else 
+            return right;
     }
 
-    static binaryNearestSearchNumber(array : Array<number>, searchValue: number, useFlooring=false): number {
+    static binaryNearestSearchNumber(array : Array<number>, searchValue: number, func=Func.Default): number {
         let left = 0, right = array.length-1;
 
         while(right - left > 1) {
@@ -38,11 +46,13 @@ export abstract class Utils {
             }
         }
         
-        if (!useFlooring)
+        if (func == Func.Default)
             return Math.abs(searchValue - array[left])
             < Math.abs(searchValue - array[right]) ? left : right;
-        
-        return left;
+        else if (func == Func.Floor)
+            return left;
+        else 
+            return right;
     }
 }
 
@@ -52,6 +62,7 @@ export type EmptyAction = () => void;
 
 export class Event<T> {
     private listeners = new Array<Action<T>>();
+    private _preventEvent: boolean = false;
 
     addListener(listener: Action<T>) {
         this.listeners.push(listener)
@@ -64,8 +75,20 @@ export class Event<T> {
 
     invoke(data: T) {
         this.listeners.forEach(listener => {
+            if (this._preventEvent) {
+                this._preventEvent = false;
+                return;
+            }
             listener(data);
         });
+    }
+
+    preventFiringEvent() {
+        this._preventEvent = true;
+    }
+
+    allowEventFiring() {
+        this._preventEvent = false;
     }
 }
 

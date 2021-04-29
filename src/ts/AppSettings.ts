@@ -10,4 +10,5 @@ export const editorColorSettings = new class EditorColorSettings {
     loudnessBarColor = new RgbaColor(255, 103, 0);
     timestepLineColor = new RgbaColor(255, 103, 0);
     selectAreaColor = new RgbaColor(92, 185, 224, 0.2);
+    selectedCreatableLineColor = new RgbaColor(255, 133, 204);
 }

@@ -97,7 +97,7 @@ var Timestamp = /** @class */ (function (_super) {
             width = this.maxWidth;
         if (width < this.minWidth)
             width = this.minWidth;
-        ctx.fillStyle = this.color.value();
+        ctx.fillStyle = color.value();
         ctx.beginPath();
         ctx.moveTo(pos.x - width, pos.y);
         ctx.lineTo(pos.x, pos.y - width);
@@ -122,13 +122,14 @@ var CreatableTimestampLine = /** @class */ (function (_super) {
             return;
         var x = this.transform.position.x + view.position.x;
         var ctx = canvas.getContext('2d');
+        var color = this._isSelected ? AppSettings_1.editorColorSettings.selectedCreatableLineColor : this.color;
         ctx.beginPath();
-        ctx.fillStyle = this.color.value();
+        ctx.fillStyle = color.value();
         ctx.moveTo((x), canvas.height - 10);
         ctx.lineTo((x - 5), canvas.height);
         ctx.lineTo((x + 5), canvas.height);
         ctx.fill();
-        ctx.strokeStyle = this.color.value();
+        ctx.strokeStyle = color.value();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
         ctx.stroke();

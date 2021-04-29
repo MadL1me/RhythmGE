@@ -16,16 +16,16 @@ function setupModules() {
     const timestampLine = new TimestepLineModule();
     const audio = new AudioAmplitudeViewModule();
     const visualiser = new VisualiserModule();
-    const selectorModule = new ElementSelectorModule(cLines, timestampsModule);
+    const selectorModule = new ElementSelectorModule(grid, cLines, timestampsModule);
 
     editor.addEditorModule(grid);
+    editor.addEditorModule(selectorModule);
     editor.addEditorModule(cLines);
     editor.addEditorModule(topScale);
     editor.addEditorModule(timestampsModule);
     editor.addEditorModule(timestampLine);
     editor.addEditorModule(audio);
     editor.addEditorModule(visualiser);
-    editor.addEditorModule(selectorModule);
 }
 
 setupModules();

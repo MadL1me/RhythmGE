@@ -26,6 +26,7 @@ var AudioPlayerView = /** @class */ (function () {
         this.audioFileName = jquery_1.default('#file-name')[0];
         this.audioCurrentTime = jquery_1.default('#current-audio-time')[0];
         this.audioDuration = jquery_1.default('#audio-duration')[0];
+        this.volumeSlider.value = 1;
         this.volumeSlider.onValueChange.addListener(function (value) { _this.onVolumeSliderChange.invoke(value); });
         jquery_1.default('#play-button').on('click', function (event) { _this.onPlayClick(event.target); });
     }

@@ -15,15 +15,15 @@ function setupModules() {
     var timestampLine = new Editor_1.TimestepLineModule();
     var audio = new Audio_1.AudioAmplitudeViewModule();
     var visualiser = new Editor_1.VisualiserEditorModule();
-    var selectorModule = new Editor_1.ElementSelectorModule(cLines, timestampsModule);
+    var selectorModule = new Editor_1.ElementSelectorModule(grid, cLines, timestampsModule);
     editor.addEditorModule(grid);
+    editor.addEditorModule(selectorModule);
     editor.addEditorModule(cLines);
     editor.addEditorModule(topScale);
     editor.addEditorModule(timestampsModule);
     editor.addEditorModule(timestampLine);
     editor.addEditorModule(audio);
     editor.addEditorModule(visualiser);
-    editor.addEditorModule(selectorModule);
 }
 setupModules();
 setInterval(function () { editor.update(); }, 15);

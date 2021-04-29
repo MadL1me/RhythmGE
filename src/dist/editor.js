@@ -71,7 +71,7 @@ var EditorData = /** @class */ (function () {
         this.hideBpmLines = new EventVar(false);
         this.hideCreatableLines = new EventVar(false);
         this.scrollingSpeed = new EventVar(0.2);
-        this.resizingSpeed = new EventVar(0.01);
+        this.resizingSpeed = new EventVar(3);
         this.fastScrollingSpeed = new EventVar(5);
         this.offset = new EventVar(0);
         this.bpmValue = new EventVar(60);
@@ -88,7 +88,7 @@ var EditorData = /** @class */ (function () {
         jquery_1.default('#bpm').on('change', function (event) { _this.bpmValue.value = parseInt(event.target.value); });
         jquery_1.default('#offset').on('change', function (event) { _this.offset.value = parseInt(event.target.value); });
         this._playbackSpeedSlider.value = 1;
-        this._snapSlider.value = 1;
+        this._snapSlider.value = 0;
         this._playbackSpeedSlider.onValueChange.addListener(function (value) { _this.onPlaybackRateValueChange(value); });
         this._snapSlider.onValueChange.addListener(function (value) { _this.onSnapSliderValueChange(value); });
     }
@@ -125,8 +125,8 @@ var Editor = /** @class */ (function () {
         this.viewport.transform.parent = this.transform;
         this.audio.transform.parent = this.transform;
         setInterval(function () { _this.audio.checkForClaps(); }, 5);
-        Input_1.Input.onCanvasWheel.addListener(function (event) { _this.onChangeScale(event.deltaY); });
-        Input_1.Input.onMainCanvasMouseClick.addListener(function (event) { _this.onCanvasClick(event); });
+        Input_1.Input.onWheelCanvas.addListener(function (event) { _this.onChangeScale((event.deltaY)); });
+        Input_1.Input.onMouseClickCanvas.addListener(function (event) { _this.onCanvasClick(event); });
         this.update();
     }
     Editor.prototype.addEditorModule = function (element) {
@@ -151,7 +151,8 @@ var Editor = /** @class */ (function () {
     Editor.prototype.onChangeScale = function (mouseDelta) {
         if (!Input_1.Input.keysPressed["ControlLeft"])
             return;
-        var resultedDelta = mouseDelta * this.editorData.resizingSpeed.value;
+        mouseDelta = mouseDelta > 0 ? 1 : -1;
+        var resultedDelta = mouseDelta * Math.log(this.transform.scale.x / this.editorData.resizingSpeed.value);
         var oldScale = this.transform.scale.x;
         var canvCenter = this.viewport.canvasToSongTime(new Vec2_1.Vec2(this._editorCanvas.width / 2, 0));
         this.transform.scale = new Vec2_1.Vec2(this.transform.scale.x - resultedDelta, this.transform.scale.y);
@@ -210,6 +211,25 @@ var CreatableLinesModule = /** @class */ (function () {
         this.creatableLines.forEach(function (element) {
             element.draw(_this.editor.viewport, _this.canvas);
         });
+    };
+    CreatableLinesModule.prototype.getLinesInRange = function (startPos, endPos) {
+        if (this.creatableLines.length < 1)
+            return;
+        var tmpStartPos = new Vec2_1.Vec2(Math.min(startPos.x, endPos.x), Math.min(startPos.y, endPos.y));
+        endPos = new Vec2_1.Vec2(Math.max(startPos.x, endPos.x), Math.max(startPos.y, endPos.y));
+        startPos = tmpStartPos;
+        var startIndex = Utils_1.Utils.binaryNearestSearch(this.creatableLines, startPos.x, Utils_1.Func.Ceil);
+        var endIndex = Utils_1.Utils.binaryNearestSearch(this.creatableLines, endPos.x, Utils_1.Func.Floor);
+        if ((startPos.y < this.canvas.height && endPos.y > this.canvas.height - 10)
+            || (endPos.y < this.canvas.height && startPos.y > this.canvas.height - 10))
+            return this.creatableLines.slice(startIndex, endIndex);
+        return null;
+    };
+    CreatableLinesModule.prototype.getClosestLine = function (posX) {
+        if (this.creatableLines.length < 1)
+            return;
+        var index = Utils_1.Utils.binaryNearestSearch(this.creatableLines, posX);
+        return this.creatableLines[index];
     };
     CreatableLinesModule.prototype.findClosestCreatableLine = function (positionX) {
         //this.creatableLines.sort((a,b) => { return a.transform.position.x-b.transform.position.x; });
@@ -309,10 +329,9 @@ var TimestampsModule = /** @class */ (function () {
     TimestampsModule.prototype.init = function (editorCoreModules) {
         var _this = this;
         this.editorCore = editorCoreModules;
-        Input_1.Input.onMainCanvasMouseClick.addListener(function (event) { _this.onCanvasClick(event); });
+        Input_1.Input.onMouseClickCanvas.addListener(function (event) { _this.onCanvasClick(event); });
         CreatableLinesModule.onCreateLineEvent.addListener(function (_a) {
             var line = _a[0], key = _a[1];
-            console.log("CREATING STUFF 228");
             if (!key.includes("Digit"))
                 return;
             console.log("CREATING STUFF");
@@ -345,6 +364,50 @@ var TimestampsModule = /** @class */ (function () {
             prefab.deselect();
         });
         this.selectedPrefab.select();
+    };
+    TimestampsModule.prototype.getTimestampsAtRange = function (startPos, endPos) {
+        var _this = this;
+        if (this.timestamps.keys.length < 1 || this.timestamps.values.length < 1)
+            return;
+        if (startPos.x > endPos.x) {
+            var tmp = startPos;
+            startPos = endPos;
+            endPos = tmp;
+        }
+        var startIndex = Utils_1.Utils.binaryNearestSearchNumber(this.clapTimings, startPos.x, Utils_1.Func.Ceil);
+        var endIndex = Utils_1.Utils.binaryNearestSearchNumber(this.clapTimings, endPos.x, Utils_1.Func.Floor);
+        var xValues = this.clapTimings.slice(startIndex, endIndex);
+        var resultTimestamps = new Array();
+        xValues.forEach(function (value) {
+            var yArray = _this.timestamps[value];
+            for (var _i = 0, _a = Object.entries(yArray); _i < _a.length; _i++) {
+                var _b = _a[_i], key = _b[0], value_1 = _b[1];
+                if (value_1.transform.localPosition.y > startPos.y
+                    && value_1.transform.localPosition.y < endPos.y) {
+                    resultTimestamps.push(value_1);
+                }
+            }
+        });
+        return resultTimestamps;
+    };
+    TimestampsModule.prototype.getClosestTimestamp = function (position) {
+        if (this.timestamps.keys.length < 1 || this.timestamps.values.length < 1)
+            return;
+        console.log("try get closest timestamps");
+        var index = Utils_1.Utils.binaryNearestSearchNumber(this.clapTimings, position.x);
+        var yArray = this.timestamps[this.clapTimings[index]].values;
+        console.log("index is " + index);
+        console.log("yLenght: " + yArray.length);
+        var result = null;
+        var min = 10000;
+        yArray.forEach(function (timestamp) {
+            var distance = Math.abs(timestamp.transform.position.y - position.y);
+            if (distance < min) {
+                min = distance;
+                result = timestamp;
+            }
+        });
+        return result;
     };
     Object.defineProperty(TimestampsModule.prototype, "selectedPrefab", {
         get: function () {
@@ -407,15 +470,17 @@ exports.TimestampsModule = TimestampsModule;
 var SelectArea = /** @class */ (function () {
     function SelectArea() {
         var _this = this;
+        this.firstPoint = new Vec2_1.Vec2(0, 0);
+        this.secondPoint = new Vec2_1.Vec2(0, 0);
         this.onSelect = new Utils_1.Event();
-        Input_1.Input.onMouseDown.addListener(function (event) { _this.onMouseDown(event); });
+        this.canvas = jquery_1.default("#editor-canvas")[0];
+        Input_1.Input.onMouseDownCanvas.addListener(function (event) { _this.onMouseDown(event); });
         Input_1.Input.onMouseUp.addListener(function (event) { _this.onMouseUp(event); });
-        Input_1.Input.onCanvasHover.addListener(function (event) { _this.onMouseMove(event); });
+        Input_1.Input.onHoverWindow.addListener(function (event) { _this.onMouseMove(event); });
     }
     SelectArea.prototype.draw = function (view, canvas) {
         if (!this.isActive)
             return;
-        console.log("draw");
         var ctx = canvas.getContext('2d');
         var sizeVec = Vec2_1.Vec2.Substract(this.secondPoint, this.firstPoint);
         ctx.fillStyle = AppSettings_1.editorColorSettings.selectAreaColor.value();
@@ -428,8 +493,11 @@ var SelectArea = /** @class */ (function () {
         this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
     };
     SelectArea.prototype.onMouseMove = function (event) {
-        //console.log(event);
-        this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
+        //if (this.isActive)
+        //    console.log(event);
+        var rect = this.canvas.getBoundingClientRect();
+        //console.log(rect);
+        this.secondPoint = new Vec2_1.Vec2(event.clientX - rect.left, event.clientY - rect.top);
     };
     SelectArea.prototype.onMouseUp = function (event) {
         //console.log(event);
@@ -439,28 +507,119 @@ var SelectArea = /** @class */ (function () {
     return SelectArea;
 }());
 var ElementSelectorModule = /** @class */ (function () {
-    function ElementSelectorModule(creatable, timestamps) {
+    function ElementSelectorModule(grid, creatable, timestamps) {
         this.transform = new Transform_1.Transform();
         this.selectedElements = new Array();
-        this.selectArea = new SelectArea();
+        this.grid = grid;
         this.creatable = creatable;
         this.timestamps = timestamps;
         this.canvas = jquery_1.default("#editor-canvas")[0];
     }
     ElementSelectorModule.prototype.init = function (editorCoreModules) {
+        var _this = this;
         this.editor = editorCoreModules;
+        Input_1.Input.onMouseClickCanvas.addListener(function (event) { _this.onCanvasClick(event); });
+        this.selectArea = new SelectArea();
+        this.selectArea.onSelect.addListener(function (_a) {
+            var a = _a[0], b = _a[1];
+            _this.onAreaSelect(a, b);
+        });
+        //CreatableLinesModule.onLineClickEvent.addListener((line) => {this.onElementClicked(line);});
+        //this.timestamps.onExistingElementClicked.addListener((element) => {this.onElementClicked(element)});
     };
     ElementSelectorModule.prototype.updateModule = function () {
         this.selectArea.draw(this.editor.viewport, this.canvas);
     };
-    ElementSelectorModule.prototype.onExistingElementClicked = function (element) {
-        this.selectedElements.push(element);
-        element.select();
+    ElementSelectorModule.prototype.onAreaSelect = function (pointA, pointB) {
+        var _this = this;
+        if (Vec2_1.Vec2.Distance(pointA, pointB) < 30) {
+            console.log("area is too smol");
+            return;
+        }
+        //Input.onMouseUp.preventFiringEvent();
+        Input_1.Input.onMouseClickCanvas.preventFiringEvent();
+        pointA = this.editor.viewport.transform.canvasToWorld(pointA);
+        pointB = this.editor.viewport.transform.canvasToWorld(pointB);
+        var selectedLines = this.creatable.getLinesInRange(pointA, pointB);
+        var selectedTimestamps = this.timestamps.getTimestampsAtRange(pointA, pointB);
+        if (!Input_1.Input.keysPressed["ShiftLeft"])
+            this.deselectAll();
+        selectedLines === null || selectedLines === void 0 ? void 0 : selectedLines.forEach(function (line) {
+            _this.onElementSelect(line);
+        });
+        selectedTimestamps === null || selectedTimestamps === void 0 ? void 0 : selectedTimestamps.forEach(function (timestamp) {
+            _this.onElementSelect(timestamp);
+        });
+        console.log("selected timestamps count: " + (selectedTimestamps === null || selectedTimestamps === void 0 ? void 0 : selectedTimestamps.length));
+        console.log("selected lines count: " + (selectedLines === null || selectedLines === void 0 ? void 0 : selectedLines.length));
+    };
+    ElementSelectorModule.prototype.onCanvasClick = function (event) {
+        if (Input_1.Input.keysPressed["ShiftLeft"] == true)
+            Input_1.Input.onMouseClickCanvas.preventFiringEvent();
+        else {
+            if (this.selectedElements.length > 0) {
+                Input_1.Input.onMouseClickCanvas.preventFiringEvent();
+            }
+            this.deselectAll();
+            return;
+        }
+        var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
+        var clickedElemenet = null;
+        var closestLine = this.creatable.getClosestLine(worldClickPos.x);
+        var closestTimestamp = this.timestamps.getClosestTimestamp(worldClickPos);
+        if (closestLine != null) {
+            var lineDist = Vec2_1.Vec2.Distance(new Vec2_1.Vec2(closestLine.transform.position.x, this.canvas.height - 5), worldClickPos);
+            console.log("Ditstance to closest line: " + lineDist);
+            if (lineDist < 10)
+                clickedElemenet = closestLine;
+        }
+        if (closestTimestamp != null) {
+            var timestampDist = Vec2_1.Vec2.Distance(closestTimestamp.transform.position, worldClickPos);
+            console.log("Ditstance to closest timestamp: " + timestampDist);
+            if (timestampDist < 20)
+                clickedElemenet = closestLine;
+        }
+        if (clickedElemenet == null) {
+            return;
+        }
+        if (lineDist > timestampDist) {
+            clickedElemenet = closestTimestamp;
+        }
+        else {
+            clickedElemenet = closestLine;
+        }
+        this.onElementSelect(clickedElemenet);
+    };
+    ElementSelectorModule.prototype.onElementSelect = function (element) {
+        if (element == null || element == undefined)
+            return;
+        if (element.isSelected)
+            this.deselectElement(element);
+        else
+            this.selectElement(element);
+        console.log("Selected elements: ");
+        console.log(this.selectedElements.length);
     };
     ElementSelectorModule.prototype.selectElement = function (element) {
-        this.selectedElements.push();
+        console.log("element selected");
+        this.selectedElements.push(element);
+        this.selectedElements.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
+        element.select();
     };
     ElementSelectorModule.prototype.deselectElement = function (element) {
+        console.log("element deselected");
+        var index = Utils_1.Utils.binaryNearestSearch(this.selectedElements, element.transform.position.x);
+        console.log(this.selectedElements);
+        this.selectedElements.splice(index, 1);
+        this.selectedElements.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
+        console.log(this.selectedElements);
+        element.deselect();
+    };
+    ElementSelectorModule.prototype.deselectAll = function () {
+        this.selectedElements.forEach(function (element) {
+            element.deselect();
+        });
+        this.selectedElements = [];
     };
     return ElementSelectorModule;
 }());
@@ -616,7 +775,7 @@ var EditorGrid = /** @class */ (function () {
                     Math.abs(_this.bpmLines[closestBpmIndex].value - worldPos))
                 closestBpm = _this.bpmLines[closestBpmIndex + 1];
         };
-        var closestBpmIndex = Utils_1.Utils.binaryNearestSearch(this.bpmLines, worldPos, true);
+        var closestBpmIndex = Utils_1.Utils.binaryNearestSearch(this.bpmLines, worldPos, Utils_1.Func.Floor);
         var closestBpm = this.bpmLines[closestBpmIndex];
         if (closestBpm.snapLines.length < 1) {
             getClosestBpm();
