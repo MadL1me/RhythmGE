@@ -7,7 +7,7 @@ import { Input } from "./Input";
 
 export interface IViewportModule extends IEditorModule {
     position: Vec2;
-    isOutOfViewportBounds(position: Vec2) : boolean;
+    isOutOfViewportBounds(position: Vec2) : [boolean, boolean];
     canvasToSongTime(canvCoords: Vec2) : Vec2;
 }
 
@@ -52,7 +52,9 @@ export class ViewportModule implements IViewportModule {
     }
 
     init(editorCore: IEditorCore) { this.editor = editorCore; }
-    updateModule() {}
+    updateModule() {
+       //console.log(this.transform.position);
+    }
 
     canvasToSongTime(canvasCoords : Vec2) : Vec2 {
         const pos = this.transform.position;
@@ -60,13 +62,9 @@ export class ViewportModule implements IViewportModule {
                         (canvasCoords.y - pos.y));
     }  
 
-    isOutOfViewportBounds(position: Vec2) : boolean {
-        const rightPos = new Vec2(this.transform.position.x+this._canvas.width,
-            this.transform.position.y+this._canvas.height);
-        
-        return position.x < this.transform.position.x 
-        || position.y < this.transform.position.y 
-        || position.x > rightPos.x 
-        || position.y > rightPos.y;
+    isOutOfViewportBounds(position: Vec2) : [boolean,boolean] {
+        const objectPos = Vec2.Sum(position, this.position);
+        return [objectPos.x < 0 || objectPos.x > this._canvas.width,
+                objectPos.y < 0 || objectPos.y > this._canvas.height];
     }
 }

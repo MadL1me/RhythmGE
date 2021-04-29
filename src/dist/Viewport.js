@@ -41,17 +41,17 @@ var ViewportModule = /** @class */ (function () {
         configurable: true
     });
     ViewportModule.prototype.init = function (editorCore) { this.editor = editorCore; };
-    ViewportModule.prototype.updateModule = function () { };
+    ViewportModule.prototype.updateModule = function () {
+        //console.log(this.transform.position);
+    };
     ViewportModule.prototype.canvasToSongTime = function (canvasCoords) {
         var pos = this.transform.position;
         return new Vec2_1.Vec2((canvasCoords.x - pos.x), (canvasCoords.y - pos.y));
     };
     ViewportModule.prototype.isOutOfViewportBounds = function (position) {
-        var rightPos = new Vec2_1.Vec2(this.transform.position.x + this._canvas.width, this.transform.position.y + this._canvas.height);
-        return position.x < this.transform.position.x
-            || position.y < this.transform.position.y
-            || position.x > rightPos.x
-            || position.y > rightPos.y;
+        var objectPos = Vec2_1.Vec2.Sum(position, this.position);
+        return [objectPos.x < 0 || objectPos.x > this._canvas.width,
+            objectPos.y < 0 || objectPos.y > this._canvas.height];
     };
     return ViewportModule;
 }());

@@ -256,6 +256,8 @@ export class CreatableLinesModule implements IEditorModule {
     private editor: IEditorCore;
     private canvas: HTMLCanvasElement;
 
+    static onCreateLineEvent = new Event<[CreatableTimestampLine, string]>();
+
     constructor() {
         this.canvas = $("#editor-canvas")[0] as HTMLCanvasElement;  
     }
@@ -287,17 +289,25 @@ export class CreatableLinesModule implements IEditorModule {
 
     private handleInput() {
         if (Input.keysPressed["Space"] == true) {
-            this.createCustomBpmLine();
+            this.createCustomBpmLine("Space");
+        }
+        for (let i = 1; i<=5; i++) {
+            if (Input.keysPressed[`Digit${i}`] == true) {
+                this.createCustomBpmLine(`Digit${i}`);
+            }
         }
     }
 
-    private createCustomBpmLine() {
+    private createCustomBpmLine(keyPressed: string) {
         let xPos = this.editor.audio.seek();
         let line = new CreatableTimestampLine(xPos, this.transform, editorColorSettings.creatableTimestampLineColor);
         this.creatableLines.push(line);
         this.creatableLines.sort((a,b) => { return a.transform.position.x-b.transform.position.x; });
+        
+        console.log(line.transform.position);
+        console.log(this.editor.viewport.transform.position);
+        CreatableLinesModule.onCreateLineEvent.invoke([line, keyPressed]);
     }
-
 }
 
 class TimestampPrefab {
@@ -386,6 +396,19 @@ export class TimestampsModule implements IEditorModule {
     init(editorCoreModules: IEditorCore) {
         this.editorCore = editorCoreModules;
         Input.onMainCanvasMouseClick.addListener((event) => {this.onCanvasClick(event);});
+        CreatableLinesModule.onCreateLineEvent.addListener(([line, key]) => 
+        {
+            console.log("CREATING STUFF 228");
+
+            if (!key.includes("Digit"))
+                return;
+
+            console.log("CREATING STUFF");
+            console.log(parseInt(key[5]))
+
+            this.createTimestamp(new Vec2(line.transform.position.x, 
+                parseInt(key[5]) * this.editorGridModule.distanceBetweenBeatLines()));
+        });
     }
 
     updateModule() {
@@ -421,16 +444,11 @@ export class TimestampsModule implements IEditorModule {
 
     private onCanvasClick(event) {
         const rect = this.canvas.getBoundingClientRect();
-        const clickX = event.clientX - rect.left;
-        const clickY = event.clientY - rect.top;
-        const click = new Vec2(clickX, clickY);
+        const click = new Vec2(event.clientX - rect.left, event.clientY - rect.top);
+        
         let worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
         worldClickPos = new Vec2(worldClickPos.x,worldClickPos.y)
         
-        //console.log(click);
-        //console.log(`World click pos is: ${worldClickPos}`);
-        //console.log(worldClickPos); 
-
         let closestBeatline = this.editorGridModule.findClosestBeatLine(click);
         let closestObjects = new Array<GridElement>();
 
@@ -446,7 +464,6 @@ export class TimestampsModule implements IEditorModule {
             return;
 
         let min = 100000, index = 0;
-        //console.log(worldClickPos);
 
         for (let i = 0; i<closestObjects.length; i++) {
             let diff = Math.abs(worldClickPos.x-closestObjects[i].transform.position.x);
@@ -457,20 +474,20 @@ export class TimestampsModule implements IEditorModule {
         }
         let closestObject = closestObjects[index];
 
-        //console.log(closestObjects);   
-        //console.log(closestObject);
-        const prefab = this.idToPrefab[this.selectedPrefabId] as TimestampPrefab;
         const placeDistance = 30;
-
-        console.log(closestObject.transform.position);
-        console.log(worldClickPos);
 
         if (Math.abs(closestObject.transform.position.x - worldClickPos.x) > placeDistance ||
             Math.abs(closestBeatline.transform.position.y - worldClickPos.y) > placeDistance )
             return;
         
+        this.createTimestamp(new Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y));
+    }
+
+    private createTimestamp(position: Vec2) {
+        const prefab = this.idToPrefab[this.selectedPrefabId] as TimestampPrefab;
+        
         let newTimestamp =  new Timestamp(prefab.color,
-            new Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y), 0.5, this.editorGridModule.transform);
+            new Vec2(position.x, position.y), 0.5, this.editorGridModule.transform);
         //console.log(newTimestamp); 
         
         if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
@@ -514,19 +531,19 @@ class SelectArea implements IDrawable {
     }
 
     onMouseDown(event: JQuery.MouseDownEvent) {
-        console.log(event);
+        //console.log(event);
         this.isActive = true;
         this.firstPoint = new Vec2(event.offsetX, event.offsetY);
         this.secondPoint = new Vec2(event.offsetX, event.offsetY);
     }
 
     onMouseMove(event: JQuery.MouseMoveEvent) {
-        console.log(event);
+        //console.log(event);
         this.secondPoint = new Vec2(event.offsetX, event.offsetY);
     }
 
     onMouseUp(event: JQuery.MouseUpEvent) {
-        console.log(event);
+        //console.log(event);
         this.isActive = false;
         this.onSelect.invoke([this.firstPoint, this.secondPoint]);
     }

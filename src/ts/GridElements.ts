@@ -33,6 +33,7 @@ export abstract class GridElement implements IDrawable, ICompareNumberProvider, 
     
     onDelete = new Event<GridElement>();
 
+    protected _outOfBounds: [boolean, boolean];
     protected _isActive: boolean = true;
     protected _isSelected: boolean = false;
 
@@ -46,9 +47,7 @@ export abstract class GridElement implements IDrawable, ICompareNumberProvider, 
     };
 
     draw(view : IViewportModule, canvas : HTMLCanvasElement) {
-        if (view.isOutOfViewportBounds(this.transform.position)) {
-            return;
-        }
+        this._outOfBounds = view.isOutOfViewportBounds(this.transform.position);
     }
 
     delete() {
@@ -98,7 +97,10 @@ export class Timestamp extends GridElement {
 
     draw(view: IViewportModule, canvas : HTMLCanvasElement) {
         super.draw(view, canvas)
-        
+
+        if (this._outOfBounds[0])
+            return;
+
         const color = this._isSelected ? RgbaColor.White: this.color;
         const ctx = canvas.getContext('2d');
         const pos = new Vec2(this.transform.position.x + view.position.x,
@@ -130,6 +132,9 @@ export class CreatableTimestampLine extends GridElement {
 
     draw(view: IViewportModule, canvas: HTMLCanvasElement) {
         super.draw(view, canvas)
+        
+        if (this._outOfBounds[0])
+            return;
         
         var x = this.transform.position.x + view.position.x;
         const ctx = canvas.getContext('2d');
@@ -194,6 +199,9 @@ export class BPMLine extends GridElement {
 
     draw(view : IViewportModule, canvas : HTMLCanvasElement) {
         super.draw(view, canvas)
+
+        if (this._outOfBounds[0])
+            return;
 
         if (!this.isActive)
             return;

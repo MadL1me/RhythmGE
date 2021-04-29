@@ -39,9 +39,7 @@ var GridElement = /** @class */ (function () {
     });
     ;
     GridElement.prototype.draw = function (view, canvas) {
-        if (view.isOutOfViewportBounds(this.transform.position)) {
-            return;
-        }
+        this._outOfBounds = view.isOutOfViewportBounds(this.transform.position);
     };
     GridElement.prototype.delete = function () {
         this.onDelete.invoke(this);
@@ -89,6 +87,8 @@ var Timestamp = /** @class */ (function (_super) {
     }
     Timestamp.prototype.draw = function (view, canvas) {
         _super.prototype.draw.call(this, view, canvas);
+        if (this._outOfBounds[0])
+            return;
         var color = this._isSelected ? RgbaColor_1.RgbaColor.White : this.color;
         var ctx = canvas.getContext('2d');
         var pos = new Vec2_1.Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
@@ -118,6 +118,8 @@ var CreatableTimestampLine = /** @class */ (function (_super) {
     }
     CreatableTimestampLine.prototype.draw = function (view, canvas) {
         _super.prototype.draw.call(this, view, canvas);
+        if (this._outOfBounds[0])
+            return;
         var x = this.transform.position.x + view.position.x;
         var ctx = canvas.getContext('2d');
         ctx.beginPath();
@@ -179,6 +181,8 @@ var BPMLine = /** @class */ (function (_super) {
     ;
     BPMLine.prototype.draw = function (view, canvas) {
         _super.prototype.draw.call(this, view, canvas);
+        if (this._outOfBounds[0])
+            return;
         if (!this.isActive)
             return;
         var ctx = canvas.getContext('2d');

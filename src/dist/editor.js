@@ -222,15 +222,24 @@ var CreatableLinesModule = /** @class */ (function () {
     };
     CreatableLinesModule.prototype.handleInput = function () {
         if (Input_1.Input.keysPressed["Space"] == true) {
-            this.createCustomBpmLine();
+            this.createCustomBpmLine("Space");
+        }
+        for (var i = 1; i <= 5; i++) {
+            if (Input_1.Input.keysPressed["Digit" + i] == true) {
+                this.createCustomBpmLine("Digit" + i);
+            }
         }
     };
-    CreatableLinesModule.prototype.createCustomBpmLine = function () {
+    CreatableLinesModule.prototype.createCustomBpmLine = function (keyPressed) {
         var xPos = this.editor.audio.seek();
         var line = new GridElements_1.CreatableTimestampLine(xPos, this.transform, AppSettings_1.editorColorSettings.creatableTimestampLineColor);
         this.creatableLines.push(line);
         this.creatableLines.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
+        console.log(line.transform.position);
+        console.log(this.editor.viewport.transform.position);
+        CreatableLinesModule.onCreateLineEvent.invoke([line, keyPressed]);
     };
+    CreatableLinesModule.onCreateLineEvent = new Utils_1.Event();
     return CreatableLinesModule;
 }());
 exports.CreatableLinesModule = CreatableLinesModule;
@@ -301,6 +310,15 @@ var TimestampsModule = /** @class */ (function () {
         var _this = this;
         this.editorCore = editorCoreModules;
         Input_1.Input.onMainCanvasMouseClick.addListener(function (event) { _this.onCanvasClick(event); });
+        CreatableLinesModule.onCreateLineEvent.addListener(function (_a) {
+            var line = _a[0], key = _a[1];
+            console.log("CREATING STUFF 228");
+            if (!key.includes("Digit"))
+                return;
+            console.log("CREATING STUFF");
+            console.log(parseInt(key[5]));
+            _this.createTimestamp(new Vec2_1.Vec2(line.transform.position.x, parseInt(key[5]) * _this.editorGridModule.distanceBetweenBeatLines()));
+        });
     };
     TimestampsModule.prototype.updateModule = function () {
         for (var _i = 0, _a = Object.entries(this.timestamps); _i < _a.length; _i++) {
@@ -337,14 +355,9 @@ var TimestampsModule = /** @class */ (function () {
     });
     TimestampsModule.prototype.onCanvasClick = function (event) {
         var rect = this.canvas.getBoundingClientRect();
-        var clickX = event.clientX - rect.left;
-        var clickY = event.clientY - rect.top;
-        var click = new Vec2_1.Vec2(clickX, clickY);
+        var click = new Vec2_1.Vec2(event.clientX - rect.left, event.clientY - rect.top);
         var worldClickPos = this.editorCore.viewport.transform.canvasToWorld(click);
         worldClickPos = new Vec2_1.Vec2(worldClickPos.x, worldClickPos.y);
-        //console.log(click);
-        //console.log(`World click pos is: ${worldClickPos}`);
-        //console.log(worldClickPos); 
         var closestBeatline = this.editorGridModule.findClosestBeatLine(click);
         var closestObjects = new Array();
         if (!this.editorCore.editorData.hideBpmLines.value && this.editorGridModule.bpmLines.length > 0) {
@@ -356,7 +369,6 @@ var TimestampsModule = /** @class */ (function () {
         if (closestObjects.length < 1)
             return;
         var min = 100000, index = 0;
-        //console.log(worldClickPos);
         for (var i = 0; i < closestObjects.length; i++) {
             var diff = Math.abs(worldClickPos.x - closestObjects[i].transform.position.x);
             if (diff < min) {
@@ -365,16 +377,15 @@ var TimestampsModule = /** @class */ (function () {
             }
         }
         var closestObject = closestObjects[index];
-        //console.log(closestObjects);   
-        //console.log(closestObject);
-        var prefab = this.idToPrefab[this.selectedPrefabId];
         var placeDistance = 30;
-        console.log(closestObject.transform.position);
-        console.log(worldClickPos);
         if (Math.abs(closestObject.transform.position.x - worldClickPos.x) > placeDistance ||
             Math.abs(closestBeatline.transform.position.y - worldClickPos.y) > placeDistance)
             return;
-        var newTimestamp = new GridElements_1.Timestamp(prefab.color, new Vec2_1.Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y), 0.5, this.editorGridModule.transform);
+        this.createTimestamp(new Vec2_1.Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y));
+    };
+    TimestampsModule.prototype.createTimestamp = function (position) {
+        var prefab = this.idToPrefab[this.selectedPrefabId];
+        var newTimestamp = new GridElements_1.Timestamp(prefab.color, new Vec2_1.Vec2(position.x, position.y), 0.5, this.editorGridModule.transform);
         //console.log(newTimestamp); 
         if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
             this.timestamps[newTimestamp.transform.localPosition.x] = {};
@@ -411,17 +422,17 @@ var SelectArea = /** @class */ (function () {
         ctx.fillRect(this.firstPoint.x, this.firstPoint.y, sizeVec.x, sizeVec.y);
     };
     SelectArea.prototype.onMouseDown = function (event) {
-        console.log(event);
+        //console.log(event);
         this.isActive = true;
         this.firstPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
         this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
     };
     SelectArea.prototype.onMouseMove = function (event) {
-        console.log(event);
+        //console.log(event);
         this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
     };
     SelectArea.prototype.onMouseUp = function (event) {
-        console.log(event);
+        //console.log(event);
         this.isActive = false;
         this.onSelect.invoke([this.firstPoint, this.secondPoint]);
     };
