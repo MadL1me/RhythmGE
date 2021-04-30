@@ -1,13 +1,16 @@
 ![RGE Github Best](https://user-images.githubusercontent.com/46647517/116629762-a7a9b580-a95a-11eb-8b7a-c3e92264b35b.png)
 
 # Description
-Rhythm Game Editor is a tool for creating a timestamps for rhythm game developers.
+Rhythm Game Editor is a tool for creating timestamps for rhythm game developers.
 
-The tool is developed and designed, to handle varius situation an uniqueness of gameplay of any rhythm game, can be developed. It supports diffenet types of timestamps, unique count of LPB lines, good tools like Claps, line following and good editing features. 
 
-The app is built with Electron, and avaible on any operating system, including Windows, MacOS and Linux.
+The tool is developed and designed, to handle various situations and the uniqueness of gameplay of any rhythm game can be developed. It supports different types of timestamps, a unique count of LPB lines, good tools like Claps, line-following, and good editing features.
 
-You can Download last stable verison at Release page
+
+The app is built with Electron, and available on any operating system, including Windows, macOS, and Linux.
+
+
+You can download the last stable version at the Release page
 
 ![Capture](https://user-images.githubusercontent.com/46647517/116630699-60bcbf80-a95c-11eb-9054-cf4a957610df.PNG)
 
