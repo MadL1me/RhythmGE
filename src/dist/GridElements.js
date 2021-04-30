@@ -17,7 +17,6 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BeatLine = exports.BPMLine = exports.TimestepLine = exports.CreatableTimestampLine = exports.Timestamp = exports.GridElement = void 0;
 var Transform_1 = require("./Transform");
-var RgbaColor_1 = require("./RgbaColor");
 var Vec2_1 = require("./Vec2");
 var AppSettings_1 = require("./AppSettings");
 var Utils_1 = require("./Utils");
@@ -89,7 +88,7 @@ var Timestamp = /** @class */ (function (_super) {
         _super.prototype.draw.call(this, view, canvas);
         if (this._outOfBounds[0])
             return;
-        var color = this._isSelected ? RgbaColor_1.RgbaColor.White : this.color;
+        var color = this._isSelected ? AppSettings_1.editorColorSettings.selectedTimestampColor : this.color;
         var ctx = canvas.getContext('2d');
         var pos = new Vec2_1.Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
         var width = this.width + this.transform.scale.x / 5;

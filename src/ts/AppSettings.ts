@@ -11,4 +11,5 @@ export const editorColorSettings = new class EditorColorSettings {
     timestepLineColor = new RgbaColor(255, 103, 0);
     selectAreaColor = new RgbaColor(92, 185, 224, 0.2);
     selectedCreatableLineColor = new RgbaColor(255, 133, 204);
+    selectedTimestampColor = new RgbaColor(255, 186, 243);
 }

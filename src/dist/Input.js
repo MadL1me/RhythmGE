@@ -11,6 +11,7 @@ var Input = /** @class */ (function () {
     function Input() {
     }
     Input.init = function () {
+        var _this = this;
         if (Input.initialized)
             return;
         Input.initialized = true;
@@ -22,7 +23,7 @@ var Input = /** @class */ (function () {
         //$(window).on('mousedown', (event) => { Input.onMouseDown.invoke(event);});
         //$(window).on('mouseup', (event) => {Input.onMouseUp.invoke(event)});
         jquery_1.default('#editor-canvas').on('wheel', function (event) { Input.onWheelCanvas.invoke(event.originalEvent); })
-            .on('click', function (event) { Input.onMouseClickCanvas.invoke(event); })
+            .on('click', function (event) { Input.onMouseClickCanvas.invoke(event); _this.onMouseAfterCanvasClick.invoke(null); })
             .on('mousemove', function (event) { Input.onCanvHover(event); })
             //.on('mouseup', (event) => {Input.onMouseUp.invoke(event)})
             .on('mousedown', function (event) { Input.onMouseDownCanvas.invoke(event); })
@@ -67,6 +68,7 @@ var Input = /** @class */ (function () {
     Input.onMouseOverCanvas = new Utils_1.Event();
     Input.onMouseDownCanvas = new Utils_1.Event();
     Input.onMouseClickCanvas = new Utils_1.Event();
+    Input.onMouseAfterCanvasClick = new Utils_1.Event();
     Input.onHoverCanvas = new Utils_1.Event();
     Input.onWheelCanvas = new Utils_1.Event();
     Input.onHoverWindow = new Utils_1.Event();

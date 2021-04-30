@@ -33,6 +33,14 @@ export class Transform {
         return new Vec2((canvasCoords.x - pos.x), canvasCoords.y - pos.y);
     }
 
+    worldToLocal(worldPos: Vec2) : Vec2 {
+        return Vec2.Divide(Vec2.Substract(worldPos, this.position), this.scale);
+    }
+    
+    localToWorld(localPos: Vec2) : Vec2 {
+        return Vec2.Multiply(Vec2.Sum(localPos, this.position), this.scale);
+    }
+
     get localPosition() : Vec2 {
         return this._localPosition;
     }

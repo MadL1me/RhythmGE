@@ -14,6 +14,7 @@ exports.editorColorSettings = new /** @class */ (function () {
         this.timestepLineColor = new RgbaColor_1.RgbaColor(255, 103, 0);
         this.selectAreaColor = new RgbaColor_1.RgbaColor(92, 185, 224, 0.2);
         this.selectedCreatableLineColor = new RgbaColor_1.RgbaColor(255, 133, 204);
+        this.selectedTimestampColor = new RgbaColor_1.RgbaColor(255, 186, 243);
     }
     return EditorColorSettings;
 }());

@@ -101,7 +101,7 @@ export class Timestamp extends GridElement {
         if (this._outOfBounds[0])
             return;
 
-        const color = this._isSelected ? RgbaColor.White: this.color;
+        const color = this._isSelected ? editorColorSettings.selectedTimestampColor : this.color;
         const ctx = canvas.getContext('2d');
         const pos = new Vec2(this.transform.position.x + view.position.x,
         this.transform.position.y + view.position.y);

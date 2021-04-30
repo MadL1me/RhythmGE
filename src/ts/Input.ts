@@ -20,6 +20,7 @@ export abstract class Input {
     static onMouseOverCanvas = new Event<JQuery.MouseOverEvent>();
     static onMouseDownCanvas = new Event<JQuery.MouseDownEvent>();
     static onMouseClickCanvas = new Event<JQuery.ClickEvent>();
+    static onMouseAfterCanvasClick = new Event<any>();
     static onHoverCanvas = new Event<JQuery.MouseMoveEvent>();
     static onWheelCanvas = new Event<any>();
    
@@ -42,7 +43,7 @@ export abstract class Input {
         //$(window).on('mouseup', (event) => {Input.onMouseUp.invoke(event)});
 
         $('#editor-canvas').on('wheel', (event) => { Input.onWheelCanvas.invoke(event.originalEvent);})
-        .on('click', (event) => { Input.onMouseClickCanvas.invoke(event);})
+        .on('click', (event) => { Input.onMouseClickCanvas.invoke(event); this.onMouseAfterCanvasClick.invoke(null);})
         .on('mousemove', (event) => { Input.onCanvHover(event);})
 
         //.on('mouseup', (event) => {Input.onMouseUp.invoke(event)})

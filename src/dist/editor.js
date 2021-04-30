@@ -369,17 +369,23 @@ var TimestampsModule = /** @class */ (function () {
     };
     TimestampsModule.prototype.getTimestampsAtRange = function (startPos, endPos) {
         var _this = this;
-        if (this.timestamps.keys.length < 1 || this.timestamps.values.length < 1)
+        if (this.clapTimings.length < 1) {
             return;
-        if (startPos.x > endPos.x) {
-            var tmp = startPos;
-            startPos = endPos;
-            endPos = tmp;
         }
+        var tmpStartPos = new Vec2_1.Vec2(Math.min(startPos.x, endPos.x), Math.min(startPos.y, endPos.y));
+        endPos = new Vec2_1.Vec2(Math.max(startPos.x, endPos.x), Math.max(startPos.y, endPos.y));
+        startPos = tmpStartPos;
+        startPos = this.editorGridModule.transform.worldToLocal(startPos);
+        endPos = this.editorGridModule.transform.worldToLocal(endPos);
+        console.log(startPos.x);
+        console.log(endPos.x);
         var startIndex = Utils_1.Utils.binaryNearestSearchNumber(this.clapTimings, startPos.x, Utils_1.Func.Ceil);
         var endIndex = Utils_1.Utils.binaryNearestSearchNumber(this.clapTimings, endPos.x, Utils_1.Func.Floor);
-        var xValues = this.clapTimings.slice(startIndex, endIndex);
+        var xValues = this.clapTimings.slice(startIndex, endIndex + 1);
         var resultTimestamps = new Array();
+        console.log(startIndex);
+        console.log(endIndex);
+        console.log(xValues.length);
         xValues.forEach(function (value) {
             var yArray = _this.timestamps[value];
             for (var _i = 0, _a = Object.entries(yArray); _i < _a.length; _i++) {
@@ -393,22 +399,32 @@ var TimestampsModule = /** @class */ (function () {
         return resultTimestamps;
     };
     TimestampsModule.prototype.getClosestTimestamp = function (position) {
-        if (this.timestamps.keys.length < 1 || this.timestamps.values.length < 1)
+        if (this.clapTimings.length < 1)
             return;
         console.log("try get closest timestamps");
+        position = this.editorGridModule.transform.worldToLocal(position);
         var index = Utils_1.Utils.binaryNearestSearchNumber(this.clapTimings, position.x);
-        var yArray = this.timestamps[this.clapTimings[index]].values;
+        console.log(this.clapTimings[index]);
+        var yArray = this.timestamps[this.clapTimings[index]];
+        console.log(yArray);
         console.log("index is " + index);
-        console.log("yLenght: " + yArray.length);
         var result = null;
         var min = 10000;
-        yArray.forEach(function (timestamp) {
-            var distance = Math.abs(timestamp.transform.position.y - position.y);
+        for (var _i = 0, _a = Object.entries(yArray); _i < _a.length; _i++) {
+            var _b = _a[_i], key = _b[0], timestamp = _b[1];
+            var distance = Math.abs(timestamp.transform.localPosition.y - position.y);
             if (distance < min) {
                 min = distance;
                 result = timestamp;
             }
-        });
+        }
+        // yArray.forEach(timestamp => {
+        //     let distance = Math.abs(timestamp.transform.localPosition.y - position.y);
+        //     if (distance < min) {
+        //         min = distance;
+        //         result = timestamp;
+        //     }
+        // });
         return result;
     };
     Object.defineProperty(TimestampsModule.prototype, "selectedPrefab", {
@@ -454,11 +470,11 @@ var TimestampsModule = /** @class */ (function () {
         //console.log(newTimestamp); 
         if (this.timestamps[newTimestamp.transform.localPosition.x] == undefined) {
             this.timestamps[newTimestamp.transform.localPosition.x] = {};
+            this.clapTimings.push(newTimestamp.transform.localPosition.x);
+            this.clapTimings.sort(function (a, b) { return a - b; });
         }
         if (this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] == null) {
             this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
-            this.clapTimings.push(newTimestamp.transform.localPosition.x);
-            this.clapTimings.sort(function (a, b) { return a - b; });
         }
         else if (Input_1.Input.keysPressed["LeftControl"])
             this.onExistingElementClicked.invoke(this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y]);
@@ -521,6 +537,7 @@ var ElementSelectorModule = /** @class */ (function () {
         var _this = this;
         this.editor = editorCoreModules;
         Input_1.Input.onMouseClickCanvas.addListener(function (event) { _this.onCanvasClick(event); });
+        Input_1.Input.onMouseAfterCanvasClick.addListener(function () { Input_1.Input.onMouseClickCanvas.allowFiring(); });
         this.selectArea = new SelectArea();
         this.selectArea.onSelect.addListener(function (_a) {
             var a = _a[0], b = _a[1];
@@ -539,7 +556,7 @@ var ElementSelectorModule = /** @class */ (function () {
             return;
         }
         //Input.onMouseUp.preventFiringEvent();
-        Input_1.Input.onMouseClickCanvas.preventFiringEvent();
+        Input_1.Input.onMouseClickCanvas.preventFiring();
         pointA = this.editor.viewport.transform.canvasToWorld(pointA);
         pointB = this.editor.viewport.transform.canvasToWorld(pointB);
         var selectedLines = this.creatable.getLinesInRange(pointA, pointB);
@@ -547,21 +564,22 @@ var ElementSelectorModule = /** @class */ (function () {
         if (!Input_1.Input.keysPressed["ShiftLeft"])
             this.deselectAll();
         selectedLines === null || selectedLines === void 0 ? void 0 : selectedLines.forEach(function (line) {
-            _this.onElementSelect(line);
+            _this.selectElement(line);
         });
         selectedTimestamps === null || selectedTimestamps === void 0 ? void 0 : selectedTimestamps.forEach(function (timestamp) {
-            _this.onElementSelect(timestamp);
+            _this.selectElement(timestamp);
         });
         console.log("selected timestamps count: " + (selectedTimestamps === null || selectedTimestamps === void 0 ? void 0 : selectedTimestamps.length));
         console.log("selected lines count: " + (selectedLines === null || selectedLines === void 0 ? void 0 : selectedLines.length));
     };
     ElementSelectorModule.prototype.onCanvasClick = function (event) {
         if (Input_1.Input.keysPressed["ShiftLeft"] == true)
-            Input_1.Input.onMouseClickCanvas.preventFiringEvent();
+            Input_1.Input.onMouseClickCanvas.preventFiringEventOnce();
         else {
             if (this.selectedElements.length > 0) {
-                Input_1.Input.onMouseClickCanvas.preventFiringEvent();
+                Input_1.Input.onMouseClickCanvas.preventFiringEventOnce();
             }
+            console.log("DESELECTING ALL CLICK");
             this.deselectAll();
             return;
         }
@@ -579,16 +597,18 @@ var ElementSelectorModule = /** @class */ (function () {
             var timestampDist = Vec2_1.Vec2.Distance(closestTimestamp.transform.position, worldClickPos);
             console.log("Ditstance to closest timestamp: " + timestampDist);
             if (timestampDist < 20)
-                clickedElemenet = closestLine;
+                clickedElemenet = closestTimestamp;
         }
         if (clickedElemenet == null) {
             return;
         }
-        if (lineDist > timestampDist) {
-            clickedElemenet = closestTimestamp;
-        }
-        else {
-            clickedElemenet = closestLine;
+        if (closestTimestamp != null && closestLine != null) {
+            if (lineDist > timestampDist) {
+                clickedElemenet = closestTimestamp;
+            }
+            else {
+                clickedElemenet = closestLine;
+            }
         }
         this.onElementSelect(clickedElemenet);
     };

@@ -68,7 +68,8 @@ exports.Utils = Utils;
 var Event = /** @class */ (function () {
     function Event() {
         this.listeners = new Array();
-        this._preventEvent = false;
+        this._preventOnce = false;
+        this._preventFiring = false;
     }
     Event.prototype.addListener = function (listener) {
         this.listeners.push(listener);
@@ -79,19 +80,27 @@ var Event = /** @class */ (function () {
     };
     Event.prototype.invoke = function (data) {
         var _this = this;
+        if (this._preventFiring)
+            return;
         this.listeners.forEach(function (listener) {
-            if (_this._preventEvent) {
-                _this._preventEvent = false;
+            if (_this._preventOnce || _this._preventFiring) {
+                _this._preventOnce = false;
                 return;
             }
             listener(data);
         });
     };
-    Event.prototype.preventFiringEvent = function () {
-        this._preventEvent = true;
+    Event.prototype.preventFiring = function () {
+        this._preventFiring = true;
     };
-    Event.prototype.allowEventFiring = function () {
-        this._preventEvent = false;
+    Event.prototype.allowFiring = function () {
+        this._preventFiring = false;
+    };
+    Event.prototype.preventFiringEventOnce = function () {
+        this._preventOnce = true;
+    };
+    Event.prototype.allowEventFiringOnce = function () {
+        this._preventOnce = false;
     };
     return Event;
 }());

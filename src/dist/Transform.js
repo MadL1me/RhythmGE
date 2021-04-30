@@ -27,6 +27,12 @@ var Transform = /** @class */ (function () {
         var pos = this.position;
         return new Vec2_1.Vec2((canvasCoords.x - pos.x), canvasCoords.y - pos.y);
     };
+    Transform.prototype.worldToLocal = function (worldPos) {
+        return Vec2_1.Vec2.Divide(Vec2_1.Vec2.Substract(worldPos, this.position), this.scale);
+    };
+    Transform.prototype.localToWorld = function (localPos) {
+        return Vec2_1.Vec2.Multiply(Vec2_1.Vec2.Sum(localPos, this.position), this.scale);
+    };
     Object.defineProperty(Transform.prototype, "localPosition", {
         get: function () {
             return this._localPosition;

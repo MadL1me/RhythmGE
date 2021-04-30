@@ -72,7 +72,8 @@ export type EmptyAction = () => void;
 
 export class Event<T> {
     private listeners = new Array<Action<T>>();
-    private _preventEvent: boolean = false;
+    private _preventOnce: boolean = false;
+    private _preventFiring: boolean = false;
 
     addListener(listener: Action<T>) {
         this.listeners.push(listener)
@@ -84,21 +85,32 @@ export class Event<T> {
     }   
 
     invoke(data: T) {
+        if (this._preventFiring)
+            return;
+        
         this.listeners.forEach(listener => {
-            if (this._preventEvent) {
-                this._preventEvent = false;
+            if (this._preventOnce || this._preventFiring) {
+                this._preventOnce = false;
                 return;
             }
             listener(data);
         });
     }
 
-    preventFiringEvent() {
-        this._preventEvent = true;
+    preventFiring() {
+        this._preventFiring = true;
     }
 
-    allowEventFiring() {
-        this._preventEvent = false;
+    allowFiring() {
+        this._preventFiring = false;
+    }
+
+    preventFiringEventOnce() {
+        this._preventOnce = true;
+    }
+
+    allowEventFiringOnce() {
+        this._preventOnce = false;
     }
 }
 
