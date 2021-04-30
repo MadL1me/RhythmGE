@@ -23,58 +23,58 @@ You can Download last stable verison at Release page
 * Claps for feeling the rhythm
 * Easy copying and pasting of element groups
 
-## OS Compability
+## OS Compatibility
 * Windows
 * MacOS
 * Linux
-* Any OS With modern web browser (cooming soon)
+* Any OS With a modern web browser (coming soon)
 
 ## How to help project and contribute
-The more stars project have, the more chance what other rhythm game developers will save their time by using this tool, by finding it on internet/github, and help with 
-project development with their unique ideas and siggestions.
+The more stars project have, the more chance what other rhythm game developers will save their time by using this tool, by finding it on the internet/GitHub, and help with 
+project development with their unique ideas and suggestions.
 
-I'll be glad if you review my code in any way, especcialy in archetecutre deisgn,
-because i'm not very experienced with typescript (actually, this is my first timescript project).  
+I'll be glad if you review my code in any way, especially in architecture design,
+because I'm not very experienced with typescript (actually, this is my first typescript project).  
 
 If you somehow can understand my code, you can do any features from TODO for v1.0 release list, there's plenty of them, you can pick whatever you want.
 
 # Contents
 
 ## Quick Start
-First of all, you can download software here.
+First of all, you can download the software here.
 
 
-Before start editing your beatmap, you must import audio file. Currently its supports audio file formats:
+Before start editing your beatmap, you must import an audio file. Currently, it supports audio file formats:
 * **.mp3** 
 * **.wav** 
 
-After imporing your audio, you now able to edit beatmap.
-By clicking with left mouse button on cross beatween BPM and LPB and CLines, you can place timestamps, by holding left mouse button you can select group of grid elements to delete/move/copy etc. 
+After importing your audio, you now able to edit beatmap.
+By clicking with the left mouse button on the cross between BPM and LPB and CLines, you can place timestamps, by holding the left mouse button you can select a group of grid elements to delete/move/copy, etc. 
 
-More info about variuos setting and hotkeys you can find below.
+More info about various settings and hotkeys you can find below.
 
 ### Editor Settings
 #### BPM 
-Then you audio file is loaded, you'll see created vertical **BPM** lines, which is used to place elements in beat. In the place where BPM line and LPB line are crossed
+Then your audio file is loaded, you'll see created vertical **BPM** lines, which are used to place elements in beat. In the place where BPM line and LPB line are crossed
 you can place your timestamp
 
 #### Offset
-Each song usual have a **offset**, which is define how much samples will be offseted in start of first song beat
+Each song usual have an **offset**, which is define how many samples will be offset at the start of the first song beat
 
 #### LPB
-Verical lines in the editor is **LPB** lines, (Lines Per Beat) which represent total tracks, used to place timestamps. For example, in Guitar Hero there's
+Horizontal lines in the editor are **LPB** lines, (Lines Per Beat) which represent total tracks, used to place timestamps. For example, in Guitar Hero there's
 6 tracks with notes. Minimum LPB is 1 and Max: 100.
 
 #### Snap Lines
-Snap lines is divider for BPM lines, and used to divide zones between beats for BPM lines
+Snap lines is a divider for BPM lines and used to divide zones between beats for BPM lines
 
-Each of the listed variables you can tune on setting tab above editor main timeline.
+Each of the listed variables you can tune on the setting tab above the editor's main timeline.
 
 #### Timestamp Prefabs
-Maybe you had mentionaed tab with colored diamonds buttons. That's timestamp prefabs. Each prefab have unique color and ic
+Maybe you had mentioned a tab with colored diamond buttons. That's timestamp prefabs. Each prefab have unique color and ic
 
 #### Hotkeys 
-In order to make editing more pleasant, editor currently supports: 
+To make editing more pleasant, the editor currently supports: 
 
 Hotkey | Action
 -------|-------
@@ -98,7 +98,7 @@ S | Play/Pause audio
 
 
 ### File Readers
-You can use existing file reader for varius programming languages and game engines (currently avaible only for C#), which is stored in **/Readers** filder
+You can use existing file reader for various programming languages and game engines (currently available only for C#), which is stored in **/Readers** folder
 
 ## TODO for v1.0 release
 - [ ] User-creatable timestamp prefabs, with metadata templates
@@ -109,4 +109,3 @@ You can use existing file reader for varius programming languages and game engin
 - [ ] Tool for bpm detecting
 - [ ] Auto Bpm detecting
 - [ ] Multiple BPM's in one song
-- [ ] Zones between CLines
