@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import { GridElement, ICompareNumberProvider } from './GridElements';
+import { GridElement, ICompareNumberProvider } from '../GridElements';
 
 export enum Func{ 
     Ceil,
@@ -63,6 +63,25 @@ export abstract class Utils {
             return left;
         else 
             return right;
+    }
+}
+
+export class EventVar<T> {
+    private _value: T;
+
+    readonly onValueChange = new Event<T>();
+
+    constructor(initialValue: T) {
+        this._value = initialValue;
+    }
+
+    get value() {
+        return this._value;
+    }
+
+    set value(value: T) {
+        this._value = value;
+        this.onValueChange.invoke(value);
     }
 }
 

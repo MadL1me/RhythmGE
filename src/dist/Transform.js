@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Transform = void 0;
-var Vec2_1 = require("./Vec2");
+var Vec2_1 = require("./Utils/Vec2");
 var Transform = /** @class */ (function () {
     function Transform(localPosition, parent) {
         if (localPosition === void 0) { localPosition = new Vec2_1.Vec2(0, 0); }

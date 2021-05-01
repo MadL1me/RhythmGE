@@ -1,9 +1,9 @@
-import {Transform} from "./Transform";
-import {Vec2} from "./Vec2";
-import {IEditorModule, IEditorCore} from "./Editor";
+import {Transform} from "../Transform";
+import {Vec2} from "../Utils/Vec2";
+import {IEditorModule, IEditorCore} from "../Editor";
 
 import $ from 'jquery';
-import { Input } from "./Input";
+import { Input } from "../Input";
 
 export interface IViewportModule extends IEditorModule {
     position: Vec2;

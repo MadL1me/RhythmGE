@@ -1,14 +1,14 @@
-import { Slider, Event, Action, EmptyAction, Utils } from "./Utils";
-import { Editor, IEditorModule, IEditorCore, EditorData} from "./Editor";
-import { Vec2 } from "./Vec2";
-import { editorColorSettings } from "./AppSettings";
-import { IDrawable } from "./GridElements";
+import { Slider, Event, Action, EmptyAction, Utils } from "../Utils/Utils";
+import { Editor, IEditorModule, IEditorCore, EditorData} from "../Editor";
+import { Vec2 } from "../Utils/Vec2";
+import { editorColorSettings } from "../Utils/AppSettings";
+import { IDrawable } from "../GridElements";
 
 import $, { data } from 'jquery';
-import { ViewportModule } from "./Viewport";
-import { Transform } from "./Transform";
+import { ViewportModule } from "./ViewportModule";
+import { Transform } from "../Transform";
 import { throws } from "node:assert";
-import { Input } from "./Input";
+import { Input } from "../Input";
 
 const { Howl, Howler } = require('howler');
 
@@ -142,17 +142,8 @@ export class AudioModule implements IAudioModule {
     setClapTimings(array: number[]) {
         this.clappingTimings = array;
         let seek = this.seek();
-        //console.log(array);
         this.clapTimingId = Utils.binaryNearestSearchNumber(array, seek);
         console.log(this.clapTimingId);
-        // for(let i = 0; i<array.length;i++) {
-        //     console.log(array[i]);
-        //     if (array[i] > seek) {
-        //         console.log(i);
-        //         this.clapTimingId = i;
-        //         return;
-        //     }
-        // }
     }
 
     checkForClaps() {
@@ -160,14 +151,9 @@ export class AudioModule implements IAudioModule {
             return;
     
         let seek = this.songSource.seek();
-        // console.log("CLAP LOOP");
-        // console.log(this.clappingTimings[this.clapTimingId]);
-        // console.log(seek);
-        // console.log(this.clapTimingId);
         if (this.clappingTimings[this.clapTimingId] < seek) {
             this.clapTimingId++;
             this.playClapSound();
-            //console.log("PLAY CLAP");
         }
     }
 

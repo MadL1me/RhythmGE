@@ -1,7 +1,12 @@
-import { Editor, EditorGrid, TimestepLineModule, CreatableLinesModule, TimestampsModule, VisualiserEditorModule as VisualiserModule, ElementSelectorModule } from "./Editor";
+import { Editor, TimestepLineModule } from "./Editor";
+import { CreatableLinesModule } from "./EditorModules/CreatableLinesModule";
+import { TimestampsModule } from "./EditorModules/TimestampsModule";
+import { ElementSelectorModule } from "./EditorModules/ElementSelectorModule";
+import { EditorGrid } from "./EditorModules/EditorGridModule";
+import { VisualiserEditorModule as VisualiserModule } from "./EditorModules/VisualiserEditorModule";
 import { TimestepLine } from "./GridElements";
-import { TopScale } from "./Scale" 
-import { AudioAmplitudeViewModule } from "./Audio";
+import { TopScale } from "./EditorModules/ScaleModule" 
+import { AudioAmplitudeViewModule } from "./EditorModules/AudioModules";
 //var editor = require("./dist/editor");
 
 const editor = new Editor();

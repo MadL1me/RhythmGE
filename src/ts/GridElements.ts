@@ -1,10 +1,9 @@
 import { Transform } from "./Transform";
-import { RgbaColor } from "./RgbaColor";
-import { IViewportModule } from "./Viewport";
-import { Vec2 } from "./Vec2";
-import { editorColorSettings } from "./AppSettings";
-import { Event } from "./Utils";
-
+import { RgbaColor } from "./Utils/RgbaColor";
+import { IViewportModule } from "./EditorModules/ViewportModule";
+import { Vec2 } from "./Utils/Vec2";
+import { editorColorSettings } from "./Utils/AppSettings";
+import { Event } from "./Utils/Utils";
 import $ from 'jquery';
 
 export interface IDrawable {
@@ -79,20 +78,74 @@ export abstract class GridElement implements IDrawable, ICompareNumberProvider, 
     }
 }
 
+export class TimestampPrefab {
+    prefabId: number;
+    color: RgbaColor;
+    width = 5;
+
+    private _isSelected: boolean;
+    private buttonElement: JQuery<HTMLElement>;
+    private diamondElement: JQuery<HTMLElement>;
+
+    onPrefabSelected = new Event<number>();
+    onPrefabDeselected = new Event<number>();
+
+    get isSelected() {
+        return this._isSelected;
+    }
+
+    constructor(id: number, color: RgbaColor) {
+        this.prefabId = id;
+        this.color = color;
+        this.createButton();
+    }
+
+    private createButton() {
+        const prefabsContainer = $('#prefabs-container');
+        
+        this.buttonElement = $("<div>", {id: this.prefabId, "class": "prefab-button" });
+        this.diamondElement = $("<div>", {"class": "diamond-shape"});
+        this.diamondElement.attr("style", `background-color:${this.color.value()}`);
+        this.buttonElement.append(this.diamondElement);
+        prefabsContainer.append(this.buttonElement);
+        
+        this.buttonElement.on("click", () => {
+            if (!this._isSelected) 
+                this.select(true);
+        });
+    }
+
+    select(callEvent=false) {
+        this._isSelected = true;
+        this.buttonElement.addClass("selected");
+        if (callEvent)
+            this.onPrefabSelected.invoke(this.prefabId);
+    }
+
+    deselect(callEvent=false) {
+        this._isSelected = false;
+        this.buttonElement.removeClass("selected");
+        if (callEvent)
+            this.onPrefabDeselected.invoke(this.prefabId);
+    }
+}
+
 export class Timestamp extends GridElement {    
     
     id: number;
     width: number;
-
+    prefab: TimestampPrefab;
+    
     private maxWidth = 7;
     private minWidth = 1;
 
-    constructor(color: RgbaColor, position: Vec2, width : number, parent: Transform) {
-        super(parent, color);
-        this.width = width;
+    constructor(prefab: TimestampPrefab, position: Vec2, parent: Transform) {
+        super(parent, prefab.color);
+        this.width = prefab.width;
+        this.color = prefab.color;
+        this.prefab = prefab;
         this.transform.parent = parent;
         this.transform.position = position;
-        this.color = color;
     }
 
     draw(view: IViewportModule, canvas : HTMLCanvasElement) {

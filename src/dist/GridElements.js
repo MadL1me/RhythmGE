@@ -14,12 +14,16 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BeatLine = exports.BPMLine = exports.TimestepLine = exports.CreatableTimestampLine = exports.Timestamp = exports.GridElement = void 0;
+exports.BeatLine = exports.BPMLine = exports.TimestepLine = exports.CreatableTimestampLine = exports.Timestamp = exports.TimestampPrefab = exports.GridElement = void 0;
 var Transform_1 = require("./Transform");
-var Vec2_1 = require("./Vec2");
-var AppSettings_1 = require("./AppSettings");
-var Utils_1 = require("./Utils");
+var Vec2_1 = require("./Utils/Vec2");
+var AppSettings_1 = require("./Utils/AppSettings");
+var Utils_1 = require("./Utils/Utils");
+var jquery_1 = __importDefault(require("jquery"));
 var GridElement = /** @class */ (function () {
     function GridElement(parent, rgbaColor) {
         this.transform = new Transform_1.Transform();
@@ -72,16 +76,63 @@ var GridElement = /** @class */ (function () {
     return GridElement;
 }());
 exports.GridElement = GridElement;
+var TimestampPrefab = /** @class */ (function () {
+    function TimestampPrefab(id, color) {
+        this.width = 5;
+        this.onPrefabSelected = new Utils_1.Event();
+        this.onPrefabDeselected = new Utils_1.Event();
+        this.prefabId = id;
+        this.color = color;
+        this.createButton();
+    }
+    Object.defineProperty(TimestampPrefab.prototype, "isSelected", {
+        get: function () {
+            return this._isSelected;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    TimestampPrefab.prototype.createButton = function () {
+        var _this = this;
+        var prefabsContainer = jquery_1.default('#prefabs-container');
+        this.buttonElement = jquery_1.default("<div>", { id: this.prefabId, "class": "prefab-button" });
+        this.diamondElement = jquery_1.default("<div>", { "class": "diamond-shape" });
+        this.diamondElement.attr("style", "background-color:" + this.color.value());
+        this.buttonElement.append(this.diamondElement);
+        prefabsContainer.append(this.buttonElement);
+        this.buttonElement.on("click", function () {
+            if (!_this._isSelected)
+                _this.select(true);
+        });
+    };
+    TimestampPrefab.prototype.select = function (callEvent) {
+        if (callEvent === void 0) { callEvent = false; }
+        this._isSelected = true;
+        this.buttonElement.addClass("selected");
+        if (callEvent)
+            this.onPrefabSelected.invoke(this.prefabId);
+    };
+    TimestampPrefab.prototype.deselect = function (callEvent) {
+        if (callEvent === void 0) { callEvent = false; }
+        this._isSelected = false;
+        this.buttonElement.removeClass("selected");
+        if (callEvent)
+            this.onPrefabDeselected.invoke(this.prefabId);
+    };
+    return TimestampPrefab;
+}());
+exports.TimestampPrefab = TimestampPrefab;
 var Timestamp = /** @class */ (function (_super) {
     __extends(Timestamp, _super);
-    function Timestamp(color, position, width, parent) {
-        var _this = _super.call(this, parent, color) || this;
+    function Timestamp(prefab, position, parent) {
+        var _this = _super.call(this, parent, prefab.color) || this;
         _this.maxWidth = 7;
         _this.minWidth = 1;
-        _this.width = width;
+        _this.width = prefab.width;
+        _this.color = prefab.color;
+        _this.prefab = prefab;
         _this.transform.parent = parent;
         _this.transform.position = position;
-        _this.color = color;
         return _this;
     }
     Timestamp.prototype.draw = function (view, canvas) {

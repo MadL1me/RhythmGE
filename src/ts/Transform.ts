@@ -1,4 +1,4 @@
-import { Vec2 } from "./Vec2";
+import { Vec2 } from "./Utils/Vec2";
 
 import $ from 'jquery';
 

@@ -3,10 +3,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Input = void 0;
-var Utils_1 = require("./Utils");
-var Vec2_1 = require("./Vec2");
+exports.Input = exports.KeyBinding = void 0;
+var Utils_1 = require("./Utils/Utils");
+var Vec2_1 = require("./Utils/Vec2");
 var jquery_1 = __importDefault(require("jquery"));
+var KeyBinding = /** @class */ (function () {
+    function KeyBinding() {
+        this.onBindPress = new Utils_1.Event();
+    }
+    KeyBinding.prototype.invoke = function () {
+        this.onBindPress.invoke(this);
+    };
+    return KeyBinding;
+}());
+exports.KeyBinding = KeyBinding;
 var Input = /** @class */ (function () {
     function Input() {
     }
@@ -35,9 +45,18 @@ var Input = /** @class */ (function () {
     Input.isMouseMoved = function () {
         return this.lastMousePosition == this.mousePosition;
     };
-    Input.onCanvasMouseButtonDown = function () {
+    Input.registerKeyBinding = function (keyBind) {
+        this.keyBindings.push(keyBind);
     };
-    Input.onCanvasMouseUpButton = function () {
+    Input.checkForKeyBindings = function () {
+        var _this = this;
+        this.keyBindings.forEach(function (keyBind) {
+            keyBind.keysList.forEach(function (key) {
+                if (!_this.keysPressed[key])
+                    return;
+            });
+            keyBind.invoke();
+        });
     };
     Input.onCanvHover = function (event) {
         this.mousePosition = new Vec2_1.Vec2(event.clientX, event.clientY);
@@ -48,17 +67,19 @@ var Input = /** @class */ (function () {
             console.log("prevent default");
             event.preventDefault();
         }
+        //console.log('Key pressed' + event.code);
         this.keysPressed[event.code] = true;
-        console.log('Key pressed' + event.code);
-        Input.onKeyDown.invoke(event.code);
+        this.onKeyDown.invoke(event.code);
+        this.checkForKeyBindings();
     };
     Input.onCanvasKeyUp = function (event) {
         delete this.keysPressed[event.code];
-        console.log('Key removed' + event.code);
-        Input.onKeyUp.invoke(event);
+        //console.log('Key removed' + event.code);
+        this.onKeyUp.invoke(event);
     };
     Input.initialized = false;
     Input.lastMousePosition = new Vec2_1.Vec2(0, 0);
+    Input.keyBindings = new Array();
     Input.mousePosition = new Vec2_1.Vec2(0, 0);
     Input.keysPressed = {};
     Input.onKeyUp = new Utils_1.Event();
@@ -73,6 +94,7 @@ var Input = /** @class */ (function () {
     Input.onWheelCanvas = new Utils_1.Event();
     Input.onHoverWindow = new Utils_1.Event();
     Input.onWindowResize = new Utils_1.Event();
+    Input.onKeyBinding = new Utils_1.Event();
     return Input;
 }());
 exports.Input = Input;

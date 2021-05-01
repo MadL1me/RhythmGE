@@ -1,5 +1,5 @@
-import { IEditorCore, IEditorModule } from "./Editor";
-import { Transform } from "./Transform";
+import { IEditorCore, IEditorModule } from "../Editor";
+import { Transform } from "../Transform";
 
 import $ from "jquery";
 

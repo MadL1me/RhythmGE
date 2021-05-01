@@ -1,13 +1,23 @@
 import { Editor } from "./Editor";
-import { Slider, Event, Action } from "./Utils";
-import { Vec2 } from "./Vec2";
+import { Slider, Event, Action } from "./Utils/Utils";
+import { Vec2 } from "./Utils/Vec2";
 
 import $ from 'jquery';
+
+export class KeyBinding {
+    keysList: Array<string>;
+    onBindPress = new Event<KeyBinding>();
+
+    invoke() {
+        this.onBindPress.invoke(this);
+    }
+}
 
 export abstract class Input {
     private static initialized = false;
     private static lastMousePosition = new Vec2(0,0)
-    
+    private static keyBindings = new Array<KeyBinding>();
+
     static mousePosition = new Vec2(0,0);
     static keysPressed = {};
 
@@ -26,6 +36,8 @@ export abstract class Input {
    
     static onHoverWindow = new Event<JQuery.MouseMoveEvent>();
     static onWindowResize = new Event<JQuery.ResizeEvent>();
+
+    static onKeyBinding = new Event<KeyBinding>();
 
     static init() {
         if (Input.initialized)
@@ -59,12 +71,18 @@ export abstract class Input {
         return this.lastMousePosition == this.mousePosition;
     }
 
-    private static onCanvasMouseButtonDown() {
-
+    static registerKeyBinding(keyBind: KeyBinding) {
+        this.keyBindings.push(keyBind);
     }
 
-    private static onCanvasMouseUpButton() {
-
+    private static checkForKeyBindings() {
+        this.keyBindings.forEach((keyBind) => {
+            keyBind.keysList.forEach((key) => {
+                if (!this.keysPressed[key])
+                    return;
+            });
+            keyBind.invoke();
+        });
     }
 
     private static onCanvHover(event) {
@@ -78,15 +96,17 @@ export abstract class Input {
             event.preventDefault();
         }
 
+        //console.log('Key pressed' + event.code);
+
         this.keysPressed[event.code] = true;
-        console.log('Key pressed' + event.code);
-        Input.onKeyDown.invoke(event.code);
+        this.onKeyDown.invoke(event.code);
+        this.checkForKeyBindings();
     }
 
     private static onCanvasKeyUp(event) {
         delete this.keysPressed[event.code];
-        console.log('Key removed' + event.code);
-        Input.onKeyUp.invoke(event);
+        //console.log('Key removed' + event.code);
+        this.onKeyUp.invoke(event);
     }
 }
 
