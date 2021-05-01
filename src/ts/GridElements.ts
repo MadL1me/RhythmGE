@@ -25,18 +25,24 @@ export interface ISelectable {
     deselect();
 }
 
+export interface IMoveable {
+    move(newLocalPos: Vec2);
+    onMoved: Event<[IMoveable, Vec2]>
+}
+
 export interface IDeletable {
     delete();
     onDelete: Event<IDeletable>;
 }
 
-export abstract class GridElement implements IDrawable, ICompareNumberProvider, ISelectable, IDeletable, IRestorable {
+export abstract class GridElement implements IMoveable, IDrawable, ICompareNumberProvider, ISelectable, IDeletable, IRestorable {
     
     transform: Transform = new Transform();
     color: RgbaColor;
     
     onRestore = new Event<GridElement>();
     onDelete = new Event<GridElement>();
+    onMoved = new Event<[GridElement, Vec2]>();
 
     protected _outOfBounds: [boolean, boolean];
     protected _isActive: boolean = true;
@@ -50,6 +56,10 @@ export abstract class GridElement implements IDrawable, ICompareNumberProvider, 
     get value(): number {
         return this.transform.position.x;
     };
+
+    move(newLocalPos: Vec2) {
+        this.onMoved.invoke([this, newLocalPos]);
+    }
 
     draw(view : IViewportModule, canvas : HTMLCanvasElement) {
         this._outOfBounds = view.isOutOfViewportBounds(this.transform.position);

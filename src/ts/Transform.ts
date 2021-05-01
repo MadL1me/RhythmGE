@@ -17,15 +17,14 @@ export class Transform {
         this._localPosition = localPosition;
     }
 
-    worldToCanvas(worldCoords : Vec2) : Vec2 {
-        const pos = this.position;
-        return new Vec2(pos.x - worldCoords.x/this.scale.x,
-                        pos.y - worldCoords.y/this.scale.y);
-    }
-
     canvasToLocal(canvasCoords : Vec2) : Vec2 {
         const pos = this.position;
         return new Vec2(-1*(canvasCoords.x/this.scale.x - this.position.x/this.scale.x), 1);
+    }
+
+    localToCanvas(localCoords: Vec2) : Vec2 {
+        const pos = this.position;
+        return new Vec2(-1*(localCoords.x*this.scale.x + this.position.x/this.scale.x), 1);
     }
     
     canvasToWorld(canvasCoords: Vec2) : Vec2 { 
@@ -40,6 +39,7 @@ export class Transform {
     localToWorld(localPos: Vec2) : Vec2 {
         return Vec2.Multiply(Vec2.Sum(localPos, this.position), this.scale);
     }
+
 
     get localPosition() : Vec2 {
         return this._localPosition;

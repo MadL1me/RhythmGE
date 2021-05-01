@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var Editor_1 = require("./Editor");
+var TimestepLineModule_1 = require("./EditorModules/TimestepLineModule");
 var CreatableLinesModule_1 = require("./EditorModules/CreatableLinesModule");
 var TimestampsModule_1 = require("./EditorModules/TimestampsModule");
 var ElementSelectorModule_1 = require("./EditorModules/ElementSelectorModule");
@@ -17,7 +18,7 @@ function setupModules() {
     var cLines = new CreatableLinesModule_1.CreatableLinesModule();
     var topScale = new ScaleModule_1.TopScale(10);
     var timestampsModule = new TimestampsModule_1.TimestampsModule(grid, cLines);
-    var timestampLine = new Editor_1.TimestepLineModule();
+    var timestampLine = new TimestepLineModule_1.TimestepLineModule();
     var audio = new AudioModules_1.AudioAmplitudeViewModule();
     var visualiser = new VisualiserEditorModule_1.VisualiserEditorModule();
     var selectorModule = new ElementSelectorModule_1.ElementSelectorModule(grid, cLines, timestampsModule);

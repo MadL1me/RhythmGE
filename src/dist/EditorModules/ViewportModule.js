@@ -19,6 +19,8 @@ var ViewportModule = /** @class */ (function () {
         Input_1.Input.onWheelCanvas.addListener(function (event) { _this.onCanvasScroll(event); });
     }
     ViewportModule.prototype.onCanvasScroll = function (event) {
+        if (Input_1.Input.keysPressed["ControlLeft"])
+            return;
         var isSpeededUp = Input_1.Input.keysPressed["ShiftLeft"] == true;
         var mouseDelta = event.deltaY;
         if (this.editor.editorData.followLine.value)
@@ -29,6 +31,7 @@ var ViewportModule = /** @class */ (function () {
         this.transform.localPosition = new Vec2_1.Vec2(this.transform.localPosition.x + resultedDelta, this.position.y);
         if (this.transform.localPosition.x > this.maxDeviation.x)
             this.transform.localPosition = new Vec2_1.Vec2(this.maxDeviation.x, this.position.y);
+        console.log(this.transform.localPosition);
     };
     Object.defineProperty(ViewportModule.prototype, "position", {
         get: function () {

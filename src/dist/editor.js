@@ -3,13 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TimestepLineModule = exports.Editor = exports.EditorData = void 0;
+exports.Editor = exports.EditorData = void 0;
 var jquery_1 = __importDefault(require("jquery"));
 var Vec2_1 = require("./Utils/Vec2");
 var Transform_1 = require("./Transform");
-var GridElements_1 = require("./GridElements");
 var ViewportModule_1 = require("./EditorModules/ViewportModule");
-var AppSettings_1 = require("./Utils/AppSettings");
 var Input_1 = require("./Input");
 var Utils_1 = require("./Utils/Utils");
 var AudioModules_1 = require("./EditorModules/AudioModules");
@@ -103,45 +101,20 @@ var Editor = /** @class */ (function () {
     Editor.prototype.onChangeScale = function (mouseDelta) {
         if (!Input_1.Input.keysPressed["ControlLeft"])
             return;
+        Input_1.Input.onWheelCanvas.preventFiringEventOnce();
         mouseDelta = mouseDelta > 0 ? 1 : -1;
         var resultedDelta = mouseDelta * Math.log(this.transform.scale.x / this.editorData.resizingSpeed.value);
-        var oldScale = this.transform.scale.x;
-        var canvCenter = this.viewport.canvasToSongTime(new Vec2_1.Vec2(this._editorCanvas.width / 2, 0));
+        var lastPos = this.viewport.transform.localPosition;
         this.transform.scale = new Vec2_1.Vec2(this.transform.scale.x - resultedDelta, this.transform.scale.y);
-        var scaleIsChanged = true;
         if (this.transform.scale.x <= this.transform.minScale.x) {
             this.transform.scale = new Vec2_1.Vec2(this.transform.minScale.x, this.transform.scale.y);
-            scaleIsChanged = false;
         }
         if (this.transform.scale.x >= this.transform.maxScale.x) {
             this.transform.scale = new Vec2_1.Vec2(this.transform.maxScale.x, this.transform.scale.y);
-            scaleIsChanged = false;
         }
-        this.viewport.position = Vec2_1.Vec2.Substract(new Vec2_1.Vec2(this._editorCanvas.width / 2, 0), canvCenter);
+        this.viewport.transform.localPosition = lastPos;
         this.update();
     };
     return Editor;
 }());
 exports.Editor = Editor;
-var TimestepLineModule = /** @class */ (function () {
-    function TimestepLineModule() {
-        this.transform = new Transform_1.Transform();
-        this.timestepLine = new GridElements_1.TimestepLine(this.transform, AppSettings_1.editorColorSettings.timestepLineColor);
-        this.canvas = jquery_1.default("#editor-canvas")[0];
-    }
-    TimestepLineModule.prototype.init = function (editorCoreModules) {
-        this.editor = editorCoreModules;
-    };
-    TimestepLineModule.prototype.updateModule = function () {
-        if (this.editor.audio.isPlaying()) {
-            this.timestepLine.transform.localPosition = new Vec2_1.Vec2(this.editor.audio.seek(), 0);
-            if (this.editor.editorData.followLine.value) {
-                var result = new Vec2_1.Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 0);
-                this.editor.viewport.transform.position = result;
-            }
-        }
-        this.timestepLine.draw(this.editor.viewport, this.canvas);
-    };
-    return TimestepLineModule;
-}());
-exports.TimestepLineModule = TimestepLineModule;

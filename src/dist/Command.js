@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MoveElementsCommand = exports.CreateElememtsCommand = exports.DeleteElementsCommand = exports.SelectElementsCommand = exports.CommandsController = void 0;
+exports.MoveElementsCommand = exports.CreateElememtsCommand = exports.DeleteElementsCommand = exports.CommandsController = void 0;
 var Input_1 = require("./Input");
 var CommandsController = /** @class */ (function () {
     function CommandsController() {
@@ -27,6 +27,8 @@ var CommandsController = /** @class */ (function () {
         executedCommand.execute();
     };
     CommandsController.undoCommand = function () {
+        if (this.commands.length < 1)
+            return;
         this.commands[this.commandIndex].undo();
         this.commandIndex--;
     };
@@ -46,26 +48,21 @@ var CommandsController = /** @class */ (function () {
     return CommandsController;
 }());
 exports.CommandsController = CommandsController;
-var SelectElementsCommand = /** @class */ (function () {
-    function SelectElementsCommand(elements, selector) {
-        this.elements = elements;
-        this.selector = selector;
-    }
-    SelectElementsCommand.prototype.execute = function () {
-        var _this = this;
-        this.elements.forEach(function (element) {
-            _this.selector.selectElement(element);
-        });
-    };
-    SelectElementsCommand.prototype.undo = function () {
-        var _this = this;
-        this.elements.forEach(function (element) {
-            _this.selector.deselectElement(element);
-        });
-    };
-    return SelectElementsCommand;
-}());
-exports.SelectElementsCommand = SelectElementsCommand;
+// export class SelectElementsCommand implements ICommand {
+//     constructor (
+//         private elements: Array<GridElement>, 
+//         private selector: ElementSelectorModule) {}
+//     execute() {
+//         this.elements.forEach((element) => {
+//             this.selector.selectElement(element);
+//         });
+//     }
+//     undo() {
+//         this.elements.forEach((element) => {
+//             this.selector.deselectElement(element);
+//         });
+//     }
+// }
 var DeleteElementsCommand = /** @class */ (function () {
     function DeleteElementsCommand(gridElements, selector) {
         this.gridElements = gridElements;
@@ -81,7 +78,7 @@ var DeleteElementsCommand = /** @class */ (function () {
         this.gridElements.forEach(function (element) {
             element.restore();
         });
-        this.selector.setSelectedElemetnts(this.gridElements);
+        this.selector.setSelectedElements(this.gridElements);
     };
     return DeleteElementsCommand;
 }());

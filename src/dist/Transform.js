@@ -15,13 +15,13 @@ var Transform = /** @class */ (function () {
         this._parent = parent;
         this._localPosition = localPosition;
     }
-    Transform.prototype.worldToCanvas = function (worldCoords) {
-        var pos = this.position;
-        return new Vec2_1.Vec2(pos.x - worldCoords.x / this.scale.x, pos.y - worldCoords.y / this.scale.y);
-    };
     Transform.prototype.canvasToLocal = function (canvasCoords) {
         var pos = this.position;
         return new Vec2_1.Vec2(-1 * (canvasCoords.x / this.scale.x - this.position.x / this.scale.x), 1);
+    };
+    Transform.prototype.localToCanvas = function (localCoords) {
+        var pos = this.position;
+        return new Vec2_1.Vec2(-1 * (localCoords.x * this.scale.x + this.position.x / this.scale.x), 1);
     };
     Transform.prototype.canvasToWorld = function (canvasCoords) {
         var pos = this.position;

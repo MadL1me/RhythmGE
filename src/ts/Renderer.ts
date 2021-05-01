@@ -1,4 +1,5 @@
-import { Editor, TimestepLineModule } from "./Editor";
+import { Editor } from "./Editor";
+import { TimestepLineModule } from "./EditorModules/TimestepLineModule";
 import { CreatableLinesModule } from "./EditorModules/CreatableLinesModule";
 import { TimestampsModule } from "./EditorModules/TimestampsModule";
 import { ElementSelectorModule } from "./EditorModules/ElementSelectorModule";

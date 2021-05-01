@@ -47,6 +47,8 @@ export class CommandsController {
     }
 
     static undoCommand() {
+        if (this.commands.length < 1)
+            return;
         this.commands[this.commandIndex].undo();
         this.commandIndex--;
     }
@@ -60,24 +62,24 @@ export class CommandsController {
     }
 }
 
-export class SelectElementsCommand implements ICommand {
+// export class SelectElementsCommand implements ICommand {
 
-    constructor (
-        private elements: Array<GridElement>, 
-        private selector: ElementSelectorModule) {}
+//     constructor (
+//         private elements: Array<GridElement>, 
+//         private selector: ElementSelectorModule) {}
 
-    execute() {
-        this.elements.forEach((element) => {
-            this.selector.selectElement(element);
-        });
-    }
+//     execute() {
+//         this.elements.forEach((element) => {
+//             this.selector.selectElement(element);
+//         });
+//     }
 
-    undo() {
-        this.elements.forEach((element) => {
-            this.selector.deselectElement(element);
-        });
-    }
-}
+//     undo() {
+//         this.elements.forEach((element) => {
+//             this.selector.deselectElement(element);
+//         });
+//     }
+// }
 
 export class DeleteElementsCommand implements ICommand {
     
@@ -97,7 +99,7 @@ export class DeleteElementsCommand implements ICommand {
         this.gridElements.forEach((element) => {
            element.restore();
         });
-        this.selector.setSelectedElemetnts(this.gridElements);
+        this.selector.setSelectedElements(this.gridElements);
     }
 }
 

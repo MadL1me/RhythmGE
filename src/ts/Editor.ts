@@ -8,14 +8,13 @@ import { RgbaColor } from "./Utils/RgbaColor";
 import { Vec2 } from "./Utils/Vec2";
 import { Transform } from "./Transform";
 import { TopScale } from "./EditorModules/ScaleModule";
-import { TimestepLine } from "./GridElements";
 import { ViewportModule, IViewportModule } from "./EditorModules/ViewportModule";
-import { editorColorSettings } from "./Utils/AppSettings";
 import { Input } from "./Input";
 import { Slider, Event, EventVar } from "./Utils/Utils";
 import { AudioAmplitudeViewModule, AudioModule, IAudioModule } from "./EditorModules/AudioModules";
 import { timeStamp } from 'node:console';
 import { start } from 'node:repl';
+import { IDrawable } from './GridElements';
 
 export interface IEditorCore {
     transform: Transform;
@@ -95,6 +94,7 @@ export class Editor implements IEditorCore {
     editorData = new EditorData();
     audio = new AudioModule();
 
+    private _lastDrawable: IDrawable;
     private _editorModules = new Array<IEditorModule>();
     private _editorCanvas: HTMLCanvasElement;
 
@@ -115,6 +115,10 @@ export class Editor implements IEditorCore {
         this.update();
     }
 
+    addLastDrawableElement(element: IDrawable) {
+        this._lastDrawable = element;
+    }
+
     addEditorModule(element: IEditorModule) {
         element.init(this);
         element.transform.parent = this.transform;
@@ -129,6 +133,8 @@ export class Editor implements IEditorCore {
         for(let i = 0; i<this._editorModules.length; i++) {
             this._editorModules[i].updateModule();
         }
+
+        this._lastDrawable.draw(this.viewport, this._editorCanvas);
     }
 
     private onCanvasClick(event: JQuery.ClickEvent) {
@@ -142,55 +148,21 @@ export class Editor implements IEditorCore {
         if (!Input.keysPressed["ControlLeft"])
             return;
         
+        Input.onWheelCanvas.preventFiringEventOnce();
         mouseDelta = mouseDelta > 0 ? 1 : -1;
 
         let resultedDelta = mouseDelta * Math.log(this.transform.scale.x / this.editorData.resizingSpeed.value);
-        let oldScale = this.transform.scale.x;
-
-        const canvCenter = this.viewport.canvasToSongTime(new Vec2(this._editorCanvas.width / 2, 0));
-
+        let lastPos = this.viewport.transform.localPosition;
         this.transform.scale = new Vec2(this.transform.scale.x - resultedDelta, this.transform.scale.y);
-        let scaleIsChanged = true;
 
         if (this.transform.scale.x <= this.transform.minScale.x) {
             this.transform.scale = new Vec2(this.transform.minScale.x, this.transform.scale.y);
-            scaleIsChanged = false;
         }
         if (this.transform.scale.x >= this.transform.maxScale.x) {
             this.transform.scale = new Vec2(this.transform.maxScale.x, this.transform.scale.y);
-            scaleIsChanged = false;
         }
 
-        this.viewport.position = Vec2.Substract(new Vec2(this._editorCanvas.width / 2, 0), canvCenter);
+        this.viewport.transform.localPosition = lastPos;
         this.update();
-    }
-}
-
-export class TimestepLineModule implements IEditorModule {
-    transform = new Transform();
-    
-    private editor: IEditorCore;
-    private timestepLine = new TimestepLine(this.transform, editorColorSettings.timestepLineColor);
-    private canvas: HTMLCanvasElement;
-
-    constructor() {
-        this.canvas = $("#editor-canvas")[0] as HTMLCanvasElement;
-    }
-
-    init(editorCoreModules: IEditorCore) {
-        this.editor = editorCoreModules;
-    }
-
-    updateModule() {
-        if (this.editor.audio.isPlaying()) {
-            this.timestepLine.transform.localPosition = new Vec2(this.editor.audio.seek(), 0);
-
-            if (this.editor.editorData.followLine.value) {
-                const result = new Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 0);
-                this.editor.viewport.transform.position = result;
-            }
-        }
-
-        this.timestepLine.draw(this.editor.viewport, this.canvas);
-    }
+    } 
 }
