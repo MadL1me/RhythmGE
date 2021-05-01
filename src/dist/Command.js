@@ -17,7 +17,7 @@ var CommandsController = /** @class */ (function () {
     };
     CommandsController.executeCommand = function (executedCommand) {
         if (this.commandIndex != this.commands.length - 1) {
-            this.commands = this.commands.slice(0, this.commandIndex);
+            this.commands.splice(this.commandIndex);
         }
         if (this.commands.length > this.commandsCapacity) {
             this.commands.shift();

@@ -104,11 +104,15 @@ export class TimestampsModule implements IEditorModule {
         let xValues = this.clapTimings.slice(startIndex, endIndex + 1);
         let resultTimestamps = new Array<Timestamp>();
 
+        console.log(this.clapTimings);
+        console.log(xValues);
+
         console.log(startIndex);
         console.log(endIndex);
         console.log(xValues.length);
 
         xValues.forEach((value) => {
+            console.log(value);
             let yArray = this.timestamps.get(value);
 
             yArray.forEach((value) => {
@@ -152,12 +156,14 @@ export class TimestampsModule implements IEditorModule {
     private deleteTimestamp(timestamp: Timestamp) {
         console.log(timestamp.transform.localPosition.y);
         console.log(this.timestamps.get(timestamp.transform.localPosition.x).get(timestamp.transform.localPosition.y));
-        this.timestamps.get(timestamp.transform.localPosition.x).delete(timestamp.transform.localPosition.y);
-        if (this.timestamps.get(timestamp.transform.localPosition.x).size < 1) {
+        let yArr = this.timestamps.get(timestamp.transform.localPosition.x);
+        yArr.delete(timestamp.transform.localPosition.y);
+        if (yArr.size < 1) {
             this.timestamps.delete(timestamp.transform.localPosition.x);
             console.log("KEY IS DELETED");
-            console.log(`Map size is: ${this.timestamps.size}`);
-            this.clapTimings.splice(Utils.binaryNearestSearchNumber(this.clapTimings, timestamp.transform.position.x, Func.Round), 1)
+            console.log(`Map size is: ${yArr.size}`);
+            this.clapTimings.splice(Utils.binaryNearestSearchNumber(this.clapTimings, timestamp.transform.localPosition.x, Func.Round), 1)
+            console.log(`clap lenght: ${this.clapTimings.length}`);     
         }
     }
 

@@ -34,7 +34,7 @@ export class CommandsController {
 
     static executeCommand(executedCommand: ICommand) {
         if (this.commandIndex != this.commands.length-1) {
-            this.commands = this.commands.slice(0, this.commandIndex);
+            this.commands.splice(this.commandIndex);
         }
 
         if (this.commands.length > this.commandsCapacity) {

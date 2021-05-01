@@ -86,10 +86,13 @@ var TimestampsModule = /** @class */ (function () {
         var endIndex = Utils_1.Utils.binaryNearestSearchNumber(this.clapTimings, endPos.x, Utils_1.Func.Floor);
         var xValues = this.clapTimings.slice(startIndex, endIndex + 1);
         var resultTimestamps = new Array();
+        console.log(this.clapTimings);
+        console.log(xValues);
         console.log(startIndex);
         console.log(endIndex);
         console.log(xValues.length);
         xValues.forEach(function (value) {
+            console.log(value);
             var yArray = _this.timestamps.get(value);
             yArray.forEach(function (value) {
                 if (value.transform.localPosition.y > startPos.y
@@ -124,12 +127,14 @@ var TimestampsModule = /** @class */ (function () {
     TimestampsModule.prototype.deleteTimestamp = function (timestamp) {
         console.log(timestamp.transform.localPosition.y);
         console.log(this.timestamps.get(timestamp.transform.localPosition.x).get(timestamp.transform.localPosition.y));
-        this.timestamps.get(timestamp.transform.localPosition.x).delete(timestamp.transform.localPosition.y);
-        if (this.timestamps.get(timestamp.transform.localPosition.x).size < 1) {
+        var yArr = this.timestamps.get(timestamp.transform.localPosition.x);
+        yArr.delete(timestamp.transform.localPosition.y);
+        if (yArr.size < 1) {
             this.timestamps.delete(timestamp.transform.localPosition.x);
             console.log("KEY IS DELETED");
-            console.log("Map size is: " + this.timestamps.size);
-            this.clapTimings.splice(Utils_1.Utils.binaryNearestSearchNumber(this.clapTimings, timestamp.transform.position.x, Utils_1.Func.Round), 1);
+            console.log("Map size is: " + yArr.size);
+            this.clapTimings.splice(Utils_1.Utils.binaryNearestSearchNumber(this.clapTimings, timestamp.transform.localPosition.x, Utils_1.Func.Round), 1);
+            console.log("clap lenght: " + this.clapTimings.length);
         }
     };
     TimestampsModule.prototype.restoreTimestamp = function (timestamp) {
