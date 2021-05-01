@@ -51,10 +51,13 @@ var Input = /** @class */ (function () {
     Input.checkForKeyBindings = function () {
         var _this = this;
         this.keyBindings.forEach(function (keyBind) {
-            keyBind.keysList.forEach(function (key) {
+            for (var i = 0; i < keyBind.keysList.length; i++) {
+                var key = keyBind.keysList[i];
+                // console.log("Binds key:");
+                // console.log(key);
                 if (!_this.keysPressed[key])
                     return;
-            });
+            }
             keyBind.invoke();
         });
     };
@@ -67,14 +70,14 @@ var Input = /** @class */ (function () {
             console.log("prevent default");
             event.preventDefault();
         }
-        //console.log('Key pressed' + event.code);
+        console.log('Key pressed' + event.code);
         this.keysPressed[event.code] = true;
         this.onKeyDown.invoke(event.code);
         this.checkForKeyBindings();
     };
     Input.onCanvasKeyUp = function (event) {
         delete this.keysPressed[event.code];
-        //console.log('Key removed' + event.code);
+        console.log('Key removed' + event.code);
         this.onKeyUp.invoke(event);
     };
     Input.initialized = false;

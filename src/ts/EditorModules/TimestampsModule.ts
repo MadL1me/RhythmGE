@@ -8,6 +8,7 @@ import { Utils, Event, Func } from "../Utils/Utils";
 import { EditorGrid } from './EditorGridModule';
 import { IEditorModule, IEditorCore } from '../Editor';
 import { CreatableLinesModule } from "./CreatableLinesModule";
+import { timeStamp } from 'node:console';
 
 
 export class TimestampsModule implements IEditorModule {
@@ -56,28 +57,29 @@ export class TimestampsModule implements IEditorModule {
     }
 
     updateModule() {
-        for (const [i, value] of Object.entries(this.timestamps)) {
-            for (const [j, timestamp] of Object.entries(value)) {
-                (timestamp as Timestamp).draw(this.editorCore.viewport, this.canvas);
-            }
-        }
-    }
-
-    removeTimestamp(timestamp: Timestamp) {
-        delete this.timestamps[timestamp.transform.localPosition.x][timestamp.transform.localPosition.y];
+        this.timestamps.forEach((value) => {
+            value.forEach((timestamp) => {
+                timestamp.draw(this.editorCore.viewport, this.canvas);
+            });
+        });
+        // for (const [i, value] of Object.entries(this.timestamps)) {
+        //     for (const [j, timestamp] of Object.entries(value)) {
+        //         (timestamp as Timestamp).draw(this.editorCore.viewport, this.canvas);
+        //     }
+        // }
     }
 
     createTimestampPrefab(color: RgbaColor): TimestampPrefab {
         const prefab = new TimestampPrefab(TimestampsModule.nextPrefabId++, color);
-        this.idToPrefab[prefab.prefabId] = prefab;
+        this.idToPrefab.set(prefab.prefabId, prefab);
         prefab.onPrefabSelected.addListener((id) => { this.selectPrefab(id); });
         return prefab;
     }
 
     selectPrefab(id: number) {
         this.selectedPrefabId = id;
-        Object.values(this.idToPrefab).forEach(prefab => {
-            prefab.deselect();
+        this.idToPrefab.forEach((value, key) => {
+            value.deselect();
         });
         this.selectedPrefab.select();
     }
@@ -107,14 +109,14 @@ export class TimestampsModule implements IEditorModule {
         console.log(xValues.length);
 
         xValues.forEach((value) => {
-            let yArray = this.timestamps[value] as Map<number, Timestamp>;
+            let yArray = this.timestamps.get(value);
 
-            for (const [key, value] of Object.entries(yArray)) {
-                if ((value as Timestamp).transform.localPosition.y > startPos.y
-                    && (value as Timestamp).transform.localPosition.y < endPos.y) {
-                    resultTimestamps.push(value as Timestamp);
+            yArray.forEach((value) => {
+                if (value.transform.localPosition.y > startPos.y
+                    && value.transform.localPosition.y < endPos.y) {
+                    resultTimestamps.push(value);
                 }
-            }
+            });
         });
 
         return resultTimestamps;
@@ -129,7 +131,7 @@ export class TimestampsModule implements IEditorModule {
 
         let index = Utils.binaryNearestSearchNumber(this.clapTimings, position.x);
         console.log(this.clapTimings[index]);
-        let yArray = this.timestamps[this.clapTimings[index]] as Map<number, Timestamp>;
+        let yArray = this.timestamps.get(this.clapTimings[index]);
         console.log(yArray);
 
         console.log(`index is ${index}`);
@@ -137,18 +139,43 @@ export class TimestampsModule implements IEditorModule {
         let result = null;
         let min = 10000;
 
-        for (const [key, timestamp] of Object.entries(yArray)) {
+        yArray.forEach((timestamp) => {
             let distance = Math.abs(timestamp.transform.localPosition.y - position.y);
             if (distance < min) {
                 min = distance;
                 result = timestamp;
             }
-        }
+        })
         return result;
     }
 
+    private deleteTimestamp(timestamp: Timestamp) {
+        console.log(timestamp.transform.localPosition.y);
+        console.log(this.timestamps.get(timestamp.transform.localPosition.x).get(timestamp.transform.localPosition.y));
+        this.timestamps.get(timestamp.transform.localPosition.x).delete(timestamp.transform.localPosition.y);
+        if (this.timestamps.get(timestamp.transform.localPosition.x).size < 1) {
+            this.timestamps.delete(timestamp.transform.localPosition.x);
+            console.log("KEY IS DELETED");
+            console.log(`Map size is: ${this.timestamps.size}`);
+            this.clapTimings.splice(Utils.binaryNearestSearchNumber(this.clapTimings, timestamp.transform.position.x, Func.Round), 1)
+        }
+    }
+
+    private restoreTimestamp(timestamp: Timestamp) {
+        if (this.timestamps.get(timestamp.transform.localPosition.x) == undefined) {
+            this.timestamps.set(timestamp.transform.localPosition.x, new Map<number, Timestamp>());
+            this.clapTimings.push(timestamp.transform.localPosition.x);
+            this.clapTimings.sort((a, b) => a - b);
+        }
+
+        if (this.timestamps.get(timestamp.transform.localPosition.x).get(timestamp.transform.localPosition.y) == null) {
+            this.timestamps.get(timestamp.transform.localPosition.x).set(timestamp.transform.localPosition.y, timestamp);
+        }
+        this.editorCore.audio.setClapTimings(this.clapTimings);
+    }
+
     private get selectedPrefab(): TimestampPrefab {
-        return this.idToPrefab[this.selectedPrefabId];
+        return this.idToPrefab.get(this.selectedPrefabId);
     }
 
     private onCanvasClick(event) {
@@ -193,26 +220,27 @@ export class TimestampsModule implements IEditorModule {
     }
 
     private createTimestamp(position: Vec2) {
-        const prefab = this.idToPrefab[this.selectedPrefabId] as TimestampPrefab;
+        const prefab = this.idToPrefab.get(this.selectedPrefabId);
 
         let newTimestamp = new Timestamp(prefab, new Vec2(position.x, position.y), this.editorGridModule.transform);
-        const yArray = this.timestamps[newTimestamp.transform.localPosition.x];
-
-        if (yArray == undefined) {
-            this.timestamps[newTimestamp.transform.localPosition.x] = {};
+       
+        if (this.timestamps.get(newTimestamp.transform.localPosition.x) == undefined) {
+            this.timestamps.set(newTimestamp.transform.localPosition.x, new Map<number, Timestamp>());
             this.clapTimings.push(newTimestamp.transform.localPosition.x);
             this.clapTimings.sort((a, b) => { return a - b; });
         }
 
-        if (this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] == null) {
-            this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] = newTimestamp;
-        }
-        else if ((this.timestamps[newTimestamp.transform.localPosition.x][newTimestamp.transform.localPosition.y] as Timestamp)
-            .prefab.prefabId != prefab.prefabId) {
+        if (this.timestamps.get(newTimestamp.transform.localPosition.x).get(newTimestamp.transform.localPosition.y) == null) {
+            this.timestamps.get(newTimestamp.transform.localPosition.x).set(newTimestamp.transform.localPosition.y, newTimestamp);
             
+            newTimestamp.onDelete.addListener((element) => {this.deleteTimestamp(element as Timestamp);});
+            newTimestamp.onRestore.addListener((element) => {this.restoreTimestamp(element as Timestamp);});
+        }
+        else if (this.timestamps.get(newTimestamp.transform.localPosition.x).get(newTimestamp.transform.localPosition.y)
+            .prefab.prefabId != prefab.prefabId) {
+                this.timestamps.get(newTimestamp.transform.localPosition.x).get(newTimestamp.transform.localPosition.y).prefab = prefab;
         }
 
-        if (this.editorCore.editorData.useClaps.value)
-            this.editorCore.audio.setClapTimings(this.clapTimings);
+        this.editorCore.audio.setClapTimings(this.clapTimings);
     }
 }

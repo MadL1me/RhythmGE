@@ -1,6 +1,9 @@
+import { CreatableLinesModule } from "./EditorModules/CreatableLinesModule";
 import { ElementSelectorModule } from "./EditorModules/ElementSelectorModule";
-import { GridElement } from "./GridElements";
+import { TimestampsModule } from "./EditorModules/TimestampsModule";
+import { CreatableTimestampLine, GridElement, Timestamp } from "./GridElements";
 import { Input, KeyBinding } from "./Input";
+import { Vec2 } from "./Utils/Vec2";
 
 export interface ICommand {
     execute();
@@ -29,7 +32,7 @@ export class CommandsController {
         Input.registerKeyBinding(this.redoBind);
     }
 
-    static addCommandToList(executedCommand: ICommand) {
+    static executeCommand(executedCommand: ICommand) {
         if (this.commandIndex != this.commands.length-1) {
             this.commands = this.commands.slice(0, this.commandIndex);
         }
@@ -39,7 +42,8 @@ export class CommandsController {
         }
 
         this.commands.push(executedCommand);
-        this.commandIndex=this.commands.length;
+        this.commandIndex=this.commands.length-1;
+        executedCommand.execute();
     }
 
     static undoCommand() {
@@ -77,40 +81,60 @@ export class SelectElementsCommand implements ICommand {
 
 export class DeleteElementsCommand implements ICommand {
     
-    constructor (
-        private elements: Array<GridElement>, 
-        private selector: ElementSelectorModule) {}
+    constructor 
+    (
+        private gridElements: Array<GridElement>,
+        private selector: ElementSelectorModule
+        ) {}
    
     execute() {
-        throw new Error("Method not implemented.");
+        this.gridElements.forEach((element) => {
+            element.delete();
+        });
+        this.selector.deselectAll();
     }
     undo() {
-        throw new Error("Method not implemented.");
+        this.gridElements.forEach((element) => {
+           element.restore();
+        });
+        this.selector.setSelectedElemetnts(this.gridElements);
     }
 }
+
+export class CreateElememtsCommand implements ICommand {
+    
+    constructor (private gridElements: Array<GridElement>) {}
+   
+    execute() {
+        this.gridElements.forEach((element) => {
+            element.restore();
+        });
+    }
+    undo() {
+        this.gridElements.forEach((element) => {
+            element.delete();
+        });
+    }
+ }
 
 export class MoveElementsCommand implements ICommand{
-    execute() {
-        throw new Error("Method not implemented.");
-    }
-    undo() {
-        throw new Error("Method not implemented.");
-    }
-
-}
-
-export class InsertElememtsCommand implements ICommand {
     
-    constructor(
-        private insertedElements: Array<GridElement>
-        ) {}
+    private lastPositions: Vec2[];
 
+    constructor(private movedElements: GridElement[]) {}
+    
     execute() {
-        throw new Error("Method not implemented.");
+        this.movedElements.forEach((element) => {
+            this.lastPositions.push(element.transform.position);
+        });
     }
+
     undo() {
-        throw new Error("Method not implemented.");
+        for(let i = 0; i<this.movedElements.length; i++) {
+            this.movedElements[i].transform.position = this.lastPositions[i];
+        }
     }
+
 }
 
 CommandsController.init();

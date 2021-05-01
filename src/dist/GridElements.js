@@ -27,6 +27,7 @@ var jquery_1 = __importDefault(require("jquery"));
 var GridElement = /** @class */ (function () {
     function GridElement(parent, rgbaColor) {
         this.transform = new Transform_1.Transform();
+        this.onRestore = new Utils_1.Event();
         this.onDelete = new Utils_1.Event();
         this._isActive = true;
         this._isSelected = false;
@@ -46,6 +47,9 @@ var GridElement = /** @class */ (function () {
     };
     GridElement.prototype.delete = function () {
         this.onDelete.invoke(this);
+    };
+    GridElement.prototype.restore = function () {
+        this.onRestore.invoke(this);
     };
     Object.defineProperty(GridElement.prototype, "isActive", {
         get: function () {
@@ -78,7 +82,7 @@ var GridElement = /** @class */ (function () {
 exports.GridElement = GridElement;
 var TimestampPrefab = /** @class */ (function () {
     function TimestampPrefab(id, color) {
-        this.width = 5;
+        this.width = 0.2;
         this.onPrefabSelected = new Utils_1.Event();
         this.onPrefabDeselected = new Utils_1.Event();
         this.prefabId = id;
@@ -130,11 +134,23 @@ var Timestamp = /** @class */ (function (_super) {
         _this.minWidth = 1;
         _this.width = prefab.width;
         _this.color = prefab.color;
-        _this.prefab = prefab;
+        _this._prefab = prefab;
         _this.transform.parent = parent;
         _this.transform.position = position;
         return _this;
     }
+    Object.defineProperty(Timestamp.prototype, "prefab", {
+        get: function () {
+            return this._prefab;
+        },
+        set: function (value) {
+            this._prefab = value;
+            this.color = value.color;
+            this.width = value.width;
+        },
+        enumerable: false,
+        configurable: true
+    });
     Timestamp.prototype.draw = function (view, canvas) {
         _super.prototype.draw.call(this, view, canvas);
         if (this._outOfBounds[0])

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.InsertElememtsCommand = exports.MoveElementsCommand = exports.DeleteElementsCommand = exports.SelectElementsCommand = exports.CommandsController = void 0;
+exports.MoveElementsCommand = exports.CreateElememtsCommand = exports.DeleteElementsCommand = exports.SelectElementsCommand = exports.CommandsController = void 0;
 var Input_1 = require("./Input");
 var CommandsController = /** @class */ (function () {
     function CommandsController() {
@@ -15,7 +15,7 @@ var CommandsController = /** @class */ (function () {
         Input_1.Input.registerKeyBinding(this.undoBind);
         Input_1.Input.registerKeyBinding(this.redoBind);
     };
-    CommandsController.addCommandToList = function (executedCommand) {
+    CommandsController.executeCommand = function (executedCommand) {
         if (this.commandIndex != this.commands.length - 1) {
             this.commands = this.commands.slice(0, this.commandIndex);
         }
@@ -23,7 +23,8 @@ var CommandsController = /** @class */ (function () {
             this.commands.shift();
         }
         this.commands.push(executedCommand);
-        this.commandIndex = this.commands.length;
+        this.commandIndex = this.commands.length - 1;
+        executedCommand.execute();
     };
     CommandsController.undoCommand = function () {
         this.commands[this.commandIndex].undo();
@@ -66,42 +67,58 @@ var SelectElementsCommand = /** @class */ (function () {
 }());
 exports.SelectElementsCommand = SelectElementsCommand;
 var DeleteElementsCommand = /** @class */ (function () {
-    function DeleteElementsCommand(elements, selector) {
-        this.elements = elements;
+    function DeleteElementsCommand(gridElements, selector) {
+        this.gridElements = gridElements;
         this.selector = selector;
     }
     DeleteElementsCommand.prototype.execute = function () {
-        throw new Error("Method not implemented.");
+        this.gridElements.forEach(function (element) {
+            element.delete();
+        });
+        this.selector.deselectAll();
     };
     DeleteElementsCommand.prototype.undo = function () {
-        throw new Error("Method not implemented.");
+        this.gridElements.forEach(function (element) {
+            element.restore();
+        });
+        this.selector.setSelectedElemetnts(this.gridElements);
     };
     return DeleteElementsCommand;
 }());
 exports.DeleteElementsCommand = DeleteElementsCommand;
+var CreateElememtsCommand = /** @class */ (function () {
+    function CreateElememtsCommand(gridElements) {
+        this.gridElements = gridElements;
+    }
+    CreateElememtsCommand.prototype.execute = function () {
+        this.gridElements.forEach(function (element) {
+            element.restore();
+        });
+    };
+    CreateElememtsCommand.prototype.undo = function () {
+        this.gridElements.forEach(function (element) {
+            element.delete();
+        });
+    };
+    return CreateElememtsCommand;
+}());
+exports.CreateElememtsCommand = CreateElememtsCommand;
 var MoveElementsCommand = /** @class */ (function () {
-    function MoveElementsCommand() {
+    function MoveElementsCommand(movedElements) {
+        this.movedElements = movedElements;
     }
     MoveElementsCommand.prototype.execute = function () {
-        throw new Error("Method not implemented.");
+        var _this = this;
+        this.movedElements.forEach(function (element) {
+            _this.lastPositions.push(element.transform.position);
+        });
     };
     MoveElementsCommand.prototype.undo = function () {
-        throw new Error("Method not implemented.");
+        for (var i = 0; i < this.movedElements.length; i++) {
+            this.movedElements[i].transform.position = this.lastPositions[i];
+        }
     };
     return MoveElementsCommand;
 }());
 exports.MoveElementsCommand = MoveElementsCommand;
-var InsertElememtsCommand = /** @class */ (function () {
-    function InsertElememtsCommand(insertedElements) {
-        this.insertedElements = insertedElements;
-    }
-    InsertElememtsCommand.prototype.execute = function () {
-        throw new Error("Method not implemented.");
-    };
-    InsertElememtsCommand.prototype.undo = function () {
-        throw new Error("Method not implemented.");
-    };
-    return InsertElememtsCommand;
-}());
-exports.InsertElememtsCommand = InsertElememtsCommand;
 CommandsController.init();

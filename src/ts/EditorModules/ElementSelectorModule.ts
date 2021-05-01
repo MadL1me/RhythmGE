@@ -10,6 +10,7 @@ import { EditorGrid } from './EditorGridModule';
 import { IEditorModule, IEditorCore } from '../Editor';
 import { CreatableLinesModule } from "./CreatableLinesModule";
 import { TimestampsModule } from "./TimestampsModule";
+import { CommandsController, DeleteElementsCommand } from '../Command';
 
 class SelectArea implements IDrawable {
     private firstPoint = new Vec2(0, 0);
@@ -84,6 +85,7 @@ export class ElementSelectorModule implements IEditorModule {
         Input.onMouseAfterCanvasClick.addListener(() => { Input.onMouseClickCanvas.allowFiring(); });
         this.selectArea = new SelectArea();
         this.selectArea.onSelect.addListener(([a, b]) => { this.onAreaSelect(a, b); });
+        Input.onKeyDown.addListener((key) => this.onKeyDown(key));
         //CreatableLinesModule.onLineClickEvent.addListener((line) => {this.onElementClicked(line);});
         //this.timestamps.onExistingElementClicked.addListener((element) => {this.onElementClicked(element)});
     }
@@ -109,6 +111,25 @@ export class ElementSelectorModule implements IEditorModule {
         element.deselect();
     }
 
+    setSelectedElemetnts(array: Array<GridElement>) {
+        this.selectedElements = array;
+    }
+    
+    deselectAll() {
+        this.selectedElements.forEach(element => {
+            element.deselect();
+        });
+
+        this.selectedElements = [];
+    }
+    
+    private onKeyDown(event: JQuery.KeyDownEvent) {
+        if (Input.keysPressed["Delete"]) {
+            console.log("DELETE COMMAND");
+            let deleteCommand = new DeleteElementsCommand(this.selectedElements, this);
+            CommandsController.executeCommand(deleteCommand);
+        }
+    }
 
     private onAreaSelect(pointA: Vec2, pointB: Vec2) {
         if (Vec2.Distance(pointA, pointB) < 30) {
@@ -202,13 +223,5 @@ export class ElementSelectorModule implements IEditorModule {
 
         console.log("Selected elements: ");
         console.log(this.selectedElements.length);
-    }
-
-    private deselectAll() {
-        this.selectedElements.forEach(element => {
-            element.deselect();
-        });
-
-        this.selectedElements = [];
     }
 }

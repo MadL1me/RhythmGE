@@ -60,6 +60,14 @@ var CreatableLinesModule = /** @class */ (function () {
         var closestCreatable = objectsArr[indexOfElement];
         return closestCreatable;
     };
+    CreatableLinesModule.prototype.deleteLine = function (line) {
+        var indexOf = Utils_1.Utils.binaryNearestSearch(this.creatableLines, line.transform.position.x, Utils_1.Func.Round);
+        this.creatableLines.splice(indexOf, 1);
+    };
+    CreatableLinesModule.prototype.restoreLine = function (line) {
+        this.creatableLines.push(line);
+        this.creatableLines.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
+    };
     CreatableLinesModule.prototype.handleInput = function () {
         if (Input_1.Input.keysPressed["Space"] == true) {
             this.createCustomBpmLine("Space");
@@ -71,8 +79,11 @@ var CreatableLinesModule = /** @class */ (function () {
         }
     };
     CreatableLinesModule.prototype.createCustomBpmLine = function (keyPressed) {
+        var _this = this;
         var xPos = this.editor.audio.seek();
         var line = new GridElements_1.CreatableTimestampLine(xPos, this.transform, AppSettings_1.editorColorSettings.creatableTimestampLineColor);
+        line.onRestore.addListener(function (line) { _this.restoreLine(line); });
+        line.onDelete.addListener(function (line) { _this.deleteLine(line); });
         this.creatableLines.push(line);
         this.creatableLines.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
         console.log(line.transform.position);

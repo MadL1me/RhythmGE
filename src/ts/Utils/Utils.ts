@@ -4,12 +4,12 @@ import { GridElement, ICompareNumberProvider } from '../GridElements';
 export enum Func{ 
     Ceil,
     Floor,
-    Default
+    Round
 }
 
 export abstract class Utils {
     
-    static binaryNearestSearch(array : Array<ICompareNumberProvider>, searchValue: number, func=Func.Default): number {
+    static binaryNearestSearch(array : Array<ICompareNumberProvider>, searchValue: number, func=Func.Round): number {
         let left = 0, right = array.length-1;
 
         if (array[0].value > searchValue)
@@ -28,7 +28,7 @@ export abstract class Utils {
             }
         }
         
-        if (func == Func.Default)
+        if (func == Func.Round)
             return Math.abs(searchValue - array[left].value)
             < Math.abs(searchValue - array[right].value) ? left : right;
         else if (func == Func.Floor)
@@ -37,7 +37,7 @@ export abstract class Utils {
             return right;
     }
 
-    static binaryNearestSearchNumber(array : Array<number>, searchValue: number, func=Func.Default): number {
+    static binaryNearestSearchNumber(array : Array<number>, searchValue: number, func=Func.Round): number {
         let left = 0, right = array.length-1;
 
         if (array[0] > searchValue)
@@ -56,7 +56,7 @@ export abstract class Utils {
             }
         }
         
-        if (func == Func.Default)
+        if (func == Func.Round)
             return Math.abs(searchValue - array[left])
             < Math.abs(searchValue - array[right]) ? left : right;
         else if (func == Func.Floor)

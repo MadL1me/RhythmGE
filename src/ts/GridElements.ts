@@ -10,6 +10,11 @@ export interface IDrawable {
     draw(view: IViewportModule, canvas: HTMLCanvasElement);
 }
 
+export interface IRestorable {
+    onRestore: Event<IRestorable>;
+    restore();
+}
+
 export interface ICompareNumberProvider {
     value: number;
 }
@@ -25,11 +30,12 @@ export interface IDeletable {
     onDelete: Event<IDeletable>;
 }
 
-export abstract class GridElement implements IDrawable, ICompareNumberProvider, ISelectable, IDeletable {
+export abstract class GridElement implements IDrawable, ICompareNumberProvider, ISelectable, IDeletable, IRestorable {
     
     transform: Transform = new Transform();
     color: RgbaColor;
     
+    onRestore = new Event<GridElement>();
     onDelete = new Event<GridElement>();
 
     protected _outOfBounds: [boolean, boolean];
@@ -51,6 +57,10 @@ export abstract class GridElement implements IDrawable, ICompareNumberProvider, 
 
     delete() {
         this.onDelete.invoke(this);
+    }
+
+    restore() {
+        this.onRestore.invoke(this);
     }
 
     get isActive(): boolean {
@@ -81,7 +91,7 @@ export abstract class GridElement implements IDrawable, ICompareNumberProvider, 
 export class TimestampPrefab {
     prefabId: number;
     color: RgbaColor;
-    width = 5;
+    width = 0.2;
 
     private _isSelected: boolean;
     private buttonElement: JQuery<HTMLElement>;
@@ -134,7 +144,7 @@ export class Timestamp extends GridElement {
     
     id: number;
     width: number;
-    prefab: TimestampPrefab;
+    private _prefab: TimestampPrefab;
     
     private maxWidth = 7;
     private minWidth = 1;
@@ -143,9 +153,19 @@ export class Timestamp extends GridElement {
         super(parent, prefab.color);
         this.width = prefab.width;
         this.color = prefab.color;
-        this.prefab = prefab;
+        this._prefab = prefab;
         this.transform.parent = parent;
         this.transform.position = position;
+    }
+
+    get prefab(): TimestampPrefab {
+        return this._prefab;
+    }
+
+    set prefab(value: TimestampPrefab) {
+        this._prefab = value;
+        this.color = value.color;
+        this.width = value.width;
     }
 
     draw(view: IViewportModule, canvas : HTMLCanvasElement) {

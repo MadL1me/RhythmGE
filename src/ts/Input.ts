@@ -77,10 +77,13 @@ export abstract class Input {
 
     private static checkForKeyBindings() {
         this.keyBindings.forEach((keyBind) => {
-            keyBind.keysList.forEach((key) => {
+            for(let i = 0; i<keyBind.keysList.length; i++) {
+                let key = keyBind.keysList[i];
+                // console.log("Binds key:");
+                // console.log(key);
                 if (!this.keysPressed[key])
                     return;
-            });
+            }
             keyBind.invoke();
         });
     }
@@ -96,7 +99,7 @@ export abstract class Input {
             event.preventDefault();
         }
 
-        //console.log('Key pressed' + event.code);
+        console.log('Key pressed' + event.code);
 
         this.keysPressed[event.code] = true;
         this.onKeyDown.invoke(event.code);
@@ -105,7 +108,7 @@ export abstract class Input {
 
     private static onCanvasKeyUp(event) {
         delete this.keysPressed[event.code];
-        //console.log('Key removed' + event.code);
+        console.log('Key removed' + event.code);
         this.onKeyUp.invoke(event);
     }
 }

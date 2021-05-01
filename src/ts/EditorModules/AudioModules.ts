@@ -141,9 +141,13 @@ export class AudioModule implements IAudioModule {
 
     setClapTimings(array: number[]) {
         this.clappingTimings = array;
+        if (this.editorCore.editorData.useClaps.value)
+            this.findClapTimingsPosition();
+    }
+
+    findClapTimingsPosition() {
         let seek = this.seek();
-        this.clapTimingId = Utils.binaryNearestSearchNumber(array, seek);
-        console.log(this.clapTimingId);
+        this.clapTimingId = Utils.binaryNearestSearchNumber(this.clappingTimings, seek)
     }
 
     checkForClaps() {
@@ -176,7 +180,8 @@ export class AudioModule implements IAudioModule {
 
         this.songSource.on('seek', (id) => {
             this.onSeek.invoke(id);
-            console.log("FUUU");
+            if (this.editorCore.editorData.useClaps.value)
+                this.findClapTimingsPosition();
         });
 
         this.songSource.on('stop', (id) => {

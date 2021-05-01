@@ -10,6 +10,7 @@ var Transform_1 = require("../Transform");
 var AppSettings_1 = require("../Utils/AppSettings");
 var Input_1 = require("../Input");
 var Utils_1 = require("../Utils/Utils");
+var Command_1 = require("../Command");
 var SelectArea = /** @class */ (function () {
     function SelectArea() {
         var _this = this;
@@ -70,6 +71,7 @@ var ElementSelectorModule = /** @class */ (function () {
             var a = _a[0], b = _a[1];
             _this.onAreaSelect(a, b);
         });
+        Input_1.Input.onKeyDown.addListener(function (key) { return _this.onKeyDown(key); });
         //CreatableLinesModule.onLineClickEvent.addListener((line) => {this.onElementClicked(line);});
         //this.timestamps.onExistingElementClicked.addListener((element) => {this.onElementClicked(element)});
     };
@@ -90,6 +92,22 @@ var ElementSelectorModule = /** @class */ (function () {
         this.selectedElements.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
         console.log(this.selectedElements);
         element.deselect();
+    };
+    ElementSelectorModule.prototype.setSelectedElemetnts = function (array) {
+        this.selectedElements = array;
+    };
+    ElementSelectorModule.prototype.deselectAll = function () {
+        this.selectedElements.forEach(function (element) {
+            element.deselect();
+        });
+        this.selectedElements = [];
+    };
+    ElementSelectorModule.prototype.onKeyDown = function (event) {
+        if (Input_1.Input.keysPressed["Delete"]) {
+            console.log("DELETE COMMAND");
+            var deleteCommand = new Command_1.DeleteElementsCommand(this.selectedElements, this);
+            Command_1.CommandsController.executeCommand(deleteCommand);
+        }
     };
     ElementSelectorModule.prototype.onAreaSelect = function (pointA, pointB) {
         var _this = this;
@@ -163,12 +181,6 @@ var ElementSelectorModule = /** @class */ (function () {
             this.selectElement(element);
         console.log("Selected elements: ");
         console.log(this.selectedElements.length);
-    };
-    ElementSelectorModule.prototype.deselectAll = function () {
-        this.selectedElements.forEach(function (element) {
-            element.deselect();
-        });
-        this.selectedElements = [];
     };
     return ElementSelectorModule;
 }());

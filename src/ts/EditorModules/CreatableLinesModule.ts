@@ -75,6 +75,16 @@ export class CreatableLinesModule implements IEditorModule {
         return closestCreatable;
     }
 
+    private deleteLine(line: CreatableTimestampLine) {
+        let indexOf = Utils.binaryNearestSearch(this.creatableLines, line.transform.position.x, Func.Round);
+        this.creatableLines.splice(indexOf, 1);
+    }
+
+    private restoreLine(line: CreatableTimestampLine) {
+        this.creatableLines.push(line);
+        this.creatableLines.sort((a, b) => { return a.transform.position.x - b.transform.position.x; });
+    }
+
     private handleInput() {
         if (Input.keysPressed["Space"] == true) {
             this.createCustomBpmLine("Space");
@@ -89,6 +99,9 @@ export class CreatableLinesModule implements IEditorModule {
     private createCustomBpmLine(keyPressed: string) {
         let xPos = this.editor.audio.seek();
         let line = new CreatableTimestampLine(xPos, this.transform, editorColorSettings.creatableTimestampLineColor);
+        line.onRestore.addListener((line) => {this.restoreLine(line)});
+        line.onDelete.addListener((line) => {this.deleteLine(line)});
+        
         this.creatableLines.push(line);
         this.creatableLines.sort((a, b) => { return a.transform.position.x - b.transform.position.x; });
 

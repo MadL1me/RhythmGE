@@ -9,13 +9,13 @@ var Func;
 (function (Func) {
     Func[Func["Ceil"] = 0] = "Ceil";
     Func[Func["Floor"] = 1] = "Floor";
-    Func[Func["Default"] = 2] = "Default";
+    Func[Func["Round"] = 2] = "Round";
 })(Func = exports.Func || (exports.Func = {}));
 var Utils = /** @class */ (function () {
     function Utils() {
     }
     Utils.binaryNearestSearch = function (array, searchValue, func) {
-        if (func === void 0) { func = Func.Default; }
+        if (func === void 0) { func = Func.Round; }
         var left = 0, right = array.length - 1;
         if (array[0].value > searchValue)
             return 0;
@@ -30,7 +30,7 @@ var Utils = /** @class */ (function () {
                 right = middle;
             }
         }
-        if (func == Func.Default)
+        if (func == Func.Round)
             return Math.abs(searchValue - array[left].value)
                 < Math.abs(searchValue - array[right].value) ? left : right;
         else if (func == Func.Floor)
@@ -39,7 +39,7 @@ var Utils = /** @class */ (function () {
             return right;
     };
     Utils.binaryNearestSearchNumber = function (array, searchValue, func) {
-        if (func === void 0) { func = Func.Default; }
+        if (func === void 0) { func = Func.Round; }
         var left = 0, right = array.length - 1;
         if (array[0] > searchValue)
             return 0;
@@ -54,7 +54,7 @@ var Utils = /** @class */ (function () {
                 right = middle;
             }
         }
-        if (func == Func.Default)
+        if (func == Func.Round)
             return Math.abs(searchValue - array[left])
                 < Math.abs(searchValue - array[right]) ? left : right;
         else if (func == Func.Floor)

@@ -88,9 +88,12 @@ var AudioModule = /** @class */ (function () {
     };
     AudioModule.prototype.setClapTimings = function (array) {
         this.clappingTimings = array;
+        if (this.editorCore.editorData.useClaps.value)
+            this.findClapTimingsPosition();
+    };
+    AudioModule.prototype.findClapTimingsPosition = function () {
         var seek = this.seek();
-        this.clapTimingId = Utils_1.Utils.binaryNearestSearchNumber(array, seek);
-        console.log(this.clapTimingId);
+        this.clapTimingId = Utils_1.Utils.binaryNearestSearchNumber(this.clappingTimings, seek);
     };
     AudioModule.prototype.checkForClaps = function () {
         if (this.songSource == null || this.clappingTimings.length < 1 || !this.editorCore.editorData.useClaps.value)
@@ -117,7 +120,8 @@ var AudioModule = /** @class */ (function () {
         });
         this.songSource.on('seek', function (id) {
             _this.onSeek.invoke(id);
-            console.log("FUUU");
+            if (_this.editorCore.editorData.useClaps.value)
+                _this.findClapTimingsPosition();
         });
         this.songSource.on('stop', function (id) {
             _this.onStop.invoke(id);
