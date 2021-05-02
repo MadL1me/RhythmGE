@@ -83,22 +83,37 @@ Hotkey | Action
 -------|-------
 Ctrl+Mouse scroll | Change canvas scale
 Shift+Mouse scroll | Fast scrolling
-Num 1-9 | Select Timestamp prefab with ID
-QWERTY | Create CLine with timestamp at 1-5
+Num 1-6 | Create CLine with timestamp at 1-5
 Space | Create CLine
-Ctrl+S | Save beatmap file
-Ctrl+C | Copy Grid Elements
-Ctrl+V | Paste Grid Elements
-Ctrl+X | Virezat Grid Elements
 Ctrl+Z | Undo last action
 Ctrl+Y | Undo undoing last action
 Ctrl+R | Move to audio Start
-S | Play/Pause audio
-
-
 
 ## File Format Specification
+The main file format used in a project is **.rbm** (states for Rhythm Beatmap)
+Timestamp info inserted line by line, each line for one timestamp.
+There's 4 required and 2 optional params.
+- Time in milliseconds - long uint
+- TimestampID - uint
+- PrefabID - uint
+- LPBTrackID - uint
+- LongTimestamp - boolean, optional, used then timestamp is the start of long note
+- NextTimestampID - uint, optional used to refer to timestampID if LongTimestamp equals true
 
+```
+[Timestamps]
+Time:TimestampID:PrefabID:LPBTrackID <- Single Timestamps
+Time:TimestampID:PrefabID:LPBTrackID:LongNote?:NextTimestampID? <- Long Timestamps
+...
+
+[Timestamps] <- Key word for timestamps section start
+100:0:0:0 <- 100 milliseconds, id=0, prefab id = 0, isLong = false
+120:1:1:5:1:4 <- 120 milliseconds, id=1, prefab id = 4, lpbID=1, longTimestamp = true, nextTimestampId=4
+130:2:4:0
+130:3:5:0
+135:4:0:1
+140:5:0:0 <- The end of long note, started from note with id = 1
+```
 
 ### File Readers
 You can use existing file reader for various programming languages and game engines (currently available only for C#), which is stored in **/Readers** folder
@@ -112,3 +127,5 @@ You can use existing file reader for various programming languages and game engi
 - [ ] Tool for bpm detecting
 - [ ] Auto Bpm detecting
 - [ ] Multiple BPM's in one song
+
+Distributed under MIT License. 
