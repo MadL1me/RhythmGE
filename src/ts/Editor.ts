@@ -15,6 +15,7 @@ import { AudioAmplitudeViewModule, AudioModule, IAudioModule } from "./EditorMod
 import { timeStamp } from 'node:console';
 import { start } from 'node:repl';
 import { IDrawable } from './GridElements';
+import { Export } from "./Export";
 
 export interface IEditorCore {
     transform: Transform;
@@ -111,7 +112,7 @@ export class Editor implements IEditorCore {
 
         Input.onWheelCanvas.addListener((event) => {this.onChangeScale((event.deltaY));});
         Input.onMouseClickCanvas.addListener((event) => {this.onCanvasClick(event);});
-
+        
         this.update();
     }
 
@@ -134,7 +135,7 @@ export class Editor implements IEditorCore {
             this._editorModules[i].updateModule();
         }
 
-        this._lastDrawable.draw(this.viewport, this._editorCanvas);
+        this._lastDrawable?.draw(this.viewport, this._editorCanvas);
     }
 
     private onCanvasClick(event: JQuery.ClickEvent) {

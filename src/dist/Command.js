@@ -101,14 +101,19 @@ var CreateElememtsCommand = /** @class */ (function () {
 }());
 exports.CreateElememtsCommand = CreateElememtsCommand;
 var MoveElementsCommand = /** @class */ (function () {
-    function MoveElementsCommand(movedElements) {
+    function MoveElementsCommand(movedElements, newPositions) {
         this.movedElements = movedElements;
+        this.newPositions = newPositions;
+        this.lastPositions = new Array();
     }
     MoveElementsCommand.prototype.execute = function () {
         var _this = this;
         this.movedElements.forEach(function (element) {
             _this.lastPositions.push(element.transform.position);
         });
+        for (var i = 0; i < this.movedElements.length; i++) {
+            this.movedElements[i].move(this.newPositions[i]);
+        }
     };
     MoveElementsCommand.prototype.undo = function () {
         for (var i = 0; i < this.movedElements.length; i++) {

@@ -11,6 +11,8 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
 
 const createWindow = () => {
   // Create the browser window.
+  //saveFile(null);
+  
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 700,
@@ -20,6 +22,7 @@ const createWindow = () => {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
+      enableRemoteModule: true,
       themeSource: "dark"
   }
   });
@@ -59,3 +62,21 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+function saveFile(timestamps) {
+  let a = dialog.showSaveDialog({title: "LMAO"});
+  let b = "LOL LOL LOL ";
+  a.then(result => {
+      if (result.canceled) {
+          console.log("ERROR OMG OMG");
+          return;
+      }
+      console.log(`file path is: ${result.filePath}`);
+      fs.writeFile(result.filePath, b, (err) => {
+          if (err) {
+              console.log("FUCKING ERROR");
+              return;
+          }
+      });
+  });
+}

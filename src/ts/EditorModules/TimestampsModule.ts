@@ -9,6 +9,7 @@ import { EditorGrid } from './EditorGridModule';
 import { IEditorModule, IEditorCore } from '../Editor';
 import { CreatableLinesModule } from "./CreatableLinesModule";
 import { timeStamp } from 'node:console';
+import { Export } from '../Export';
 
 
 export class TimestampsModule implements IEditorModule {
@@ -30,6 +31,7 @@ export class TimestampsModule implements IEditorModule {
         this.editorGridModule = editorGrid;
         this.createableLinesModule = creatableLines;
         this.canvas = $("#editor-canvas")[0] as HTMLCanvasElement;
+        $("#save-beatmap-btn").on("click", event => Export.saveFile(this.joinTimestampMap()));//Export.saveFile(this.timestamps));
 
         this.createTimestampPrefab(new RgbaColor(0, 255, 26));
         this.createTimestampPrefab(new RgbaColor(252, 236, 8));
@@ -150,6 +152,18 @@ export class TimestampsModule implements IEditorModule {
                 result = timestamp;
             }
         })
+        return result;
+    }
+
+    private joinTimestampMap() : Array<Timestamp> {
+        let result = new Array<Timestamp>();
+        this.timestamps.forEach((value,key) => {
+            value.forEach((value, key) => {
+                result.push(value);
+            })
+        });
+        
+        //console.log(result);
         return result;
     }
 

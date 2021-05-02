@@ -29,6 +29,7 @@ var GridElement = /** @class */ (function () {
         this.transform = new Transform_1.Transform();
         this.onRestore = new Utils_1.Event();
         this.onDelete = new Utils_1.Event();
+        this.onMoved = new Utils_1.Event();
         this._isActive = true;
         this._isSelected = false;
         this.color = rgbaColor;
@@ -42,6 +43,9 @@ var GridElement = /** @class */ (function () {
         configurable: true
     });
     ;
+    GridElement.prototype.move = function (newLocalPos) {
+        this.onMoved.invoke([this, newLocalPos]);
+    };
     GridElement.prototype.draw = function (view, canvas) {
         this._outOfBounds = view.isOutOfViewportBounds(this.transform.position);
     };

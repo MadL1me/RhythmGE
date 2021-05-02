@@ -12,8 +12,10 @@ var GridElements_1 = require("../GridElements");
 var Input_1 = require("../Input");
 var Utils_1 = require("../Utils/Utils");
 var CreatableLinesModule_1 = require("./CreatableLinesModule");
+var Export_1 = require("../Export");
 var TimestampsModule = /** @class */ (function () {
     function TimestampsModule(editorGrid, creatableLines) {
+        var _this = this;
         this.transform = new Transform_1.Transform();
         this.selectedPrefabId = 0;
         this.idToPrefab = new Map();
@@ -22,6 +24,7 @@ var TimestampsModule = /** @class */ (function () {
         this.editorGridModule = editorGrid;
         this.createableLinesModule = creatableLines;
         this.canvas = jquery_1.default("#editor-canvas")[0];
+        jquery_1.default("#save-beatmap-btn").on("click", function (event) { return Export_1.Export.saveFile(_this.joinTimestampMap()); }); //Export.saveFile(this.timestamps));
         this.createTimestampPrefab(new RgbaColor_1.RgbaColor(0, 255, 26));
         this.createTimestampPrefab(new RgbaColor_1.RgbaColor(252, 236, 8));
         this.createTimestampPrefab(new RgbaColor_1.RgbaColor(8, 215, 252));
@@ -122,6 +125,16 @@ var TimestampsModule = /** @class */ (function () {
                 result = timestamp;
             }
         });
+        return result;
+    };
+    TimestampsModule.prototype.joinTimestampMap = function () {
+        var result = new Array();
+        this.timestamps.forEach(function (value, key) {
+            value.forEach(function (value, key) {
+                result.push(value);
+            });
+        });
+        //console.log(result);
         return result;
     };
     TimestampsModule.prototype.deleteTimestamp = function (timestamp) {

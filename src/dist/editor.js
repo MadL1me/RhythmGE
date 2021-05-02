@@ -79,18 +79,23 @@ var Editor = /** @class */ (function () {
         Input_1.Input.onMouseClickCanvas.addListener(function (event) { _this.onCanvasClick(event); });
         this.update();
     }
+    Editor.prototype.addLastDrawableElement = function (element) {
+        this._lastDrawable = element;
+    };
     Editor.prototype.addEditorModule = function (element) {
         element.init(this);
         element.transform.parent = this.transform;
         this._editorModules.push(element);
     };
     Editor.prototype.update = function () {
+        var _a;
         Input_1.Input.update();
         this.audio.updateModule();
         this.viewport.updateModule();
         for (var i = 0; i < this._editorModules.length; i++) {
             this._editorModules[i].updateModule();
         }
+        (_a = this._lastDrawable) === null || _a === void 0 ? void 0 : _a.draw(this.viewport, this._editorCanvas);
     };
     Editor.prototype.onCanvasClick = function (event) {
         var clickPos = new Vec2_1.Vec2(event.offsetX, event.offsetY);

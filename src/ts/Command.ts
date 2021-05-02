@@ -121,14 +121,17 @@ export class CreateElememtsCommand implements ICommand {
 
 export class MoveElementsCommand implements ICommand{
     
-    private lastPositions: Vec2[];
+    private lastPositions = new Array<Vec2>();
 
-    constructor(private movedElements: GridElement[]) {}
+    constructor(private movedElements: GridElement[], private newPositions: Vec2[]) {}
     
     execute() {
-        this.movedElements.forEach((element) => {
+        this.movedElements.forEach(element => {
             this.lastPositions.push(element.transform.position);
         });
+        for(let i = 0; i<this.movedElements.length; i++) {
+            this.movedElements[i].move(this.newPositions[i]);
+        }
     }
 
     undo() {

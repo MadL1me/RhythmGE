@@ -12,6 +12,7 @@ var AppSettings_1 = require("../Utils/AppSettings");
 var Input_1 = require("../Input");
 var Utils_1 = require("../Utils/Utils");
 var Command_1 = require("../Command");
+var RgbaColor_1 = require("../Utils/RgbaColor");
 var SelectArea = /** @class */ (function () {
     function SelectArea() {
         var _this = this;
@@ -65,7 +66,8 @@ var ElementSelectorModule = /** @class */ (function () {
     ElementSelectorModule.prototype.init = function (editorCoreModules) {
         var _this = this;
         this.editor = editorCoreModules;
-        Input_1.Input.onMouseDownCanvas.addListener(function (event) { return _this.onMouseDown(event); });
+        Input_1.Input.onHoverWindow.addListener(function (event) { return _this.onMouseMove(event); });
+        Input_1.Input.onMouseUp.addListener(function (event) { return _this.onMouseUp(event); });
         Input_1.Input.onMouseClickCanvas.addListener(function (event) { return _this.onCanvasClick(event); });
         Input_1.Input.onMouseAfterCanvasClick.addListener(function () { return Input_1.Input.onMouseClickCanvas.allowFiring(); });
         this.selectArea = new SelectArea();
@@ -73,18 +75,13 @@ var ElementSelectorModule = /** @class */ (function () {
             var a = _a[0], b = _a[1];
             return _this.onAreaSelect(a, b);
         });
+        Input_1.Input.onMouseDownCanvas.addListener(function (event) { return _this.onMouseDown(event); });
         Input_1.Input.onKeyDown.addListener(function (key) { return _this.onKeyDown(key); });
         //CreatableLinesModule.onLineClickEvent.addListener((line) => {this.onElementClicked(line);});
         //this.timestamps.onExistingElementClicked.addListener((element) => {this.onElementClicked(element)});
     };
     ElementSelectorModule.prototype.updateModule = function () {
         this.selectArea.draw(this.editor.viewport, this.canvas);
-    };
-    ElementSelectorModule.prototype.selectElementsGroup = function (elements) {
-        //let selectCommand = new SelectElementsCommand(elements, this);
-        // this.selectedElements.push(element);
-        // this.selectedElements.sort((a, b) => a.transform.position.x - b.transform.position.x);
-        // element.select();
     };
     ElementSelectorModule.prototype.selectElement = function (element) {
         console.log("element selected");
@@ -155,7 +152,6 @@ var ElementSelectorModule = /** @class */ (function () {
             return;
         console.log("MOSUE DOWN 2");
         this.movingElement = closestElement;
-        console.log(this.movingElement instanceof GridElements_1.Timestamp);
         this.selectArea.isActive = false;
         this.movingState = true;
     };
@@ -163,16 +159,58 @@ var ElementSelectorModule = /** @class */ (function () {
         if (!this.movingState)
             return;
         var worldPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
-        var closestBpm = this.grid.findClosestBpmLine(worldPos.x);
-        var closestCreatable = this.creatable.findClosestCreatableLine(worldPos.x);
-        var closestBeatline = this.grid.findClosestBeatLine(worldPos);
-        // if (typeof this.movingElement) {
-        // }
+        if (this.movingElement instanceof GridElements_1.Timestamp) {
+            var timestamp = this.movingElement;
+            var closestBpm = this.grid.findClosestBpmLine(worldPos.x);
+            var closestCreatable = this.creatable.findClosestCreatableLine(worldPos.x);
+            var closestLine = void 0;
+            if (closestBpm == null)
+                closestLine = closestCreatable;
+            else if (closestCreatable == null)
+                closestLine = closestBpm;
+            else
+                closestLine = Math.abs(closestBpm.transform.position.x - worldPos.x) <
+                    Math.abs(closestCreatable.transform.position.x - worldPos.x) ? closestBpm : closestCreatable;
+            var closestBeatline = this.grid.findClosestBeatLine(worldPos);
+            var position = new Vec2_1.Vec2(closestLine.transform.position.x, closestBeatline.transform.position.y);
+            var phantomTimestamp = new GridElements_1.Timestamp(timestamp.prefab, position, this.timestamps.transform);
+            this.editor.addLastDrawableElement(phantomTimestamp);
+            return;
+        }
+        var cLine = this.movingElement;
+        var line = new GridElements_1.CreatableTimestampLine(worldPos.x, this.creatable.transform, new RgbaColor_1.RgbaColor(cLine.color.r, cLine.color.g, cLine.color.b, 0.6));
+        this.editor.addLastDrawableElement(line);
     };
-    // private isTimestamp(grid: Fish | Bird): pet is Fish {
-    //     return (pet as Fish).swim !== undefined;
-    // }
     ElementSelectorModule.prototype.onMouseUp = function (event) {
+        if (!this.movingState)
+            return;
+        var worldPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
+        if (this.movingElement instanceof GridElements_1.Timestamp) {
+            var timestamp = this.movingElement;
+            var closestBpm = this.grid.findClosestBpmLine(worldPos.x);
+            var closestCreatable = this.creatable.findClosestCreatableLine(worldPos.x);
+            var closestLine = void 0;
+            if (closestBpm == null)
+                closestLine = closestCreatable;
+            else if (closestCreatable == null)
+                closestLine = closestBpm;
+            else
+                closestLine = Math.abs(closestBpm.transform.position.x - worldPos.x) <
+                    Math.abs(closestCreatable.transform.position.x - worldPos.x) ? closestBpm : closestCreatable;
+            var closestBeatline = this.grid.findClosestBeatLine(worldPos);
+            var position = this.editor.viewport.transform.worldToLocal(new Vec2_1.Vec2(closestLine.transform.position.x, closestBeatline.transform.position.y));
+            this.editor.addLastDrawableElement(null);
+            //this.movingElement.move(position);
+            var moveCommand = new Command_1.MoveElementsCommand([this.movingElement], [position]);
+            Command_1.CommandsController.executeCommand(moveCommand);
+            return;
+        }
+        else {
+            var position = this.editor.viewport.transform.worldToLocal(worldPos);
+            var moveCommand = new Command_1.MoveElementsCommand([this.movingElement], [position]);
+            Command_1.CommandsController.executeCommand(moveCommand);
+            //this.movingElement.move(position);
+        }
         this.movingElement = null;
         this.selectArea.isActive = true;
         this.movingState = false;

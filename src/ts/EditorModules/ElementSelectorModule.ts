@@ -10,7 +10,7 @@ import { EditorGrid } from './EditorGridModule';
 import { IEditorModule, IEditorCore, Editor } from '../Editor';
 import { CreatableLinesModule } from "./CreatableLinesModule";
 import { TimestampsModule } from "./TimestampsModule";
-import { CommandsController, DeleteElementsCommand } from '../Command';
+import { CommandsController, DeleteElementsCommand, MoveElementsCommand } from '../Command';
 import { RgbaColor } from '../Utils/RgbaColor';
 
 class SelectArea implements IDrawable {
@@ -85,11 +85,15 @@ export class ElementSelectorModule implements IEditorModule {
 
     init(editorCoreModules: IEditorCore) {
         this.editor = editorCoreModules;
-        Input.onMouseDownCanvas.addListener((event) => this.onMouseDown(event));
+        Input.onHoverWindow.addListener((event) => this.onMouseMove(event));
+        Input.onMouseUp.addListener((event) => this.onMouseUp(event));
         Input.onMouseClickCanvas.addListener((event) => this.onCanvasClick(event));
         Input.onMouseAfterCanvasClick.addListener(() => Input.onMouseClickCanvas.allowFiring());
+        
         this.selectArea = new SelectArea();
         this.selectArea.onSelect.addListener(([a, b]) => this.onAreaSelect(a, b));
+        
+        Input.onMouseDownCanvas.addListener((event) => this.onMouseDown(event));
         Input.onKeyDown.addListener((key) => this.onKeyDown(key));
         //CreatableLinesModule.onLineClickEvent.addListener((line) => {this.onElementClicked(line);});
         //this.timestamps.onExistingElementClicked.addListener((element) => {this.onElementClicked(element)});
@@ -201,8 +205,16 @@ export class ElementSelectorModule implements IEditorModule {
             let timestamp = this.movingElement as Timestamp;
             let closestBpm = this.grid.findClosestBpmLine(worldPos.x);
             let closestCreatable = this.creatable.findClosestCreatableLine(worldPos.x);
-            let closestLine = Math.abs(closestBpm.transform.position.x - worldPos.x) <
-                Math.abs(closestCreatable.transform.position.x - worldPos.x) ? closestBpm : closestCreatable;
+            let closestLine: GridElement;
+
+            if (closestBpm == null)
+                closestLine = closestCreatable;
+            else if (closestCreatable == null)
+                closestLine = closestBpm;
+            else
+                closestLine = Math.abs(closestBpm.transform.position.x - worldPos.x) <
+                    Math.abs(closestCreatable.transform.position.x - worldPos.x) ? closestBpm : closestCreatable;
+
 
             let closestBeatline = this.grid.findClosestBeatLine(worldPos);
             let position = new Vec2(closestLine.transform.position.x, closestBeatline.transform.position.y);
@@ -218,28 +230,43 @@ export class ElementSelectorModule implements IEditorModule {
         (this.editor as Editor).addLastDrawableElement(line);
     }   
 
-    private onMouseUp(event: JQuery.MouseOutEvent) {
+    private onMouseUp(event: JQuery.MouseUpEvent) {
+        if (!this.movingState)
+            return;
+        
         let worldPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
         
         if (this.movingElement instanceof Timestamp) {
             let timestamp = this.movingElement as Timestamp;
             let closestBpm = this.grid.findClosestBpmLine(worldPos.x);
             let closestCreatable = this.creatable.findClosestCreatableLine(worldPos.x);
-            let closestLine = Math.abs(closestBpm.transform.position.x - worldPos.x) <
-                Math.abs(closestCreatable.transform.position.x - worldPos.x) ? closestBpm : closestCreatable;
+            let closestLine: GridElement;
+
+            if (closestBpm == null)
+                closestLine = closestCreatable;
+            else if (closestCreatable == null)
+                closestLine = closestBpm;
+            else
+                closestLine = Math.abs(closestBpm.transform.position.x - worldPos.x) <
+                    Math.abs(closestCreatable.transform.position.x - worldPos.x) ? closestBpm : closestCreatable;
+
 
             let closestBeatline = this.grid.findClosestBeatLine(worldPos);
             let position = this.editor.viewport.transform.worldToLocal(new Vec2(closestLine.transform.position.x, closestBeatline.transform.position.y));
             (this.editor as Editor).addLastDrawableElement(null);
 
-            this.movingElement.move(position);
+            //this.movingElement.move(position);
+            let moveCommand = new MoveElementsCommand([this.movingElement], [position]);
+            CommandsController.executeCommand(moveCommand);
             return;
         }
         else {
             let position = this.editor.viewport.transform.worldToLocal(worldPos);
-            this.movingElement.move(position);
+            let moveCommand = new MoveElementsCommand([this.movingElement], [position]);
+            CommandsController.executeCommand(moveCommand);
+
+            //this.movingElement.move(position);
         }
-        
         
         this.movingElement = null;
         this.selectArea.isActive = true;
