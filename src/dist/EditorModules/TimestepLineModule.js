@@ -16,17 +16,22 @@ var TimestepLineModule = /** @class */ (function () {
         this.canvas = jquery_1.default("#editor-canvas")[0];
     }
     TimestepLineModule.prototype.init = function (editorCoreModules) {
+        var _this = this;
         this.editor = editorCoreModules;
+        this.editor.audio.onSeek.addListener(function () { _this.setLinePosition(); _this.timestepLine.draw(_this.editor.viewport, _this.canvas); });
     };
     TimestepLineModule.prototype.updateModule = function () {
         if (this.editor.audio.isPlaying()) {
-            this.timestepLine.transform.localPosition = new Vec2_1.Vec2(this.editor.audio.seek(), 0);
-            if (this.editor.editorData.followLine.value) {
-                var result = new Vec2_1.Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 0);
-                this.editor.viewport.transform.position = result;
-            }
+            this.setLinePosition();
         }
         this.timestepLine.draw(this.editor.viewport, this.canvas);
+    };
+    TimestepLineModule.prototype.setLinePosition = function () {
+        this.timestepLine.transform.localPosition = new Vec2_1.Vec2(this.editor.audio.seek(), 0);
+        if (this.editor.editorData.followLine.value) {
+            var result = new Vec2_1.Vec2(-this.timestepLine.transform.position.x + this.canvas.width / 2, 0);
+            this.editor.viewport.transform.position = result;
+        }
     };
     return TimestepLineModule;
 }());

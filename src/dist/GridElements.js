@@ -20,6 +20,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BeatLine = exports.BPMLine = exports.TimestepLine = exports.CreatableTimestampLine = exports.Timestamp = exports.TimestampPrefab = exports.GridElement = void 0;
 var Transform_1 = require("./Transform");
+var RgbaColor_1 = require("./Utils/RgbaColor");
 var Vec2_1 = require("./Utils/Vec2");
 var AppSettings_1 = require("./Utils/AppSettings");
 var Utils_1 = require("./Utils/Utils");
@@ -155,18 +156,22 @@ var Timestamp = /** @class */ (function (_super) {
         enumerable: false,
         configurable: true
     });
+    Object.defineProperty(Timestamp.prototype, "isLongTimestamp", {
+        get: function () {
+            return this.connectedTimestamps != null && this.connectedTimestamps.length > 0;
+        },
+        enumerable: false,
+        configurable: true
+    });
     Timestamp.prototype.draw = function (view, canvas) {
+        var _a;
         _super.prototype.draw.call(this, view, canvas);
         if (this._outOfBounds[0])
             return;
-        var color = this._isSelected ? AppSettings_1.editorColorSettings.selectedTimestampColor : this.color;
+        var color = this.getColor();
         var ctx = canvas.getContext('2d');
         var pos = new Vec2_1.Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
-        var width = this.width + this.transform.scale.x / 5;
-        if (width > this.maxWidth)
-            width = this.maxWidth;
-        if (width < this.minWidth)
-            width = this.minWidth;
+        var width = this.getWidth();
         ctx.fillStyle = color.value();
         ctx.beginPath();
         ctx.moveTo(pos.x - width, pos.y);
@@ -174,6 +179,51 @@ var Timestamp = /** @class */ (function (_super) {
         ctx.lineTo(pos.x + width, pos.y);
         ctx.lineTo(pos.x, pos.y + width);
         ctx.fill();
+        color = new RgbaColor_1.RgbaColor(color.r, color.g, color.b, 0.6);
+        (_a = this.connectedTimestamps) === null || _a === void 0 ? void 0 : _a.forEach(function (element) {
+            console.log("DRAW CONNECTED");
+            var timestamp = element[0];
+            var elementPos = new Vec2_1.Vec2(timestamp.transform.position.x + view.position.x, timestamp.transform.position.y + view.position.y);
+            var directionVec = Vec2_1.Vec2.Substract(elementPos, pos);
+            var normalVec = Vec2_1.Vec2.Normal(directionVec).normalized;
+            width = width / 2;
+            ctx.fillStyle = color.value();
+            ctx.beginPath();
+            ctx.moveTo(pos.x + normalVec.x * width, pos.y + normalVec.y * width);
+            ctx.lineTo(elementPos.x + normalVec.x * width, elementPos.y + normalVec.y * width);
+            ctx.lineTo(elementPos.x - normalVec.x * width, elementPos.y - normalVec.y * width);
+            ctx.lineTo(pos.x - normalVec.x * width, pos.y - normalVec.y * width);
+            ctx.fill();
+        });
+    };
+    Timestamp.prototype.connectToTimestamp = function (timestamp) {
+        var _this = this;
+        if (this.connectedTimestamps == null)
+            this.connectedTimestamps = new Array();
+        console.log("FUCK YEAH CONNECTED");
+        var id = timestamp.onDelete.addListener(function (element) { return _this.removeConnection(element); });
+        this.connectedTimestamps.push([timestamp, id]);
+    };
+    Timestamp.prototype.removeConnection = function (timestamp) {
+        var index = this.connectedTimestamps.findIndex(function (stamp, id) { return stamp[0].id == timestamp.id; });
+        var removed = this.connectedTimestamps.splice(index, 1);
+        console.log("FUCK YEAH REMOVED");
+        timestamp.onDelete.removeListener(removed[0][1]);
+    };
+    Timestamp.prototype.isConnected = function (timestamp) {
+        var index = this.connectedTimestamps.findIndex(function (stamp, id) { return stamp[0].id == timestamp.id; });
+        return index != -1;
+    };
+    Timestamp.prototype.getColor = function () {
+        return this._isSelected ? AppSettings_1.editorColorSettings.selectedTimestampColor : this.color;
+    };
+    Timestamp.prototype.getWidth = function () {
+        var width = this.width + this.transform.scale.x / 5;
+        if (width > this.maxWidth)
+            width = this.maxWidth;
+        if (width < this.minWidth)
+            width = this.minWidth;
+        return width;
     };
     return Timestamp;
 }(GridElement));

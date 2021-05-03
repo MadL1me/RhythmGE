@@ -154,8 +154,9 @@ export class Timestamp extends GridElement {
     
     id: number;
     width: number;
+
     private _prefab: TimestampPrefab;
-    
+    private connectedTimestamps: Array<[Timestamp, number]>;
     private maxWidth = 7;
     private minWidth = 1;
 
@@ -178,22 +179,21 @@ export class Timestamp extends GridElement {
         this.width = value.width;
     }
 
+    get isLongTimestamp(): boolean {
+        return this.connectedTimestamps != null && this.connectedTimestamps.length > 0;
+    }
+
     draw(view: IViewportModule, canvas : HTMLCanvasElement) {
         super.draw(view, canvas)
 
         if (this._outOfBounds[0])
             return;
 
-        const color = this._isSelected ? editorColorSettings.selectedTimestampColor : this.color;
+        let color = this.getColor();
         const ctx = canvas.getContext('2d');
-        const pos = new Vec2(this.transform.position.x + view.position.x,
-        this.transform.position.y + view.position.y);
+        const pos = new Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
         
-        let width = this.width + this.transform.scale.x/5;
-        if (width > this.maxWidth)
-            width = this.maxWidth;
-        if (width < this.minWidth)
-            width = this.minWidth;
+        let width = this.getWidth();
 
         ctx.fillStyle = color.value();
         ctx.beginPath();
@@ -202,6 +202,62 @@ export class Timestamp extends GridElement {
         ctx.lineTo(pos.x + width, pos.y);
         ctx.lineTo(pos.x, pos.y + width);
         ctx.fill();
+
+        color = new RgbaColor(color.r, color.g, color.b, 0.6);
+
+        this.connectedTimestamps?.forEach(element => {
+            console.log("DRAW CONNECTED");
+            let timestamp = element[0];
+            const elementPos = new Vec2(timestamp.transform.position.x + view.position.x,
+                timestamp.transform.position.y + view.position.y);
+            
+            const directionVec = Vec2.Substract(elementPos, pos);    
+            const normalVec = Vec2.Normal(directionVec).normalized;
+            
+            width = width/2;
+
+            ctx.fillStyle = color.value();
+            ctx.beginPath();
+            ctx.moveTo(pos.x + normalVec.x * width, pos.y + normalVec.y * width);
+            ctx.lineTo(elementPos.x + normalVec.x*width, elementPos.y+normalVec.y*width);
+            ctx.lineTo(elementPos.x - normalVec.x*width, elementPos.y-normalVec.y*width);
+            ctx.lineTo(pos.x - normalVec.x * width, pos.y - normalVec.y * width);
+            ctx.fill();
+        });
+    }
+
+    connectToTimestamp(timestamp: Timestamp) {
+        if (this.connectedTimestamps == null)
+            this.connectedTimestamps = new Array<[Timestamp, number]>();
+        
+        console.log("FUCK YEAH CONNECTED");
+        let id = timestamp.onDelete.addListener((element) => this.removeConnection(element as Timestamp));
+        this.connectedTimestamps.push([timestamp, id]);
+    }
+
+    removeConnection(timestamp: Timestamp) {
+        let index = this.connectedTimestamps.findIndex((stamp, id) => { return stamp[0].id == timestamp.id; });
+        let removed = this.connectedTimestamps.splice(index, 1);
+        console.log("FUCK YEAH REMOVED");
+        timestamp.onDelete.removeListener(removed[0][1]);
+    }
+
+    isConnected(timestamp: Timestamp) {
+        let index = this.connectedTimestamps.findIndex((stamp, id) => { return stamp[0].id == timestamp.id; });
+        return index != -1;
+    }
+    
+    private getColor() {
+        return this._isSelected ? editorColorSettings.selectedTimestampColor : this.color;
+    }
+
+    private getWidth() : number {
+        let width = this.width + this.transform.scale.x/5;
+        if (width > this.maxWidth)
+            width = this.maxWidth;
+        if (width < this.minWidth)
+            width = this.minWidth;
+        return width;
     }
 }
 

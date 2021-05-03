@@ -21,6 +21,7 @@ var TimestampsModule = /** @class */ (function () {
         this.idToPrefab = new Map();
         this.timestamps = new Map();
         this.clapTimings = new Array();
+        this.idToTimestamp = 0;
         this.editorGridModule = editorGrid;
         this.createableLinesModule = creatableLines;
         this.canvas = jquery_1.default("#editor-canvas")[0];
@@ -212,8 +213,10 @@ var TimestampsModule = /** @class */ (function () {
         }
         if (this.timestamps.get(newTimestamp.transform.localPosition.x).get(newTimestamp.transform.localPosition.y) == null) {
             this.timestamps.get(newTimestamp.transform.localPosition.x).set(newTimestamp.transform.localPosition.y, newTimestamp);
+            newTimestamp.id = this.idToTimestamp;
             newTimestamp.onDelete.addListener(function (element) { _this.deleteTimestamp(element); });
             newTimestamp.onRestore.addListener(function (element) { _this.restoreTimestamp(element); });
+            this.idToTimestamp++;
         }
         else if (this.timestamps.get(newTimestamp.transform.localPosition.x).get(newTimestamp.transform.localPosition.y)
             .prefab.prefabId != prefab.prefabId) {

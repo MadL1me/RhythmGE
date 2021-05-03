@@ -142,7 +142,35 @@ export class ElementSelectorModule implements IEditorModule {
             let deleteCommand = new DeleteElementsCommand(this.selectedElements, this);
             CommandsController.executeCommand(deleteCommand);
         }
+        if (Input.keysPressed["KeyF"]) {
+            console.log("Connect command") 
+            this.connectTimestamps();
+        }
     }
+
+    private connectTimestamps() {
+        if (this.selectedElements.length != 2) {
+            console.log("NOT VALID LEGTH");
+            return;
+        }
+
+        let [firstTimestamp, secondTimestmap] = this.selectedElements;
+        if (!(firstTimestamp instanceof Timestamp || secondTimestmap !instanceof Timestamp)) {
+            console.log("NOT INSTANCES OF!!!");
+            return;
+        }
+        
+        if (firstTimestamp.transform.position.x == secondTimestmap.transform.position.x)
+            return;
+
+        if (firstTimestamp.transform.position.x > secondTimestmap.transform.position.x)
+            [firstTimestamp, secondTimestmap] = [secondTimestmap, firstTimestamp];
+
+        if ((firstTimestamp as Timestamp).isLongTimestamp && (firstTimestamp as Timestamp).isConnected(secondTimestmap as Timestamp))
+            (firstTimestamp as Timestamp).removeConnection(secondTimestmap as Timestamp);
+        else
+            (firstTimestamp as Timestamp).connectToTimestamp(secondTimestmap as Timestamp);
+    }   
 
     private onAreaSelect(pointA: Vec2, pointB: Vec2) {
         if (Vec2.Distance(pointA, pointB) < 30) {

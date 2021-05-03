@@ -245,7 +245,7 @@ export class AudioModule implements IAudioModule {
             return;
         var second = this.editorCore.viewport.canvasToSongTime(position).x/this.editorCore.transform.scale.x;
         this.songSource.seek([second]);
-        this.setupData();
+        //this.setupData();
     }
 
     getDomainData() : Float32Array {

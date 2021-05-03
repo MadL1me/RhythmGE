@@ -117,6 +117,30 @@ var ElementSelectorModule = /** @class */ (function () {
             var deleteCommand = new Command_1.DeleteElementsCommand(this.selectedElements, this);
             Command_1.CommandsController.executeCommand(deleteCommand);
         }
+        if (Input_1.Input.keysPressed["KeyF"]) {
+            console.log("Connect command");
+            this.connectTimestamps();
+        }
+    };
+    ElementSelectorModule.prototype.connectTimestamps = function () {
+        var _a;
+        if (this.selectedElements.length != 2) {
+            console.log("NOT VALID LEGTH");
+            return;
+        }
+        var _b = this.selectedElements, firstTimestamp = _b[0], secondTimestmap = _b[1];
+        if (!(firstTimestamp instanceof GridElements_1.Timestamp || secondTimestmap instanceof GridElements_1.Timestamp)) {
+            console.log("NOT INSTANCES OF!!!");
+            return;
+        }
+        if (firstTimestamp.transform.position.x == secondTimestmap.transform.position.x)
+            return;
+        if (firstTimestamp.transform.position.x > secondTimestmap.transform.position.x)
+            _a = [secondTimestmap, firstTimestamp], firstTimestamp = _a[0], secondTimestmap = _a[1];
+        if (firstTimestamp.isLongTimestamp && firstTimestamp.isConnected(secondTimestmap))
+            firstTimestamp.removeConnection(secondTimestmap);
+        else
+            firstTimestamp.connectToTimestamp(secondTimestmap);
     };
     ElementSelectorModule.prototype.onAreaSelect = function (pointA, pointB) {
         var _this = this;

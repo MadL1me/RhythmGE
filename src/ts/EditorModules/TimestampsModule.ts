@@ -26,6 +26,7 @@ export class TimestampsModule implements IEditorModule {
     private editorCore: IEditorCore;
     private editorGridModule: EditorGrid;
     private createableLinesModule: CreatableLinesModule;
+    private idToTimestamp = 0;
 
     constructor(editorGrid: EditorGrid, creatableLines: CreatableLinesModule) {
         this.editorGridModule = editorGrid;
@@ -243,6 +244,7 @@ export class TimestampsModule implements IEditorModule {
         this.createTimestamp(new Vec2(closestObject.transform.position.x, closestBeatline.transform.position.y));
     }
 
+
     private createTimestamp(position: Vec2) {
         const prefab = this.idToPrefab.get(this.selectedPrefabId);
 
@@ -257,8 +259,11 @@ export class TimestampsModule implements IEditorModule {
         if (this.timestamps.get(newTimestamp.transform.localPosition.x).get(newTimestamp.transform.localPosition.y) == null) {
             this.timestamps.get(newTimestamp.transform.localPosition.x).set(newTimestamp.transform.localPosition.y, newTimestamp);
             
+            newTimestamp.id = this.idToTimestamp;
             newTimestamp.onDelete.addListener((element) => {this.deleteTimestamp(element as Timestamp);});
             newTimestamp.onRestore.addListener((element) => {this.restoreTimestamp(element as Timestamp);});
+        
+            this.idToTimestamp++;
         }
         else if (this.timestamps.get(newTimestamp.transform.localPosition.x).get(newTimestamp.transform.localPosition.y)
             .prefab.prefabId != prefab.prefabId) {

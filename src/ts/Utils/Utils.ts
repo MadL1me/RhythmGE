@@ -99,14 +99,16 @@ export class Event<T> {
     private listeners = new Array<Action<T>>();
     private _preventOnce: boolean = false;
     private _preventFiring: boolean = false;
+    private _id: number = -1;
 
-    addListener(listener: Action<T>) {
+    addListener(listener: Action<T>): number {
         this.listeners.push(listener)
+        this._id++;
+        return this._id;
     }
 
-    removeListener(listener: Action<T>) {
-        var index = this.listeners.findIndex((element)=>{ return listener==element; });
-        this.listeners.slice(index,index);
+    removeListener(id: number) {
+        this.listeners.splice(id,1);
     }   
 
     invoke(data: T) {

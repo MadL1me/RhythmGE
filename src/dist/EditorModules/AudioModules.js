@@ -182,7 +182,7 @@ var AudioModule = /** @class */ (function () {
             return;
         var second = this.editorCore.viewport.canvasToSongTime(position).x / this.editorCore.transform.scale.x;
         this.songSource.seek([second]);
-        this.setupData();
+        //this.setupData();
     };
     AudioModule.prototype.getDomainData = function () {
         var dataArray = new Float32Array(this.analyser.frequencyBinCount);

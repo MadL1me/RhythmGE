@@ -93,13 +93,15 @@ var Event = /** @class */ (function () {
         this.listeners = new Array();
         this._preventOnce = false;
         this._preventFiring = false;
+        this._id = -1;
     }
     Event.prototype.addListener = function (listener) {
         this.listeners.push(listener);
+        this._id++;
+        return this._id;
     };
-    Event.prototype.removeListener = function (listener) {
-        var index = this.listeners.findIndex(function (element) { return listener == element; });
-        this.listeners.slice(index, index);
+    Event.prototype.removeListener = function (id) {
+        this.listeners.splice(id, 1);
     };
     Event.prototype.invoke = function (data) {
         var _this = this;
