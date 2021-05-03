@@ -21,23 +21,23 @@ var Input = /** @class */ (function () {
     function Input() {
     }
     Input.init = function () {
-        var _this = this;
         if (Input.initialized)
             return;
         Input.initialized = true;
-        jquery_1.default(window).on('resize', function (event) { Input.onWindowResize.invoke(event); })
-            .on('keydown', function (event) { Input.onCanvasKeyDown(event); })
-            .on('keyup', function (event) { Input.onCanvasKeyUp(event); })
-            .on('mouseup', function (event) { Input.onMouseUp.invoke(event); })
-            .on('mousemove', function (event) { Input.onHoverWindow.invoke(event); });
+        jquery_1.default(window).on('resize', function (event) { return Input.onWindowResize.invoke(event); })
+            .on('keydown', function (event) { return Input.onCanvasKeyDown(event); })
+            .on('keyup', function (event) { return Input.onCanvasKeyUp(event); })
+            .on('mouseup', function (event) { return Input.onMouseUp.invoke(event); })
+            .on('mousemove', function (event) { return Input.onHoverWindow.invoke(event); })
+            .on('mousedown', function (event) { return Input.onMouseDown.invoke(event); });
         //$(window).on('mousedown', (event) => { Input.onMouseDown.invoke(event);});
         //$(window).on('mouseup', (event) => {Input.onMouseUp.invoke(event)});
-        jquery_1.default('#editor-canvas').on('wheel', function (event) { Input.onWheelCanvas.invoke(event.originalEvent); })
-            .on('click', function (event) { Input.onMouseClickCanvas.invoke(event); _this.onMouseAfterCanvasClick.invoke(null); })
-            .on('mousemove', function (event) { Input.onCanvHover(event); })
+        jquery_1.default('#editor-canvas').on('wheel', function (event) { return Input.onWheelCanvas.invoke(event.originalEvent); })
+            .on('click', function (event) { Input.onMouseClickCanvas.invoke(event); Input.onMouseAfterCanvasClick.invoke(null); })
+            .on('mousemove', function (event) { return Input.onCanvHover(event); })
             //.on('mouseup', (event) => {Input.onMouseUp.invoke(event)})
-            .on('mousedown', function (event) { Input.onMouseDownCanvas.invoke(event); })
-            .on('mouseover', function (event) { Input.onMouseOverCanvas.invoke(event); });
+            .on('mousedown', function (event) { return Input.onMouseDownCanvas.invoke(event); })
+            .on('mouseover', function (event) { return Input.onMouseOverCanvas.invoke(event); });
     };
     Input.update = function () {
         this.lastMousePosition = this.mousePosition;

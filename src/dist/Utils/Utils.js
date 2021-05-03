@@ -62,6 +62,10 @@ var Utils = /** @class */ (function () {
         else
             return right;
     };
+    Utils.isOutOfCanvasBounds = function (pos, canvas) {
+        return (!(pos.x > canvas.width || pos.y > canvas.height ||
+            pos.x < 0 || pos.y < 0));
+    };
     return Utils;
 }());
 exports.Utils = Utils;

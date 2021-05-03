@@ -50,6 +50,10 @@ export class CreatableLinesModule implements IEditorModule {
         console.log(startIndex);
         console.log(endIndex);
 
+        if (startIndex == 0 && endIndex == 0 || 
+            startIndex == this.creatableLines.length-1 && startIndex == this.creatableLines.length-1)
+            return null;
+
         if ((startPos.y < this.canvas.height && endPos.y > this.canvas.height - 10)
             || (endPos.y < this.canvas.height && startPos.y > this.canvas.height - 10))
             return this.creatableLines.slice(startIndex, endIndex + 1);

@@ -85,16 +85,16 @@ export class ElementSelectorModule implements IEditorModule {
 
     init(editorCoreModules: IEditorCore) {
         this.editor = editorCoreModules;
-        Input.onHoverWindow.addListener((event) => this.onMouseMove(event));
-        Input.onMouseUp.addListener((event) => this.onMouseUp(event));
-        Input.onMouseClickCanvas.addListener((event) => this.onCanvasClick(event));
+        Input.onHoverWindow.addListener(event => this.elementMovingHandle(event));
+        Input.onMouseUp.addListener(event => this.elementMovingEndHandle(event));
+        Input.onMouseClickCanvas.addListener(event => this.onCanvasClick(event));
         Input.onMouseAfterCanvasClick.addListener(() => Input.onMouseClickCanvas.allowFiring());
         
         this.selectArea = new SelectArea();
         this.selectArea.onSelect.addListener(([a, b]) => this.onAreaSelect(a, b));
         
-        Input.onMouseDownCanvas.addListener((event) => this.onMouseDown(event));
-        Input.onKeyDown.addListener((key) => this.onKeyDown(key));
+        Input.onMouseDownCanvas.addListener(event => this.elementMovingStartHandle(event));
+        Input.onKeyDown.addListener(key => this.checkForKeyDownActions(key));
         //CreatableLinesModule.onLineClickEvent.addListener((line) => {this.onElementClicked(line);});
         //this.timestamps.onExistingElementClicked.addListener((element) => {this.onElementClicked(element)});
     }
@@ -136,7 +136,7 @@ export class ElementSelectorModule implements IEditorModule {
         this.selectedElements = [];
     }
     
-    private onKeyDown(event: JQuery.KeyDownEvent) {
+    private checkForKeyDownActions(event: JQuery.KeyDownEvent) {
         if (Input.keysPressed["Delete"]) {
             console.log("DELETE COMMAND");
             let deleteCommand = new DeleteElementsCommand(this.selectedElements, this);
@@ -150,8 +150,8 @@ export class ElementSelectorModule implements IEditorModule {
             return;
         }
 
-        //Input.onMouseUp.preventFiringEvent();
-        Input.onMouseClickCanvas.preventFiring();
+        if (Utils.isOutOfCanvasBounds(pointB, this.canvas))
+            Input.onMouseClickCanvas.preventFiring();
 
         pointA = this.editor.viewport.transform.canvasToWorld(pointA);
         pointB = this.editor.viewport.transform.canvasToWorld(pointB);
@@ -174,7 +174,23 @@ export class ElementSelectorModule implements IEditorModule {
         console.log(`selected lines count: ${selectedLines?.length}`);
     }
 
-    private onMouseDown(event: JQuery.MouseDownEvent) {
+    private onCanvasClick(event: JQuery.ClickEvent) {
+        if (Input.keysPressed["ShiftLeft"] == true)
+            Input.onMouseClickCanvas.preventFiringEventOnce();
+        else {
+            if (this.selectedElements.length > 0) {
+                Input.onMouseClickCanvas.preventFiringEventOnce();
+            }
+            console.log("DESELECTING ALL CLICK");
+            this.deselectAll();
+            return;
+        }
+
+        let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
+        this.onElementSelect(this.getClosestGridElement(worldClickPos));
+    }
+
+    private elementMovingStartHandle(event: JQuery.MouseDownEvent) {
         console.log("MOSUE DOWN 0");
         
         if (this.selectedElements.length != 1)
@@ -182,7 +198,7 @@ export class ElementSelectorModule implements IEditorModule {
 
         console.log("MOSUE DOWN");
 
-        let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
+        let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.clientX, event.clientY));
         let closestElement = this.selectedElements[0];
         
         if (!closestElement.isSelected && Vec2.Distance(worldClickPos, closestElement.transform.position) > 20)
@@ -195,7 +211,7 @@ export class ElementSelectorModule implements IEditorModule {
         this.movingState = true;
     }
 
-    private onMouseMove(event: JQuery.MouseMoveEvent) {
+    private elementMovingHandle(event: JQuery.MouseMoveEvent) {
         if (!this.movingState)
             return;
 
@@ -230,7 +246,7 @@ export class ElementSelectorModule implements IEditorModule {
         (this.editor as Editor).addLastDrawableElement(line);
     }   
 
-    private onMouseUp(event: JQuery.MouseUpEvent) {
+    private elementMovingEndHandle(event: JQuery.MouseUpEvent) {
         if (!this.movingState)
             return;
         
@@ -258,36 +274,19 @@ export class ElementSelectorModule implements IEditorModule {
             //this.movingElement.move(position);
             let moveCommand = new MoveElementsCommand([this.movingElement], [position]);
             CommandsController.executeCommand(moveCommand);
-            return;
         }
         else {
             let position = this.editor.viewport.transform.worldToLocal(worldPos);
             let moveCommand = new MoveElementsCommand([this.movingElement], [position]);
             CommandsController.executeCommand(moveCommand);
-
             //this.movingElement.move(position);
         }
         
         this.movingElement = null;
         this.selectArea.isActive = true;
+        this.selectArea.onSelect.preventFiringEventOnce();
         this.movingState = false;
     }   
-
-    private onCanvasClick(event: JQuery.ClickEvent) {
-        if (Input.keysPressed["ShiftLeft"] == true)
-            Input.onMouseClickCanvas.preventFiringEventOnce();
-        else {
-            if (this.selectedElements.length > 0) {
-                Input.onMouseClickCanvas.preventFiringEventOnce();
-            }
-            console.log("DESELECTING ALL CLICK");
-            this.deselectAll();
-            return;
-        }
-
-        let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
-        this.onElementSelect(this.getClosestGridElement(worldClickPos));
-    }
 
     private getClosestGridElement(worldPos: Vec2) : GridElement {
         let clickedElemenet = null;

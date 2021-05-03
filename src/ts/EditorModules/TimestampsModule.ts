@@ -113,6 +113,10 @@ export class TimestampsModule implements IEditorModule {
         console.log(endIndex);
         console.log(xValues.length);
 
+        if (startIndex == 0 && endIndex == 0 || 
+            startIndex == this.timestamps.size-1 && startIndex == this.timestamps.size-1)
+            return null;
+
         xValues.forEach((value) => {
             console.log(value);
             let yArray = this.timestamps.get(value);

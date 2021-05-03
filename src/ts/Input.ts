@@ -45,22 +45,23 @@ export abstract class Input {
         
         Input.initialized = true;
 
-        $(window).on('resize', (event) => { Input.onWindowResize.invoke(event); })
-        .on('keydown', (event) => { Input.onCanvasKeyDown(event);})
-        .on('keyup', (event) => { Input.onCanvasKeyUp(event);})
-        .on('mouseup', (event) => {Input.onMouseUp.invoke(event)})
-        .on('mousemove', (event) => {Input.onHoverWindow.invoke(event);});
-        
+        $(window).on('resize', event => Input.onWindowResize.invoke(event))
+        .on('keydown', event => Input.onCanvasKeyDown(event))
+        .on('keyup', event => Input.onCanvasKeyUp(event))
+        .on('mouseup', event => Input.onMouseUp.invoke(event))
+        .on('mousemove', event => Input.onHoverWindow.invoke(event))
+        .on('mousedown', event => Input.onMouseDown.invoke(event));
+
         //$(window).on('mousedown', (event) => { Input.onMouseDown.invoke(event);});
         //$(window).on('mouseup', (event) => {Input.onMouseUp.invoke(event)});
 
-        $('#editor-canvas').on('wheel', (event) => { Input.onWheelCanvas.invoke(event.originalEvent);})
-        .on('click', (event) => { Input.onMouseClickCanvas.invoke(event); this.onMouseAfterCanvasClick.invoke(null);})
-        .on('mousemove', (event) => { Input.onCanvHover(event);})
+        $('#editor-canvas').on('wheel', event => Input.onWheelCanvas.invoke(event.originalEvent))
+        .on('click', (event) => { Input.onMouseClickCanvas.invoke(event); Input.onMouseAfterCanvasClick.invoke(null);})
+        .on('mousemove', event => Input.onCanvHover(event))
 
         //.on('mouseup', (event) => {Input.onMouseUp.invoke(event)})
-        .on('mousedown', (event) => { Input.onMouseDownCanvas.invoke(event);})
-        .on('mouseover', (event) => { Input.onMouseOverCanvas.invoke(event);});
+        .on('mousedown', event => Input.onMouseDownCanvas.invoke(event))
+        .on('mouseover', event => Input.onMouseOverCanvas.invoke(event));
     }
 
     static update() {

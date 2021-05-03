@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import { GridElement, ICompareNumberProvider } from '../GridElements';
+import { Vec2 } from './Vec2';
 
 export enum Func{ 
     Ceil,
@@ -63,6 +64,11 @@ export abstract class Utils {
             return left;
         else 
             return right;
+    }
+
+    static isOutOfCanvasBounds(pos: Vec2, canvas: HTMLCanvasElement): boolean {
+        return (!(pos.x > canvas.width || pos.y > canvas.height ||
+                  pos.x < 0 || pos.y < 0))
     }
 }
 

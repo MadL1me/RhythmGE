@@ -66,8 +66,8 @@ var ElementSelectorModule = /** @class */ (function () {
     ElementSelectorModule.prototype.init = function (editorCoreModules) {
         var _this = this;
         this.editor = editorCoreModules;
-        Input_1.Input.onHoverWindow.addListener(function (event) { return _this.onMouseMove(event); });
-        Input_1.Input.onMouseUp.addListener(function (event) { return _this.onMouseUp(event); });
+        Input_1.Input.onHoverWindow.addListener(function (event) { return _this.elementMovingHandle(event); });
+        Input_1.Input.onMouseUp.addListener(function (event) { return _this.elementMovingEndHandle(event); });
         Input_1.Input.onMouseClickCanvas.addListener(function (event) { return _this.onCanvasClick(event); });
         Input_1.Input.onMouseAfterCanvasClick.addListener(function () { return Input_1.Input.onMouseClickCanvas.allowFiring(); });
         this.selectArea = new SelectArea();
@@ -75,8 +75,8 @@ var ElementSelectorModule = /** @class */ (function () {
             var a = _a[0], b = _a[1];
             return _this.onAreaSelect(a, b);
         });
-        Input_1.Input.onMouseDownCanvas.addListener(function (event) { return _this.onMouseDown(event); });
-        Input_1.Input.onKeyDown.addListener(function (key) { return _this.onKeyDown(key); });
+        Input_1.Input.onMouseDownCanvas.addListener(function (event) { return _this.elementMovingStartHandle(event); });
+        Input_1.Input.onKeyDown.addListener(function (key) { return _this.checkForKeyDownActions(key); });
         //CreatableLinesModule.onLineClickEvent.addListener((line) => {this.onElementClicked(line);});
         //this.timestamps.onExistingElementClicked.addListener((element) => {this.onElementClicked(element)});
     };
@@ -111,7 +111,7 @@ var ElementSelectorModule = /** @class */ (function () {
         });
         this.selectedElements = [];
     };
-    ElementSelectorModule.prototype.onKeyDown = function (event) {
+    ElementSelectorModule.prototype.checkForKeyDownActions = function (event) {
         if (Input_1.Input.keysPressed["Delete"]) {
             console.log("DELETE COMMAND");
             var deleteCommand = new Command_1.DeleteElementsCommand(this.selectedElements, this);
@@ -124,8 +124,8 @@ var ElementSelectorModule = /** @class */ (function () {
             console.log("area is too smol");
             return;
         }
-        //Input.onMouseUp.preventFiringEvent();
-        Input_1.Input.onMouseClickCanvas.preventFiring();
+        if (Utils_1.Utils.isOutOfCanvasBounds(pointB, this.canvas))
+            Input_1.Input.onMouseClickCanvas.preventFiring();
         pointA = this.editor.viewport.transform.canvasToWorld(pointA);
         pointB = this.editor.viewport.transform.canvasToWorld(pointB);
         var selectedLines = this.creatable.getLinesInRange(pointA, pointB);
@@ -141,12 +141,26 @@ var ElementSelectorModule = /** @class */ (function () {
         console.log("selected timestamps count: " + (selectedTimestamps === null || selectedTimestamps === void 0 ? void 0 : selectedTimestamps.length));
         console.log("selected lines count: " + (selectedLines === null || selectedLines === void 0 ? void 0 : selectedLines.length));
     };
-    ElementSelectorModule.prototype.onMouseDown = function (event) {
+    ElementSelectorModule.prototype.onCanvasClick = function (event) {
+        if (Input_1.Input.keysPressed["ShiftLeft"] == true)
+            Input_1.Input.onMouseClickCanvas.preventFiringEventOnce();
+        else {
+            if (this.selectedElements.length > 0) {
+                Input_1.Input.onMouseClickCanvas.preventFiringEventOnce();
+            }
+            console.log("DESELECTING ALL CLICK");
+            this.deselectAll();
+            return;
+        }
+        var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
+        this.onElementSelect(this.getClosestGridElement(worldClickPos));
+    };
+    ElementSelectorModule.prototype.elementMovingStartHandle = function (event) {
         console.log("MOSUE DOWN 0");
         if (this.selectedElements.length != 1)
             return;
         console.log("MOSUE DOWN");
-        var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
+        var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.clientX, event.clientY));
         var closestElement = this.selectedElements[0];
         if (!closestElement.isSelected && Vec2_1.Vec2.Distance(worldClickPos, closestElement.transform.position) > 20)
             return;
@@ -155,7 +169,7 @@ var ElementSelectorModule = /** @class */ (function () {
         this.selectArea.isActive = false;
         this.movingState = true;
     };
-    ElementSelectorModule.prototype.onMouseMove = function (event) {
+    ElementSelectorModule.prototype.elementMovingHandle = function (event) {
         if (!this.movingState)
             return;
         var worldPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
@@ -181,7 +195,7 @@ var ElementSelectorModule = /** @class */ (function () {
         var line = new GridElements_1.CreatableTimestampLine(worldPos.x, this.creatable.transform, new RgbaColor_1.RgbaColor(cLine.color.r, cLine.color.g, cLine.color.b, 0.6));
         this.editor.addLastDrawableElement(line);
     };
-    ElementSelectorModule.prototype.onMouseUp = function (event) {
+    ElementSelectorModule.prototype.elementMovingEndHandle = function (event) {
         if (!this.movingState)
             return;
         var worldPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
@@ -203,7 +217,6 @@ var ElementSelectorModule = /** @class */ (function () {
             //this.movingElement.move(position);
             var moveCommand = new Command_1.MoveElementsCommand([this.movingElement], [position]);
             Command_1.CommandsController.executeCommand(moveCommand);
-            return;
         }
         else {
             var position = this.editor.viewport.transform.worldToLocal(worldPos);
@@ -213,21 +226,8 @@ var ElementSelectorModule = /** @class */ (function () {
         }
         this.movingElement = null;
         this.selectArea.isActive = true;
+        this.selectArea.onSelect.preventFiringEventOnce();
         this.movingState = false;
-    };
-    ElementSelectorModule.prototype.onCanvasClick = function (event) {
-        if (Input_1.Input.keysPressed["ShiftLeft"] == true)
-            Input_1.Input.onMouseClickCanvas.preventFiringEventOnce();
-        else {
-            if (this.selectedElements.length > 0) {
-                Input_1.Input.onMouseClickCanvas.preventFiringEventOnce();
-            }
-            console.log("DESELECTING ALL CLICK");
-            this.deselectAll();
-            return;
-        }
-        var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
-        this.onElementSelect(this.getClosestGridElement(worldClickPos));
     };
     ElementSelectorModule.prototype.getClosestGridElement = function (worldPos) {
         var clickedElemenet = null;

@@ -94,6 +94,9 @@ var TimestampsModule = /** @class */ (function () {
         console.log(startIndex);
         console.log(endIndex);
         console.log(xValues.length);
+        if (startIndex == 0 && endIndex == 0 ||
+            startIndex == this.timestamps.size - 1 && startIndex == this.timestamps.size - 1)
+            return null;
         xValues.forEach(function (value) {
             console.log(value);
             var yArray = _this.timestamps.get(value);

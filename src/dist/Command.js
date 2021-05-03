@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MoveElementsCommand = exports.CreateElememtsCommand = exports.DeleteElementsCommand = exports.CommandsController = void 0;
+exports.MoveElementsCommand = exports.CreateElememtsCommand = exports.DeleteElementsCommand = exports.SelectElementsCommand = exports.CutCommand = exports.PasteCommand = exports.CopyCommand = exports.CommandsController = void 0;
 var Input_1 = require("./Input");
 var CommandsController = /** @class */ (function () {
     function CommandsController() {
@@ -48,21 +48,62 @@ var CommandsController = /** @class */ (function () {
     return CommandsController;
 }());
 exports.CommandsController = CommandsController;
-// export class SelectElementsCommand implements ICommand {
-//     constructor (
-//         private elements: Array<GridElement>, 
-//         private selector: ElementSelectorModule) {}
-//     execute() {
-//         this.elements.forEach((element) => {
-//             this.selector.selectElement(element);
-//         });
-//     }
-//     undo() {
-//         this.elements.forEach((element) => {
-//             this.selector.deselectElement(element);
-//         });
-//     }
-// }
+var CopyCommand = /** @class */ (function () {
+    function CopyCommand() {
+    }
+    CopyCommand.prototype.execute = function () {
+        throw new Error("Method not implemented.");
+    };
+    CopyCommand.prototype.undo = function () {
+        throw new Error("Method not implemented.");
+    };
+    return CopyCommand;
+}());
+exports.CopyCommand = CopyCommand;
+var PasteCommand = /** @class */ (function () {
+    function PasteCommand() {
+    }
+    PasteCommand.prototype.execute = function () {
+        throw new Error("Method not implemented.");
+    };
+    PasteCommand.prototype.undo = function () {
+        throw new Error("Method not implemented.");
+    };
+    return PasteCommand;
+}());
+exports.PasteCommand = PasteCommand;
+var CutCommand = /** @class */ (function () {
+    function CutCommand() {
+    }
+    CutCommand.prototype.execute = function () {
+        throw new Error("Method not implemented.");
+    };
+    CutCommand.prototype.undo = function () {
+        throw new Error("Method not implemented.");
+    };
+    return CutCommand;
+}());
+exports.CutCommand = CutCommand;
+var SelectElementsCommand = /** @class */ (function () {
+    function SelectElementsCommand(elements, selector) {
+        this.elements = elements;
+        this.selector = selector;
+    }
+    SelectElementsCommand.prototype.execute = function () {
+        var _this = this;
+        this.elements.forEach(function (element) {
+            _this.selector.selectElement(element);
+        });
+    };
+    SelectElementsCommand.prototype.undo = function () {
+        var _this = this;
+        this.elements.forEach(function (element) {
+            _this.selector.deselectElement(element);
+        });
+    };
+    return SelectElementsCommand;
+}());
+exports.SelectElementsCommand = SelectElementsCommand;
 var DeleteElementsCommand = /** @class */ (function () {
     function DeleteElementsCommand(gridElements, selector) {
         this.gridElements = gridElements;
@@ -117,7 +158,7 @@ var MoveElementsCommand = /** @class */ (function () {
     };
     MoveElementsCommand.prototype.undo = function () {
         for (var i = 0; i < this.movedElements.length; i++) {
-            this.movedElements[i].transform.position = this.lastPositions[i];
+            this.movedElements[i].move(this.lastPositions[i]);
         }
     };
     return MoveElementsCommand;

@@ -62,24 +62,53 @@ export class CommandsController {
     }
 }
 
-// export class SelectElementsCommand implements ICommand {
+export class CopyCommand implements ICommand {
+    execute() {
+        throw new Error("Method not implemented.");
+    }
+    undo() {
+        throw new Error("Method not implemented.");
+    }
 
-//     constructor (
-//         private elements: Array<GridElement>, 
-//         private selector: ElementSelectorModule) {}
+}
 
-//     execute() {
-//         this.elements.forEach((element) => {
-//             this.selector.selectElement(element);
-//         });
-//     }
+export class PasteCommand implements ICommand {
+    execute() {
+        throw new Error("Method not implemented.");
+    }
+    undo() {
+        throw new Error("Method not implemented.");
+    }
+}
 
-//     undo() {
-//         this.elements.forEach((element) => {
-//             this.selector.deselectElement(element);
-//         });
-//     }
-// }
+export class CutCommand implements ICommand {
+    execute() {
+        throw new Error("Method not implemented.");
+    }
+    undo() {
+        throw new Error("Method not implemented.");
+    }
+
+}
+
+export class SelectElementsCommand implements ICommand {
+
+    constructor (
+        private elements: Array<GridElement>, 
+        private selector: ElementSelectorModule) {}
+
+    execute() {
+        this.elements.forEach((element) => {
+            this.selector.selectElement(element);
+        });
+    }
+
+    undo() {
+        this.elements.forEach((element) => {
+            this.selector.deselectElement(element);
+        });
+    }
+}
 
 export class DeleteElementsCommand implements ICommand {
     
@@ -136,7 +165,7 @@ export class MoveElementsCommand implements ICommand{
 
     undo() {
         for(let i = 0; i<this.movedElements.length; i++) {
-            this.movedElements[i].transform.position = this.lastPositions[i];
+            this.movedElements[i].move(this.lastPositions[i]);
         }
     }
 
