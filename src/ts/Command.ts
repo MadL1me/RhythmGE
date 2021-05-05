@@ -47,17 +47,17 @@ export class CommandsController {
     }
 
     static undoCommand() {
-        if (this.commands.length < 1)
+        if (this.commands.length < 1 || this.commandIndex < 0)
             return;
         this.commands[this.commandIndex].undo();
         this.commandIndex--;
     }
 
     static redoCommand() {
-        if (this.commandIndex == this.commands.length-1) {
+        if (this.commands.length < 1 || this.commandIndex == this.commands.length-1) {
             return;
         }
-        this.commandIndex++
+        this.commandIndex++;
         this.commands[this.commandIndex].execute();
     }
 }
@@ -91,6 +91,35 @@ export class CutCommand implements ICommand {
 
 }
 
+export class MakeConnectionCommand implements ICommand {
+    constructor(
+        private firstTimestamp: Timestamp,
+        private secondTimestamp: Timestamp
+    ) {}
+    
+    execute() {
+        this.firstTimestamp.connectToTimestamp(this.secondTimestamp);
+    }
+    undo() {
+        this.firstTimestamp.removeConnection(this.secondTimestamp);
+    }
+}
+
+export class RemoveConnectionCommand implements ICommand {
+    constructor(
+        private firstTimestamp: Timestamp,
+        private secondTimestamp: Timestamp
+    ) {}
+    
+    execute() {
+        this.firstTimestamp.removeConnection(this.secondTimestamp);
+    }
+    undo() {
+        this.firstTimestamp.connectToTimestamp(this.secondTimestamp);
+    }
+
+}
+
 export class SelectElementsCommand implements ICommand {
 
     constructor (
@@ -107,6 +136,31 @@ export class SelectElementsCommand implements ICommand {
         this.elements.forEach((element) => {
             this.selector.deselectElement(element);
         });
+    }
+}
+
+export class DeselectElementsCommand implements ICommand {
+    
+    constructor (
+        protected elements: Array<GridElement>, 
+        protected selector: ElementSelectorModule) {}
+
+    execute() {
+        this.elements.forEach((element) => {
+            this.selector.deselectElement(element);
+        });
+    }
+
+    undo() {
+        this.elements.forEach((element) => {
+            this.selector.selectElement(element);
+        });
+    }
+}
+
+export class DeselectAllElementsCommand extends DeselectElementsCommand {
+    execute() {
+        this.selector.deselectAll();
     }
 }
 

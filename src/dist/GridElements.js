@@ -31,6 +31,8 @@ var GridElement = /** @class */ (function () {
         this.onRestore = new Utils_1.Event();
         this.onDelete = new Utils_1.Event();
         this.onMoved = new Utils_1.Event();
+        this.onSelected = new Utils_1.Event();
+        this.onDeselected = new Utils_1.Event();
         this._isActive = true;
         this._isSelected = false;
         this.color = rgbaColor;
@@ -74,9 +76,11 @@ var GridElement = /** @class */ (function () {
         this._isSelected = true;
     };
     GridElement.prototype.deselect = function () {
+        this.onDeselected.invoke(this);
         this._isSelected = false;
     };
     GridElement.prototype.activate = function () {
+        this.onSelected.invoke(this);
         this._isActive = true;
     };
     GridElement.prototype.deactivate = function () {
@@ -180,13 +184,12 @@ var Timestamp = /** @class */ (function (_super) {
         ctx.lineTo(pos.x, pos.y + width);
         ctx.fill();
         color = new RgbaColor_1.RgbaColor(color.r, color.g, color.b, 0.6);
+        width = width / 2;
         (_a = this.connectedTimestamps) === null || _a === void 0 ? void 0 : _a.forEach(function (element) {
-            console.log("DRAW CONNECTED");
             var timestamp = element[0];
             var elementPos = new Vec2_1.Vec2(timestamp.transform.position.x + view.position.x, timestamp.transform.position.y + view.position.y);
             var directionVec = Vec2_1.Vec2.Substract(elementPos, pos);
             var normalVec = Vec2_1.Vec2.Normal(directionVec).normalized;
-            width = width / 2;
             ctx.fillStyle = color.value();
             ctx.beginPath();
             ctx.moveTo(pos.x + normalVec.x * width, pos.y + normalVec.y * width);
@@ -194,6 +197,7 @@ var Timestamp = /** @class */ (function (_super) {
             ctx.lineTo(elementPos.x - normalVec.x * width, elementPos.y - normalVec.y * width);
             ctx.lineTo(pos.x - normalVec.x * width, pos.y - normalVec.y * width);
             ctx.fill();
+            ctx.closePath();
         });
     };
     Timestamp.prototype.connectToTimestamp = function (timestamp) {

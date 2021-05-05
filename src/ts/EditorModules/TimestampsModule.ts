@@ -10,6 +10,7 @@ import { IEditorModule, IEditorCore } from '../Editor';
 import { CreatableLinesModule } from "./CreatableLinesModule";
 import { timeStamp } from 'node:console';
 import { Export } from '../Export';
+import { CommandsController, CreateElememtsCommand } from '../Command';
 
 
 export class TimestampsModule implements IEditorModule {
@@ -114,8 +115,8 @@ export class TimestampsModule implements IEditorModule {
         console.log(endIndex);
         console.log(xValues.length);
 
-        if (startIndex == 0 && endIndex == 0 || 
-            startIndex == this.timestamps.size-1 && startIndex == this.timestamps.size-1)
+        if (endPos.x < this.clapTimings[0] || 
+            startPos.x > this.clapTimings[this.clapTimings.length-1])
             return null;
 
         xValues.forEach((value) => {
@@ -263,6 +264,8 @@ export class TimestampsModule implements IEditorModule {
             newTimestamp.onDelete.addListener((element) => {this.deleteTimestamp(element as Timestamp);});
             newTimestamp.onRestore.addListener((element) => {this.restoreTimestamp(element as Timestamp);});
         
+            let createCommand = new CreateElememtsCommand([newTimestamp]);
+            CommandsController.executeCommand(createCommand);
             this.idToTimestamp++;
         }
         else if (this.timestamps.get(newTimestamp.transform.localPosition.x).get(newTimestamp.transform.localPosition.y)

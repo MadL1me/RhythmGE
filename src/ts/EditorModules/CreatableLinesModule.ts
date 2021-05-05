@@ -6,6 +6,7 @@ import { editorColorSettings } from "../Utils/AppSettings";
 import { Input } from "../Input";
 import { Utils, Event, Func } from "../Utils/Utils";
 import { IEditorModule, IEditorCore } from '../Editor';
+import { CommandsController, CreateElememtsCommand } from '../Command';
 
 
 export class CreatableLinesModule implements IEditorModule {
@@ -50,8 +51,8 @@ export class CreatableLinesModule implements IEditorModule {
         console.log(startIndex);
         console.log(endIndex);
 
-        if (startIndex == 0 && endIndex == 0 || 
-            startIndex == this.creatableLines.length-1 && startIndex == this.creatableLines.length-1)
+        if (endPos.x < this.creatableLines[0].transform.position.x || 
+            startPos.x > this.creatableLines[this.creatableLines.length-1].transform.position.x)
             return null;
 
         if ((startPos.y < this.canvas.height && endPos.y > this.canvas.height - 10)
@@ -110,8 +111,8 @@ export class CreatableLinesModule implements IEditorModule {
         this.creatableLines.push(line);
         this.creatableLines.sort((a, b) => { return a.transform.position.x - b.transform.position.x; });
 
-        console.log(line.transform.position);
-        console.log(this.editor.viewport.transform.position);
+        let createCommand = new CreateElememtsCommand([line]);
+        CommandsController.executeCommand(createCommand);
         CreatableLinesModule.onCreateLineEvent.invoke([line, keyPressed]);
     }
 }

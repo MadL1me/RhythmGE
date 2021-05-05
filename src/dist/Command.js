@@ -1,6 +1,21 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MoveElementsCommand = exports.CreateElememtsCommand = exports.DeleteElementsCommand = exports.SelectElementsCommand = exports.CutCommand = exports.PasteCommand = exports.CopyCommand = exports.CommandsController = void 0;
+exports.MoveElementsCommand = exports.CreateElememtsCommand = exports.DeleteElementsCommand = exports.DeselectAllElementsCommand = exports.DeselectElementsCommand = exports.SelectElementsCommand = exports.RemoveConnectionCommand = exports.MakeConnectionCommand = exports.CutCommand = exports.PasteCommand = exports.CopyCommand = exports.CommandsController = void 0;
 var Input_1 = require("./Input");
 var CommandsController = /** @class */ (function () {
     function CommandsController() {
@@ -27,13 +42,13 @@ var CommandsController = /** @class */ (function () {
         executedCommand.execute();
     };
     CommandsController.undoCommand = function () {
-        if (this.commands.length < 1)
+        if (this.commands.length < 1 || this.commandIndex < 0)
             return;
         this.commands[this.commandIndex].undo();
         this.commandIndex--;
     };
     CommandsController.redoCommand = function () {
-        if (this.commandIndex == this.commands.length - 1) {
+        if (this.commands.length < 1 || this.commandIndex == this.commands.length - 1) {
             return;
         }
         this.commandIndex++;
@@ -84,6 +99,34 @@ var CutCommand = /** @class */ (function () {
     return CutCommand;
 }());
 exports.CutCommand = CutCommand;
+var MakeConnectionCommand = /** @class */ (function () {
+    function MakeConnectionCommand(firstTimestamp, secondTimestamp) {
+        this.firstTimestamp = firstTimestamp;
+        this.secondTimestamp = secondTimestamp;
+    }
+    MakeConnectionCommand.prototype.execute = function () {
+        this.firstTimestamp.connectToTimestamp(this.secondTimestamp);
+    };
+    MakeConnectionCommand.prototype.undo = function () {
+        this.firstTimestamp.removeConnection(this.secondTimestamp);
+    };
+    return MakeConnectionCommand;
+}());
+exports.MakeConnectionCommand = MakeConnectionCommand;
+var RemoveConnectionCommand = /** @class */ (function () {
+    function RemoveConnectionCommand(firstTimestamp, secondTimestamp) {
+        this.firstTimestamp = firstTimestamp;
+        this.secondTimestamp = secondTimestamp;
+    }
+    RemoveConnectionCommand.prototype.execute = function () {
+        this.firstTimestamp.removeConnection(this.secondTimestamp);
+    };
+    RemoveConnectionCommand.prototype.undo = function () {
+        this.firstTimestamp.connectToTimestamp(this.secondTimestamp);
+    };
+    return RemoveConnectionCommand;
+}());
+exports.RemoveConnectionCommand = RemoveConnectionCommand;
 var SelectElementsCommand = /** @class */ (function () {
     function SelectElementsCommand(elements, selector) {
         this.elements = elements;
@@ -104,6 +147,37 @@ var SelectElementsCommand = /** @class */ (function () {
     return SelectElementsCommand;
 }());
 exports.SelectElementsCommand = SelectElementsCommand;
+var DeselectElementsCommand = /** @class */ (function () {
+    function DeselectElementsCommand(elements, selector) {
+        this.elements = elements;
+        this.selector = selector;
+    }
+    DeselectElementsCommand.prototype.execute = function () {
+        var _this = this;
+        this.elements.forEach(function (element) {
+            _this.selector.deselectElement(element);
+        });
+    };
+    DeselectElementsCommand.prototype.undo = function () {
+        var _this = this;
+        this.elements.forEach(function (element) {
+            _this.selector.selectElement(element);
+        });
+    };
+    return DeselectElementsCommand;
+}());
+exports.DeselectElementsCommand = DeselectElementsCommand;
+var DeselectAllElementsCommand = /** @class */ (function (_super) {
+    __extends(DeselectAllElementsCommand, _super);
+    function DeselectAllElementsCommand() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    DeselectAllElementsCommand.prototype.execute = function () {
+        this.selector.deselectAll();
+    };
+    return DeselectAllElementsCommand;
+}(DeselectElementsCommand));
+exports.DeselectAllElementsCommand = DeselectAllElementsCommand;
 var DeleteElementsCommand = /** @class */ (function () {
     function DeleteElementsCommand(gridElements, selector) {
         this.gridElements = gridElements;

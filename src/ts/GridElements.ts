@@ -21,6 +21,8 @@ export interface ICompareNumberProvider {
 
 export interface ISelectable {
     isSelected: boolean;
+    onSelected: Event<ISelectable>;
+    onDeselected: Event<ISelectable>;
     select();
     deselect();
 }
@@ -43,6 +45,8 @@ export abstract class GridElement implements IMoveable, IDrawable, ICompareNumbe
     onRestore = new Event<GridElement>();
     onDelete = new Event<GridElement>();
     onMoved = new Event<[GridElement, Vec2]>();
+    onSelected = new Event<GridElement>();
+    onDeselected = new Event<GridElement>();
 
     protected _outOfBounds: [boolean, boolean];
     protected _isActive: boolean = true;
@@ -86,10 +90,12 @@ export abstract class GridElement implements IMoveable, IDrawable, ICompareNumbe
     }
 
     deselect() {
+        this.onDeselected.invoke(this);
         this._isSelected = false;
     }
 
     activate() {
+        this.onSelected.invoke(this);
         this._isActive = true;
     }
 
@@ -205,8 +211,9 @@ export class Timestamp extends GridElement {
 
         color = new RgbaColor(color.r, color.g, color.b, 0.6);
 
+        width = width/2;
+
         this.connectedTimestamps?.forEach(element => {
-            console.log("DRAW CONNECTED");
             let timestamp = element[0];
             const elementPos = new Vec2(timestamp.transform.position.x + view.position.x,
                 timestamp.transform.position.y + view.position.y);
@@ -214,8 +221,6 @@ export class Timestamp extends GridElement {
             const directionVec = Vec2.Substract(elementPos, pos);    
             const normalVec = Vec2.Normal(directionVec).normalized;
             
-            width = width/2;
-
             ctx.fillStyle = color.value();
             ctx.beginPath();
             ctx.moveTo(pos.x + normalVec.x * width, pos.y + normalVec.y * width);
@@ -223,6 +228,7 @@ export class Timestamp extends GridElement {
             ctx.lineTo(elementPos.x - normalVec.x*width, elementPos.y-normalVec.y*width);
             ctx.lineTo(pos.x - normalVec.x * width, pos.y - normalVec.y * width);
             ctx.fill();
+            ctx.closePath();
         });
     }
 

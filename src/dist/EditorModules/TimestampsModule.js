@@ -13,6 +13,7 @@ var Input_1 = require("../Input");
 var Utils_1 = require("../Utils/Utils");
 var CreatableLinesModule_1 = require("./CreatableLinesModule");
 var Export_1 = require("../Export");
+var Command_1 = require("../Command");
 var TimestampsModule = /** @class */ (function () {
     function TimestampsModule(editorGrid, creatableLines) {
         var _this = this;
@@ -95,8 +96,8 @@ var TimestampsModule = /** @class */ (function () {
         console.log(startIndex);
         console.log(endIndex);
         console.log(xValues.length);
-        if (startIndex == 0 && endIndex == 0 ||
-            startIndex == this.timestamps.size - 1 && startIndex == this.timestamps.size - 1)
+        if (endPos.x < this.clapTimings[0] ||
+            startPos.x > this.clapTimings[this.clapTimings.length - 1])
             return null;
         xValues.forEach(function (value) {
             console.log(value);
@@ -216,6 +217,8 @@ var TimestampsModule = /** @class */ (function () {
             newTimestamp.id = this.idToTimestamp;
             newTimestamp.onDelete.addListener(function (element) { _this.deleteTimestamp(element); });
             newTimestamp.onRestore.addListener(function (element) { _this.restoreTimestamp(element); });
+            var createCommand = new Command_1.CreateElememtsCommand([newTimestamp]);
+            Command_1.CommandsController.executeCommand(createCommand);
             this.idToTimestamp++;
         }
         else if (this.timestamps.get(newTimestamp.transform.localPosition.x).get(newTimestamp.transform.localPosition.y)

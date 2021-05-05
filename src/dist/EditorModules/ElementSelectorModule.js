@@ -1,4 +1,9 @@
 "use strict";
+var __spreadArray = (this && this.__spreadArray) || function (to, from) {
+    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+        to[j] = from[i];
+    return to;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -84,8 +89,7 @@ var ElementSelectorModule = /** @class */ (function () {
         this.selectArea.draw(this.editor.viewport, this.canvas);
     };
     ElementSelectorModule.prototype.selectElement = function (element) {
-        console.log("element selected");
-        //let selectCommand = new SelectElementsCommand([element], this);
+        //console.log("element selected");        
         this.selectedElements.push(element);
         this.selectedElements.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
         element.select();
@@ -110,6 +114,11 @@ var ElementSelectorModule = /** @class */ (function () {
             element.deselect();
         });
         this.selectedElements = [];
+    };
+    ElementSelectorModule.prototype.selectElementsCommand = function (elements) {
+        console.log("NO WAY");
+        var selectCommand = new Command_1.SelectElementsCommand(elements, this);
+        Command_1.CommandsController.executeCommand(selectCommand);
     };
     ElementSelectorModule.prototype.checkForKeyDownActions = function (event) {
         if (Input_1.Input.keysPressed["Delete"]) {
@@ -137,13 +146,18 @@ var ElementSelectorModule = /** @class */ (function () {
             return;
         if (firstTimestamp.transform.position.x > secondTimestmap.transform.position.x)
             _a = [secondTimestmap, firstTimestamp], firstTimestamp = _a[0], secondTimestmap = _a[1];
-        if (firstTimestamp.isLongTimestamp && firstTimestamp.isConnected(secondTimestmap))
-            firstTimestamp.removeConnection(secondTimestmap);
-        else
-            firstTimestamp.connectToTimestamp(secondTimestmap);
+        if (firstTimestamp.isLongTimestamp && (firstTimestamp).isConnected(secondTimestmap)) {
+            var unconnectCommand = new Command_1.RemoveConnectionCommand(firstTimestamp, secondTimestmap);
+            Command_1.CommandsController.executeCommand(unconnectCommand);
+            //firstTimestamp.removeConnection(secondTimestmap);
+        }
+        else {
+            var connectCommand = new Command_1.MakeConnectionCommand(firstTimestamp, secondTimestmap);
+            Command_1.CommandsController.executeCommand(connectCommand);
+            //firstTimestamp.connectToTimestamp(secondTimestmap);
+        }
     };
     ElementSelectorModule.prototype.onAreaSelect = function (pointA, pointB) {
-        var _this = this;
         if (Vec2_1.Vec2.Distance(pointA, pointB) < 30) {
             console.log("area is too smol");
             return;
@@ -154,14 +168,20 @@ var ElementSelectorModule = /** @class */ (function () {
         pointB = this.editor.viewport.transform.canvasToWorld(pointB);
         var selectedLines = this.creatable.getLinesInRange(pointA, pointB);
         var selectedTimestamps = this.timestamps.getTimestampsAtRange(pointA, pointB);
-        if (!Input_1.Input.keysPressed["ShiftLeft"])
-            this.deselectAll();
-        selectedLines === null || selectedLines === void 0 ? void 0 : selectedLines.forEach(function (line) {
-            _this.selectElement(line);
-        });
-        selectedTimestamps === null || selectedTimestamps === void 0 ? void 0 : selectedTimestamps.forEach(function (timestamp) {
-            _this.selectElement(timestamp);
-        });
+        if (!Input_1.Input.keysPressed["ShiftLeft"]) {
+            var deselectAllCommnad = new Command_1.DeselectAllElementsCommand(__spreadArray([], this.selectedElements), this);
+            Command_1.CommandsController.executeCommand(deselectAllCommnad);
+        }
+        if (selectedLines != null)
+            this.selectElementsCommand(selectedLines);
+        if (selectedTimestamps != null)
+            this.selectElementsCommand(selectedTimestamps);
+        // selectedLines?.forEach((line) => {
+        //     this.selectElementsCommand(line);
+        // });
+        // selectedTimestamps?.forEach((timestamp) => {
+        //     this.selectElementsCommand(timestamp);
+        // });
         console.log("selected timestamps count: " + (selectedTimestamps === null || selectedTimestamps === void 0 ? void 0 : selectedTimestamps.length));
         console.log("selected lines count: " + (selectedLines === null || selectedLines === void 0 ? void 0 : selectedLines.length));
     };
@@ -173,7 +193,8 @@ var ElementSelectorModule = /** @class */ (function () {
                 Input_1.Input.onMouseClickCanvas.preventFiringEventOnce();
             }
             console.log("DESELECTING ALL CLICK");
-            this.deselectAll();
+            var deselectAllCommnad = new Command_1.DeselectAllElementsCommand(__spreadArray([], this.selectedElements), this);
+            Command_1.CommandsController.executeCommand(deselectAllCommnad);
             return;
         }
         var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
@@ -288,7 +309,7 @@ var ElementSelectorModule = /** @class */ (function () {
         if (element.isSelected)
             this.deselectElement(element);
         else
-            this.selectElement(element);
+            this.selectElementsCommand([element]);
         console.log("Selected elements: ");
         console.log(this.selectedElements.length);
     };

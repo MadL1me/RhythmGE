@@ -10,7 +10,7 @@ import { EditorGrid } from './EditorGridModule';
 import { IEditorModule, IEditorCore, Editor } from '../Editor';
 import { CreatableLinesModule } from "./CreatableLinesModule";
 import { TimestampsModule } from "./TimestampsModule";
-import { CommandsController, DeleteElementsCommand, MoveElementsCommand } from '../Command';
+import { CommandsController, DeleteElementsCommand, RemoveConnectionCommand, MoveElementsCommand, MakeConnectionCommand, DeselectAllElementsCommand, SelectElementsCommand } from '../Command';
 import { RgbaColor } from '../Utils/RgbaColor';
 
 class SelectArea implements IDrawable {
@@ -104,8 +104,7 @@ export class ElementSelectorModule implements IEditorModule {
     }
 
     selectElement(element: GridElement) {
-        console.log("element selected");
-        //let selectCommand = new SelectElementsCommand([element], this);
+        //console.log("element selected");        
         this.selectedElements.push(element);
         this.selectedElements.sort((a, b) => a.transform.position.x - b.transform.position.x);
         element.select();
@@ -135,6 +134,12 @@ export class ElementSelectorModule implements IEditorModule {
 
         this.selectedElements = [];
     }
+
+    private selectElementsCommand(elements: GridElement[]) {
+        console.log("NO WAY");
+        let selectCommand = new SelectElementsCommand(elements, this);
+        CommandsController.executeCommand(selectCommand);
+    }
     
     private checkForKeyDownActions(event: JQuery.KeyDownEvent) {
         if (Input.keysPressed["Delete"]) {
@@ -154,7 +159,7 @@ export class ElementSelectorModule implements IEditorModule {
             return;
         }
 
-        let [firstTimestamp, secondTimestmap] = this.selectedElements;
+        let [firstTimestamp, secondTimestmap] = this.selectedElements as Timestamp[];
         if (!(firstTimestamp instanceof Timestamp || secondTimestmap !instanceof Timestamp)) {
             console.log("NOT INSTANCES OF!!!");
             return;
@@ -166,10 +171,16 @@ export class ElementSelectorModule implements IEditorModule {
         if (firstTimestamp.transform.position.x > secondTimestmap.transform.position.x)
             [firstTimestamp, secondTimestmap] = [secondTimestmap, firstTimestamp];
 
-        if ((firstTimestamp as Timestamp).isLongTimestamp && (firstTimestamp as Timestamp).isConnected(secondTimestmap as Timestamp))
-            (firstTimestamp as Timestamp).removeConnection(secondTimestmap as Timestamp);
-        else
-            (firstTimestamp as Timestamp).connectToTimestamp(secondTimestmap as Timestamp);
+        if (firstTimestamp.isLongTimestamp && (firstTimestamp).isConnected(secondTimestmap)) {
+            let unconnectCommand = new RemoveConnectionCommand(firstTimestamp, secondTimestmap);
+            CommandsController.executeCommand(unconnectCommand);
+            //firstTimestamp.removeConnection(secondTimestmap);
+        }
+        else {
+            let connectCommand = new MakeConnectionCommand(firstTimestamp, secondTimestmap);
+            CommandsController.executeCommand(connectCommand);
+            //firstTimestamp.connectToTimestamp(secondTimestmap);
+        }
     }   
 
     private onAreaSelect(pointA: Vec2, pointB: Vec2) {
@@ -187,16 +198,24 @@ export class ElementSelectorModule implements IEditorModule {
         let selectedLines = this.creatable.getLinesInRange(pointA, pointB);
         let selectedTimestamps = this.timestamps.getTimestampsAtRange(pointA, pointB);
 
-        if (!Input.keysPressed["ShiftLeft"])
-            this.deselectAll();
+        if (!Input.keysPressed["ShiftLeft"]) {
+            let deselectAllCommnad = new DeselectAllElementsCommand([...this.selectedElements], this);
+            CommandsController.executeCommand(deselectAllCommnad);
+        }
 
-        selectedLines?.forEach((line) => {
-            this.selectElement(line);
-        });
+        if (selectedLines !=null)
+            this.selectElementsCommand(selectedLines);
+        
+        if (selectedTimestamps != null)
+            this.selectElementsCommand(selectedTimestamps);
 
-        selectedTimestamps?.forEach((timestamp) => {
-            this.selectElement(timestamp);
-        });
+        // selectedLines?.forEach((line) => {
+        //     this.selectElementsCommand(line);
+        // });
+
+        // selectedTimestamps?.forEach((timestamp) => {
+        //     this.selectElementsCommand(timestamp);
+        // });
 
         console.log(`selected timestamps count: ${selectedTimestamps?.length}`);
         console.log(`selected lines count: ${selectedLines?.length}`);
@@ -210,7 +229,8 @@ export class ElementSelectorModule implements IEditorModule {
                 Input.onMouseClickCanvas.preventFiringEventOnce();
             }
             console.log("DESELECTING ALL CLICK");
-            this.deselectAll();
+            let deselectAllCommnad = new DeselectAllElementsCommand([...this.selectedElements], this);
+            CommandsController.executeCommand(deselectAllCommnad);
             return;
         }
 
@@ -258,7 +278,6 @@ export class ElementSelectorModule implements IEditorModule {
             else
                 closestLine = Math.abs(closestBpm.transform.position.x - worldPos.x) <
                     Math.abs(closestCreatable.transform.position.x - worldPos.x) ? closestBpm : closestCreatable;
-
 
             let closestBeatline = this.grid.findClosestBeatLine(worldPos);
             let position = new Vec2(closestLine.transform.position.x, closestBeatline.transform.position.y);
@@ -361,7 +380,7 @@ export class ElementSelectorModule implements IEditorModule {
             this.deselectElement(element);
 
         else
-            this.selectElement(element);
+            this.selectElementsCommand([element]);
 
         console.log("Selected elements: ");
         console.log(this.selectedElements.length);

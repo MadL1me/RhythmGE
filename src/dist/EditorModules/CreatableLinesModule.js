@@ -11,6 +11,7 @@ var GridElements_1 = require("../GridElements");
 var AppSettings_1 = require("../Utils/AppSettings");
 var Input_1 = require("../Input");
 var Utils_1 = require("../Utils/Utils");
+var Command_1 = require("../Command");
 var CreatableLinesModule = /** @class */ (function () {
     function CreatableLinesModule() {
         this.transform = new Transform_1.Transform();
@@ -40,8 +41,8 @@ var CreatableLinesModule = /** @class */ (function () {
         var endIndex = Utils_1.Utils.binaryNearestSearch(this.creatableLines, endPos.x, Utils_1.Func.Floor);
         console.log(startIndex);
         console.log(endIndex);
-        if (startIndex == 0 && endIndex == 0 ||
-            startIndex == this.creatableLines.length - 1 && startIndex == this.creatableLines.length - 1)
+        if (endPos.x < this.creatableLines[0].transform.position.x ||
+            startPos.x > this.creatableLines[this.creatableLines.length - 1].transform.position.x)
             return null;
         if ((startPos.y < this.canvas.height && endPos.y > this.canvas.height - 10)
             || (endPos.y < this.canvas.height && startPos.y > this.canvas.height - 10))
@@ -89,8 +90,8 @@ var CreatableLinesModule = /** @class */ (function () {
         line.onDelete.addListener(function (line) { _this.deleteLine(line); });
         this.creatableLines.push(line);
         this.creatableLines.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
-        console.log(line.transform.position);
-        console.log(this.editor.viewport.transform.position);
+        var createCommand = new Command_1.CreateElememtsCommand([line]);
+        Command_1.CommandsController.executeCommand(createCommand);
         CreatableLinesModule.onCreateLineEvent.invoke([line, keyPressed]);
     };
     CreatableLinesModule.onCreateLineEvent = new Utils_1.Event();
