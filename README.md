@@ -7,7 +7,7 @@ The tool is developed and designed, to handle various situations and the uniquen
 
 The app is built with Electron, and available on any operating system, including Windows, macOS, and Linux.
 
-You can download the last stable version at the Release page
+You can [download](https://github.com/Sn0wy-0wl/RhythmGE/releases) the last stable version at the [Release page](https://github.com/Sn0wy-0wl/RhythmGE/releases)
 
 ![Capture](https://user-images.githubusercontent.com/46647517/116630699-60bcbf80-a95c-11eb-9054-cf4a957610df.PNG)
 
