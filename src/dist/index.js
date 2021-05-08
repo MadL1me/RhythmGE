@@ -14,11 +14,12 @@ const createWindow = () => {
   //saveFile(null);
   
   const mainWindow = new BrowserWindow({
-    width: 900,
+    width: 1000,
     height: 700,
     minWidth: 900,
     minHeight: 700,
     webSecurity: false,
+    icon: __dirname + "/Resources/Icon.ico",
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -31,7 +32,7 @@ const createWindow = () => {
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
  
   ipcMain.on("openDialog", (event, arg) => {
     dialog.showOpenDialog(mainWindow, 

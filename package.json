@@ -22,6 +22,14 @@
       "packagerConfig": {},
       "makers": [
         {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        },
+        {
           "name": "@electron-forge/maker-squirrel",
           "config": {
             "name": "my_app"
@@ -32,14 +40,6 @@
           "platforms": [
             "darwin"
           ]
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
         }
       ]
     }

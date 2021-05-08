@@ -54,6 +54,7 @@ var EditorGrid = /** @class */ (function () {
     };
     EditorGrid.prototype.updateModule = function () {
         var _this = this;
+        this.onWindowResize();
         var ctx = this._canvas.getContext("2d");
         ctx.fillStyle = AppSettings_1.editorColorSettings.editorBackgroundColor.value();
         ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);

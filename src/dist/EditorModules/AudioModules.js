@@ -231,6 +231,7 @@ var AudioAmplitudeViewModule = /** @class */ (function () {
         this.editorCore.audio.onPlay.addListener(function () { _this.onAudioLoad(); });
     };
     AudioAmplitudeViewModule.prototype.updateModule = function () {
+        this.onWindowResize();
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = AppSettings_1.editorColorSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);

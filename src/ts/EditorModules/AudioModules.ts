@@ -310,6 +310,7 @@ export class AudioAmplitudeViewModule implements IEditorModule {
     } 
 
     updateModule() {
+        this.onWindowResize();
         this.ctx.clearRect(0,0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = editorColorSettings.editorBackgroundColor.value();
         this.ctx.fillRect(0,0,this.canvas.width, this.canvas.height);

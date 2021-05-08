@@ -65,6 +65,7 @@ export class EditorGrid implements IEditorModule {
     }
 
     updateModule() {
+        this.onWindowResize();
         const ctx = this._canvas.getContext("2d");
         ctx.fillStyle = editorColorSettings.editorBackgroundColor.value();
         ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
