@@ -246,10 +246,10 @@ export class ElementSelectorModule implements IEditorModule {
 
         console.log("MOSUE DOWN");
 
-        let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.clientX, event.clientY));
+        let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
         let closestElement = this.selectedElements[0];
         
-        if (!closestElement.isSelected && Vec2.Distance(worldClickPos, closestElement.transform.position) > 20)
+        if (!closestElement.isSelected || Vec2.Distance(worldClickPos, closestElement.transform.position) > 20)
             return;
 
         console.log("MOSUE DOWN 2");
@@ -264,6 +264,8 @@ export class ElementSelectorModule implements IEditorModule {
             return;
 
         let worldPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
+        let color = Object.assign(this.movingElement) as RgbaColor;
+        color.r = 0.6;
 
         if (this.movingElement instanceof Timestamp) {
             let timestamp = this.movingElement as Timestamp;
@@ -283,13 +285,14 @@ export class ElementSelectorModule implements IEditorModule {
             let position = new Vec2(closestLine.transform.position.x, closestBeatline.transform.position.y);
 
             let phantomTimestamp = new Timestamp(timestamp.prefab, position, this.timestamps.transform);
+            phantomTimestamp.color = color;
             (this.editor as Editor).addLastDrawableElement(phantomTimestamp);
             
             return;
         }
-        let cLine = this.movingElement as CreatableTimestampLine;
 
-        let line = new CreatableTimestampLine(worldPos.x, this.creatable.transform, new RgbaColor(cLine.color.r, cLine.color.g, cLine.color.b, 0.6));
+        let cLine = this.movingElement as CreatableTimestampLine;
+        let line = new CreatableTimestampLine(worldPos.x, this.creatable.transform, color);
         (this.editor as Editor).addLastDrawableElement(line);
     }   
 

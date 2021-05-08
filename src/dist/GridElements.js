@@ -160,9 +160,16 @@ var Timestamp = /** @class */ (function (_super) {
         enumerable: false,
         configurable: true
     });
+    Object.defineProperty(Timestamp.prototype, "connectedTimestamps", {
+        get: function () {
+            return this._connectedTimestamps;
+        },
+        enumerable: false,
+        configurable: true
+    });
     Object.defineProperty(Timestamp.prototype, "isLongTimestamp", {
         get: function () {
-            return this.connectedTimestamps != null && this.connectedTimestamps.length > 0;
+            return this._connectedTimestamps != null && this._connectedTimestamps.length > 0;
         },
         enumerable: false,
         configurable: true
@@ -185,7 +192,7 @@ var Timestamp = /** @class */ (function (_super) {
         ctx.fill();
         color = new RgbaColor_1.RgbaColor(color.r, color.g, color.b, 0.6);
         width = width / 2;
-        (_a = this.connectedTimestamps) === null || _a === void 0 ? void 0 : _a.forEach(function (element) {
+        (_a = this._connectedTimestamps) === null || _a === void 0 ? void 0 : _a.forEach(function (element) {
             var timestamp = element[0];
             var elementPos = new Vec2_1.Vec2(timestamp.transform.position.x + view.position.x, timestamp.transform.position.y + view.position.y);
             var directionVec = Vec2_1.Vec2.Substract(elementPos, pos);
@@ -202,20 +209,18 @@ var Timestamp = /** @class */ (function (_super) {
     };
     Timestamp.prototype.connectToTimestamp = function (timestamp) {
         var _this = this;
-        if (this.connectedTimestamps == null)
-            this.connectedTimestamps = new Array();
-        console.log("FUCK YEAH CONNECTED");
+        if (this._connectedTimestamps == null)
+            this._connectedTimestamps = new Array();
         var id = timestamp.onDelete.addListener(function (element) { return _this.removeConnection(element); });
-        this.connectedTimestamps.push([timestamp, id]);
+        this._connectedTimestamps.push([timestamp, id]);
     };
     Timestamp.prototype.removeConnection = function (timestamp) {
-        var index = this.connectedTimestamps.findIndex(function (stamp, id) { return stamp[0].id == timestamp.id; });
-        var removed = this.connectedTimestamps.splice(index, 1);
-        console.log("FUCK YEAH REMOVED");
+        var index = this._connectedTimestamps.findIndex(function (stamp, id) { return stamp[0].id == timestamp.id; });
+        var removed = this._connectedTimestamps.splice(index, 1);
         timestamp.onDelete.removeListener(removed[0][1]);
     };
     Timestamp.prototype.isConnected = function (timestamp) {
-        var index = this.connectedTimestamps.findIndex(function (stamp, id) { return stamp[0].id == timestamp.id; });
+        var index = this._connectedTimestamps.findIndex(function (stamp, id) { return stamp[0].id == timestamp.id; });
         return index != -1;
     };
     Timestamp.prototype.getColor = function () {

@@ -29,14 +29,14 @@ var Export = /** @class */ (function () {
         var _this = this;
         if (timestamps == null || timestamps.length < 1)
             return;
-        var showDialogPromise = dialog.showSaveDialog({ title: "LMAO" });
+        var showDialogPromise = dialog.showSaveDialog({ title: "Export File", filters: [{ name: "Rhythm Beatmap File", extensions: ["rbm"] }] });
         showDialogPromise.then(function (result) {
             if (result.canceled) {
                 console.log("ERROR OMG OMG");
                 return;
             }
             console.log("file path is: " + result.filePath);
-            fs.writeFile(result.filePath, _this.getContent(timestamps), function (err) {
+            fs.writeFile(result.filePath + ".rbm", _this.getContent(timestamps), function (err) {
                 if (err) {
                     console.log("FUCKING ERROR");
                     return;
@@ -45,12 +45,23 @@ var Export = /** @class */ (function () {
         });
     };
     Export.getContent = function (timestamps) {
+        var separator = ":";
         var result = new Array();
         result.push("[Timestamps]");
-        var timestampID = 0;
+        for (var i = timestamps.length - 1; i >= 0; i--) {
+            timestamps[i].id = i;
+        }
         timestamps.forEach(function (timestamp) {
-            var string = timestamp.transform.localPosition.x + ":" + timestampID +
-                ":" + timestamp.prefab.prefabId + ":" + timestamp.transform.localPosition.y;
+            var string = Math.round(timestamp.transform.localPosition.x * 1000) + separator + timestamp.id +
+                separator + timestamp.prefab.prefabId + separator + timestamp.transform.localPosition.y + separator;
+            if (timestamp.isLongTimestamp) {
+                string += "1" + separator + timestamp.connectedTimestamps.length;
+                timestamp.connectedTimestamps.forEach(function (connected) {
+                    string += separator + connected[0].id;
+                });
+            }
+            else
+                string += "0";
             result.push(string);
         });
         return result.join("\n");

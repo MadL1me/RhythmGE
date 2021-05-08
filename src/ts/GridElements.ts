@@ -162,7 +162,7 @@ export class Timestamp extends GridElement {
     width: number;
 
     private _prefab: TimestampPrefab;
-    private connectedTimestamps: Array<[Timestamp, number]>;
+    private _connectedTimestamps: Array<[Timestamp, number]>;
     private maxWidth = 7;
     private minWidth = 1;
 
@@ -185,8 +185,12 @@ export class Timestamp extends GridElement {
         this.width = value.width;
     }
 
+    get connectedTimestamps() : Array<[Timestamp, number]> {
+        return this._connectedTimestamps;
+    }
+
     get isLongTimestamp(): boolean {
-        return this.connectedTimestamps != null && this.connectedTimestamps.length > 0;
+        return this._connectedTimestamps != null && this._connectedTimestamps.length > 0;
     }
 
     draw(view: IViewportModule, canvas : HTMLCanvasElement) {
@@ -213,7 +217,7 @@ export class Timestamp extends GridElement {
 
         width = width/2;
 
-        this.connectedTimestamps?.forEach(element => {
+        this._connectedTimestamps?.forEach(element => {
             let timestamp = element[0];
             const elementPos = new Vec2(timestamp.transform.position.x + view.position.x,
                 timestamp.transform.position.y + view.position.y);
@@ -233,29 +237,27 @@ export class Timestamp extends GridElement {
     }
 
     connectToTimestamp(timestamp: Timestamp) {
-        if (this.connectedTimestamps == null)
-            this.connectedTimestamps = new Array<[Timestamp, number]>();
+        if (this._connectedTimestamps == null)
+            this._connectedTimestamps = new Array<[Timestamp, number]>();
         
-        console.log("FUCK YEAH CONNECTED");
         let id = timestamp.onDelete.addListener((element) => this.removeConnection(element as Timestamp));
-        this.connectedTimestamps.push([timestamp, id]);
+        this._connectedTimestamps.push([timestamp, id]);
     }
 
     removeConnection(timestamp: Timestamp) {
-        let index = this.connectedTimestamps.findIndex((stamp, id) => { return stamp[0].id == timestamp.id; });
-        let removed = this.connectedTimestamps.splice(index, 1);
-        console.log("FUCK YEAH REMOVED");
+        let index = this._connectedTimestamps.findIndex((stamp, id) => { return stamp[0].id == timestamp.id; });
+        let removed = this._connectedTimestamps.splice(index, 1);
         timestamp.onDelete.removeListener(removed[0][1]);
     }
 
     isConnected(timestamp: Timestamp) {
-        let index = this.connectedTimestamps.findIndex((stamp, id) => { return stamp[0].id == timestamp.id; });
+        let index = this._connectedTimestamps.findIndex((stamp, id) => { return stamp[0].id == timestamp.id; });
         return index != -1;
     }
     
-    private getColor() {
+    getColor() {
         return this._isSelected ? editorColorSettings.selectedTimestampColor : this.color;
-    }
+    } 
 
     private getWidth() : number {
         let width = this.width + this.transform.scale.x/5;

@@ -17,7 +17,6 @@ var AppSettings_1 = require("../Utils/AppSettings");
 var Input_1 = require("../Input");
 var Utils_1 = require("../Utils/Utils");
 var Command_1 = require("../Command");
-var RgbaColor_1 = require("../Utils/RgbaColor");
 var SelectArea = /** @class */ (function () {
     function SelectArea() {
         var _this = this;
@@ -205,9 +204,9 @@ var ElementSelectorModule = /** @class */ (function () {
         if (this.selectedElements.length != 1)
             return;
         console.log("MOSUE DOWN");
-        var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.clientX, event.clientY));
+        var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
         var closestElement = this.selectedElements[0];
-        if (!closestElement.isSelected && Vec2_1.Vec2.Distance(worldClickPos, closestElement.transform.position) > 20)
+        if (!closestElement.isSelected || Vec2_1.Vec2.Distance(worldClickPos, closestElement.transform.position) > 20)
             return;
         console.log("MOSUE DOWN 2");
         this.movingElement = closestElement;
@@ -218,6 +217,8 @@ var ElementSelectorModule = /** @class */ (function () {
         if (!this.movingState)
             return;
         var worldPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
+        var color = Object.assign(this.movingElement);
+        color.r = 0.6;
         if (this.movingElement instanceof GridElements_1.Timestamp) {
             var timestamp = this.movingElement;
             var closestBpm = this.grid.findClosestBpmLine(worldPos.x);
@@ -233,11 +234,12 @@ var ElementSelectorModule = /** @class */ (function () {
             var closestBeatline = this.grid.findClosestBeatLine(worldPos);
             var position = new Vec2_1.Vec2(closestLine.transform.position.x, closestBeatline.transform.position.y);
             var phantomTimestamp = new GridElements_1.Timestamp(timestamp.prefab, position, this.timestamps.transform);
+            phantomTimestamp.color = color;
             this.editor.addLastDrawableElement(phantomTimestamp);
             return;
         }
         var cLine = this.movingElement;
-        var line = new GridElements_1.CreatableTimestampLine(worldPos.x, this.creatable.transform, new RgbaColor_1.RgbaColor(cLine.color.r, cLine.color.g, cLine.color.b, 0.6));
+        var line = new GridElements_1.CreatableTimestampLine(worldPos.x, this.creatable.transform, color);
         this.editor.addLastDrawableElement(line);
     };
     ElementSelectorModule.prototype.elementMovingEndHandle = function (event) {
