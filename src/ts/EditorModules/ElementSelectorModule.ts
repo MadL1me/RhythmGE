@@ -174,12 +174,10 @@ export class ElementSelectorModule implements IEditorModule {
         if (firstTimestamp.isLongTimestamp && (firstTimestamp).isConnected(secondTimestmap)) {
             let unconnectCommand = new RemoveConnectionCommand(firstTimestamp, secondTimestmap);
             CommandsController.executeCommand(unconnectCommand);
-            //firstTimestamp.removeConnection(secondTimestmap);
         }
         else {
             let connectCommand = new MakeConnectionCommand(firstTimestamp, secondTimestmap);
             CommandsController.executeCommand(connectCommand);
-            //firstTimestamp.connectToTimestamp(secondTimestmap);
         }
     }   
 
@@ -199,8 +197,8 @@ export class ElementSelectorModule implements IEditorModule {
         let selectedTimestamps = this.timestamps.getTimestampsAtRange(pointA, pointB);
 
         if (!Input.keysPressed["ShiftLeft"]) {
-            let deselectAllCommnad = new DeselectAllElementsCommand([...this.selectedElements], this);
-            CommandsController.executeCommand(deselectAllCommnad);
+            let deselectAllCommand = new DeselectAllElementsCommand([...this.selectedElements], this);
+            CommandsController.executeCommand(deselectAllCommand);
         }
 
         if (selectedLines !=null)
@@ -209,19 +207,20 @@ export class ElementSelectorModule implements IEditorModule {
         if (selectedTimestamps != null)
             this.selectElementsCommand(selectedTimestamps);
 
-        // selectedLines?.forEach((line) => {
-        //     this.selectElementsCommand(line);
-        // });
-
-        // selectedTimestamps?.forEach((timestamp) => {
-        //     this.selectElementsCommand(timestamp);
-        // });
-
         console.log(`selected timestamps count: ${selectedTimestamps?.length}`);
         console.log(`selected lines count: ${selectedLines?.length}`);
     }
 
     private onCanvasClick(event: JQuery.ClickEvent) {
+        // right button click
+        if (event.originalEvent.button == 2) {
+            console.log("DELETE LMAO");
+            let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
+            let deleteCommand = new DeleteElementsCommand([this.getClosestGridElement(worldClickPos)], this);
+            CommandsController.executeCommand(deleteCommand);
+            return;
+        }
+
         if (Input.keysPressed["ShiftLeft"] == true)
             Input.onMouseClickCanvas.preventFiringEventOnce();
         else {

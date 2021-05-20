@@ -6,8 +6,7 @@
   $accent-color-medium: #ee5f00;
   $accent-color-dark: #d15400;
   $accent-color-second: #0affce;
-  $block-border-radius: 5px;
-
+  $block-border-radius: 7px;
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -200,18 +199,18 @@
         }
 
         #prefabs-container {
-          display: grid;
-          padding: 5px;
-          grid-template-columns: repeat(4, 40px);
-          grid-template-rows: auto;
-          //grid-auto-flow: column;
-          row-gap: 5px;
-          column-gap: 5px;
+          display: flex;
+          //column-gap: 5px;
+          //row-gap: 5px;
           border-radius: $block-border-radius;
-          //align-items: center;
           justify-items: center;
           flex: 2;
           background-color: $background-second-color;
+          flex-wrap: wrap;
+
+          div {
+            margin: 5px;
+          }
         }
     
         .imports {
@@ -247,7 +246,7 @@
         .settings-container {
           flex: 6;
           display: flex;
-          flex-shrink: 1;
+          //flex-shrink: 1;
           flex-direction: row;
           justify-content: space-between;
           background-color: $background-second-color;     
@@ -293,14 +292,6 @@
             }
           }
   
-          .sliders {
-             flex: 1;
-             display: flex;
-             flex-direction: column;
-             justify-content: space-between;
-             flex-wrap: wrap;
-          }
-  
           .checkbox-holder {
             flex: 1;
             display: flex;
@@ -311,20 +302,29 @@
             user-select: none;
           }
         }
-  
-        .visualiser {
-          flex: 2;
-          background-color: $background-second-color;
-          border-radius: $block-border-radius;
-          display: flex;
-          flex-direction:column-reverse;
-
-          canvas {
-            margin:0;
-            border-radius: $block-border-radius;
-          }
-        }
       }
+    }
+  }
+
+  .sliders {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .visualiser {
+    flex: 2;
+    max-width: 300px;
+    background-color: $background-second-color;
+    border-radius: $block-border-radius;
+    display: flex;
+    flex-direction:column-reverse;
+
+    canvas {
+      margin:0;
+      border-radius: $block-border-radius;
     }
   }
 

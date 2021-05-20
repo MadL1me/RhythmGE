@@ -169,7 +169,6 @@ export class TimestampsModule implements IEditorModule {
             })
         });
         
-        //console.log(result);
         return result;
     }
 

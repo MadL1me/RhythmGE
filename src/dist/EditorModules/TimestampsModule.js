@@ -139,7 +139,6 @@ var TimestampsModule = /** @class */ (function () {
                 result.push(value);
             });
         });
-        //console.log(result);
         return result;
     };
     TimestampsModule.prototype.deleteTimestamp = function (timestamp) {
