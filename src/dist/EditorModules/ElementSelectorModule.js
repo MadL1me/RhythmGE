@@ -37,20 +37,17 @@ var SelectArea = /** @class */ (function () {
         ctx.fillRect(this.firstPoint.x, this.firstPoint.y, sizeVec.x, sizeVec.y);
     };
     SelectArea.prototype.onMouseDown = function (event) {
-        //console.log(event);
+        if (event.button != 0)
+            return;
         this.isActive = true;
         this.firstPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
         this.secondPoint = new Vec2_1.Vec2(event.offsetX, event.offsetY);
     };
     SelectArea.prototype.onMouseMove = function (event) {
-        //if (this.isActive)
-        //    console.log(event);
         var rect = this.canvas.getBoundingClientRect();
-        //console.log(rect);
         this.secondPoint = new Vec2_1.Vec2(event.clientX - rect.left, event.clientY - rect.top);
     };
     SelectArea.prototype.onMouseUp = function (event) {
-        //console.log(event);
         if (!this.isActive)
             return;
         this.isActive = false;
@@ -71,7 +68,7 @@ var ElementSelectorModule = /** @class */ (function () {
         var _this = this;
         this.editor = editorCoreModules;
         Input_1.Input.onHoverWindow.addListener(function (event) { return _this.elementMovingHandle(event); });
-        Input_1.Input.onMouseUp.addListener(function (event) { return _this.elementMovingEndHandle(event); });
+        Input_1.Input.onMouseUp.addListener(function (event) { return _this.onMouseUp(event); });
         Input_1.Input.onMouseClickCanvas.addListener(function (event) { return _this.onCanvasClick(event); });
         Input_1.Input.onMouseAfterCanvasClick.addListener(function () { return Input_1.Input.onMouseClickCanvas.allowFiring(); });
         this.selectArea = new SelectArea();
@@ -79,7 +76,7 @@ var ElementSelectorModule = /** @class */ (function () {
             var a = _a[0], b = _a[1];
             return _this.onAreaSelect(a, b);
         });
-        Input_1.Input.onMouseDownCanvas.addListener(function (event) { return _this.elementMovingStartHandle(event); });
+        Input_1.Input.onMouseDownCanvas.addListener(function (event) { return _this.onMouseDownCanvas(event); });
         Input_1.Input.onKeyDown.addListener(function (key) { return _this.checkForKeyDownActions(key); });
         //CreatableLinesModule.onLineClickEvent.addListener((line) => {this.onElementClicked(line);});
         //this.timestamps.onExistingElementClicked.addListener((element) => {this.onElementClicked(element)});
@@ -176,15 +173,14 @@ var ElementSelectorModule = /** @class */ (function () {
         console.log("selected timestamps count: " + (selectedTimestamps === null || selectedTimestamps === void 0 ? void 0 : selectedTimestamps.length));
         console.log("selected lines count: " + (selectedLines === null || selectedLines === void 0 ? void 0 : selectedLines.length));
     };
+    ElementSelectorModule.prototype.deleteClosestTimestampAtClick = function (event) {
+        var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
+        var deleteCommand = new Command_1.DeleteElementsCommand([this.getClosestGridElement(worldClickPos)], this);
+        Command_1.CommandsController.executeCommand(deleteCommand);
+        return;
+    };
     ElementSelectorModule.prototype.onCanvasClick = function (event) {
         // right button click
-        if (event.originalEvent.button == 2) {
-            console.log("DELETE LMAO");
-            var worldClickPos_1 = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
-            var deleteCommand = new Command_1.DeleteElementsCommand([this.getClosestGridElement(worldClickPos_1)], this);
-            Command_1.CommandsController.executeCommand(deleteCommand);
-            return;
-        }
         if (Input_1.Input.keysPressed["ShiftLeft"] == true)
             Input_1.Input.onMouseClickCanvas.preventFiringEventOnce();
         else {
@@ -199,11 +195,15 @@ var ElementSelectorModule = /** @class */ (function () {
         var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
         this.onElementSelect(this.getClosestGridElement(worldClickPos));
     };
+    ElementSelectorModule.prototype.onMouseDownCanvas = function (event) {
+        if (event.button == 0) {
+            this.elementMovingStartHandle(event);
+            console.log("its ok!!!");
+        }
+    };
     ElementSelectorModule.prototype.elementMovingStartHandle = function (event) {
-        console.log("MOSUE DOWN 0");
         if (this.selectedElements.length != 1)
             return;
-        console.log("MOSUE DOWN");
         var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
         var closestElement = this.selectedElements[0];
         if (!closestElement.isSelected || Vec2_1.Vec2.Distance(worldClickPos, closestElement.transform.position) > 20)
@@ -211,10 +211,10 @@ var ElementSelectorModule = /** @class */ (function () {
         console.log("MOSUE DOWN 2");
         this.movingElement = closestElement;
         this.selectArea.isActive = false;
-        this.movingState = true;
+        this.isMoving = true;
     };
     ElementSelectorModule.prototype.elementMovingHandle = function (event) {
-        if (!this.movingState)
+        if (!this.isMoving)
             return;
         var worldPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
         var color = Object.assign(this.movingElement);
@@ -242,8 +242,17 @@ var ElementSelectorModule = /** @class */ (function () {
         var line = new GridElements_1.CreatableTimestampLine(worldPos.x, this.creatable.transform, color);
         this.editor.addLastDrawableElement(line);
     };
+    ElementSelectorModule.prototype.onMouseUp = function (event) {
+        if (event.button == 0) {
+            this.elementMovingEndHandle(event);
+        }
+        else if (event.button == 2) {
+            this.deleteClosestTimestampAtClick(event);
+            console.log("FUCK YEAH");
+        }
+    };
     ElementSelectorModule.prototype.elementMovingEndHandle = function (event) {
-        if (!this.movingState)
+        if (!this.isMoving)
             return;
         var worldPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
         if (this.movingElement instanceof GridElements_1.Timestamp) {
@@ -274,7 +283,7 @@ var ElementSelectorModule = /** @class */ (function () {
         this.movingElement = null;
         this.selectArea.isActive = true;
         this.selectArea.onSelect.preventFiringEventOnce();
-        this.movingState = false;
+        this.isMoving = false;
     };
     ElementSelectorModule.prototype.getClosestGridElement = function (worldPos) {
         var clickedElemenet = null;

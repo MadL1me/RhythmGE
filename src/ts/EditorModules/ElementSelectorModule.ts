@@ -39,22 +39,20 @@ class SelectArea implements IDrawable {
     }
 
     onMouseDown(event: JQuery.MouseDownEvent) {
-        //console.log(event);
+        if (event.button != 0)
+            return;
+
         this.isActive = true;
         this.firstPoint = new Vec2(event.offsetX, event.offsetY);
         this.secondPoint = new Vec2(event.offsetX, event.offsetY);
     }
 
     onMouseMove(event: JQuery.MouseMoveEvent) {
-        //if (this.isActive)
-        //    console.log(event);
         const rect = this.canvas.getBoundingClientRect();
-        //console.log(rect);
         this.secondPoint = new Vec2(event.clientX - rect.left, event.clientY - rect.top);
     }
 
     onMouseUp(event: JQuery.MouseUpEvent) {
-        //console.log(event);
         if (!this.isActive)
             return;
         this.isActive = false;
@@ -73,7 +71,7 @@ export class ElementSelectorModule implements IEditorModule {
     private creatable: CreatableLinesModule;
     private canvas: HTMLCanvasElement;
     
-    private movingState: boolean;
+    private isMoving: boolean;
     private movingElement: GridElement;
 
     constructor(grid: EditorGrid, creatable: CreatableLinesModule, timestamps: TimestampsModule) {
@@ -86,14 +84,14 @@ export class ElementSelectorModule implements IEditorModule {
     init(editorCoreModules: IEditorCore) {
         this.editor = editorCoreModules;
         Input.onHoverWindow.addListener(event => this.elementMovingHandle(event));
-        Input.onMouseUp.addListener(event => this.elementMovingEndHandle(event));
+        Input.onMouseUp.addListener(event => this.onMouseUp(event));
         Input.onMouseClickCanvas.addListener(event => this.onCanvasClick(event));
         Input.onMouseAfterCanvasClick.addListener(() => Input.onMouseClickCanvas.allowFiring());
         
         this.selectArea = new SelectArea();
         this.selectArea.onSelect.addListener(([a, b]) => this.onAreaSelect(a, b));
         
-        Input.onMouseDownCanvas.addListener(event => this.elementMovingStartHandle(event));
+        Input.onMouseDownCanvas.addListener(event => this.onMouseDownCanvas(event));
         Input.onKeyDown.addListener(key => this.checkForKeyDownActions(key));
         //CreatableLinesModule.onLineClickEvent.addListener((line) => {this.onElementClicked(line);});
         //this.timestamps.onExistingElementClicked.addListener((element) => {this.onElementClicked(element)});
@@ -211,16 +209,15 @@ export class ElementSelectorModule implements IEditorModule {
         console.log(`selected lines count: ${selectedLines?.length}`);
     }
 
+    private deleteClosestTimestampAtClick(event: JQuery.MouseUpEvent) {
+        let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
+        let deleteCommand = new DeleteElementsCommand([this.getClosestGridElement(worldClickPos)], this);
+        CommandsController.executeCommand(deleteCommand);
+        return;
+    }
+
     private onCanvasClick(event: JQuery.ClickEvent) {
         // right button click
-        if (event.originalEvent.button == 2) {
-            console.log("DELETE LMAO");
-            let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
-            let deleteCommand = new DeleteElementsCommand([this.getClosestGridElement(worldClickPos)], this);
-            CommandsController.executeCommand(deleteCommand);
-            return;
-        }
-
         if (Input.keysPressed["ShiftLeft"] == true)
             Input.onMouseClickCanvas.preventFiringEventOnce();
         else {
@@ -237,13 +234,16 @@ export class ElementSelectorModule implements IEditorModule {
         this.onElementSelect(this.getClosestGridElement(worldClickPos));
     }
 
+    private onMouseDownCanvas(event: JQuery.MouseDownEvent) {
+        if (event.button == 0) {
+            this.elementMovingStartHandle(event);
+            console.log("its ok!!!");
+        }
+    }
+
     private elementMovingStartHandle(event: JQuery.MouseDownEvent) {
-        console.log("MOSUE DOWN 0");
-        
         if (this.selectedElements.length != 1)
             return;
-
-        console.log("MOSUE DOWN");
 
         let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
         let closestElement = this.selectedElements[0];
@@ -255,11 +255,11 @@ export class ElementSelectorModule implements IEditorModule {
 
         this.movingElement = closestElement;
         this.selectArea.isActive = false;
-        this.movingState = true;
+        this.isMoving = true;
     }
 
     private elementMovingHandle(event: JQuery.MouseMoveEvent) {
-        if (!this.movingState)
+        if (!this.isMoving)
             return;
 
         let worldPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
@@ -293,10 +293,20 @@ export class ElementSelectorModule implements IEditorModule {
         let cLine = this.movingElement as CreatableTimestampLine;
         let line = new CreatableTimestampLine(worldPos.x, this.creatable.transform, color);
         (this.editor as Editor).addLastDrawableElement(line);
-    }   
+    }
+
+    private onMouseUp(event: JQuery.MouseUpEvent) {
+        if (event.button == 0) {
+            this.elementMovingEndHandle(event);
+        }
+        else if (event.button == 2) {
+            this.deleteClosestTimestampAtClick(event);
+            console.log("FUCK YEAH");
+        }
+    }
 
     private elementMovingEndHandle(event: JQuery.MouseUpEvent) {
-        if (!this.movingState)
+        if (!this.isMoving)
             return;
         
         let worldPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
@@ -334,7 +344,7 @@ export class ElementSelectorModule implements IEditorModule {
         this.movingElement = null;
         this.selectArea.isActive = true;
         this.selectArea.onSelect.preventFiringEventOnce();
-        this.movingState = false;
+        this.isMoving = false;
     }   
 
     private getClosestGridElement(worldPos: Vec2) : GridElement {
