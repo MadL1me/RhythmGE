@@ -42,6 +42,12 @@ export class TimestampsModule implements IEditorModule {
         this.createTimestampPrefab(new RgbaColor(255, 13, 166));
         this.createTimestampPrefab(new RgbaColor(255, 13, 74));
 
+        this.createTimestampPrefab(new RgbaColor(255, 157, 0));
+        this.createTimestampPrefab(new RgbaColor(255, 255, 255));
+        this.createTimestampPrefab(new RgbaColor(150, 150, 150));
+        this.createTimestampPrefab(new RgbaColor(0, 6, 33));
+
+
         this.selectedPrefab.select();
     }
 

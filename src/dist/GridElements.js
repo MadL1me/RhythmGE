@@ -175,36 +175,14 @@ var Timestamp = /** @class */ (function (_super) {
         configurable: true
     });
     Timestamp.prototype.draw = function (view, canvas) {
+        var _this = this;
         var _a;
         _super.prototype.draw.call(this, view, canvas);
-        if (this._outOfBounds[0])
-            return;
-        var color = this.getColor();
-        var ctx = canvas.getContext('2d');
-        var pos = new Vec2_1.Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
-        var width = this.getWidth();
-        ctx.fillStyle = color.value();
-        ctx.beginPath();
-        ctx.moveTo(pos.x - width, pos.y);
-        ctx.lineTo(pos.x, pos.y - width);
-        ctx.lineTo(pos.x + width, pos.y);
-        ctx.lineTo(pos.x, pos.y + width);
-        ctx.fill();
-        color = new RgbaColor_1.RgbaColor(color.r, color.g, color.b, 0.6);
-        width = width / 2;
+        if (!this._outOfBounds[0])
+            this.drawTimestampCore(view, canvas);
         (_a = this._connectedTimestamps) === null || _a === void 0 ? void 0 : _a.forEach(function (element) {
-            var timestamp = element[0];
-            var elementPos = new Vec2_1.Vec2(timestamp.transform.position.x + view.position.x, timestamp.transform.position.y + view.position.y);
-            var directionVec = Vec2_1.Vec2.Substract(elementPos, pos);
-            var normalVec = Vec2_1.Vec2.Normal(directionVec).normalized;
-            ctx.fillStyle = color.value();
-            ctx.beginPath();
-            ctx.moveTo(pos.x + normalVec.x * width, pos.y + normalVec.y * width);
-            ctx.lineTo(elementPos.x + normalVec.x * width, elementPos.y + normalVec.y * width);
-            ctx.lineTo(elementPos.x - normalVec.x * width, elementPos.y - normalVec.y * width);
-            ctx.lineTo(pos.x - normalVec.x * width, pos.y - normalVec.y * width);
-            ctx.fill();
-            ctx.closePath();
+            if (!view.isOutOfViewportBounds(element[0].transform.position)[0])
+                _this.drawConncetion(view, canvas, element[0]);
         });
     };
     Timestamp.prototype.connectToTimestamp = function (timestamp) {
@@ -225,6 +203,37 @@ var Timestamp = /** @class */ (function (_super) {
     };
     Timestamp.prototype.getColor = function () {
         return this._isSelected ? AppSettings_1.editorColorSettings.selectedTimestampColor : this.color;
+    };
+    Timestamp.prototype.drawConncetion = function (view, canvas, timestamp) {
+        var pos = new Vec2_1.Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
+        var ctx = canvas.getContext('2d');
+        var width = this.getWidth() / 2;
+        var color = this.getColor();
+        color = new RgbaColor_1.RgbaColor(color.r, color.g, color.b, 0.6);
+        var elementPos = new Vec2_1.Vec2(timestamp.transform.position.x + view.position.x, timestamp.transform.position.y + view.position.y);
+        var directionVec = Vec2_1.Vec2.Substract(elementPos, pos);
+        var normalVec = Vec2_1.Vec2.Normal(directionVec).normalized;
+        ctx.fillStyle = color.value();
+        ctx.beginPath();
+        ctx.moveTo(pos.x + normalVec.x * width, pos.y + normalVec.y * width);
+        ctx.lineTo(elementPos.x + normalVec.x * width, elementPos.y + normalVec.y * width);
+        ctx.lineTo(elementPos.x - normalVec.x * width, elementPos.y - normalVec.y * width);
+        ctx.lineTo(pos.x - normalVec.x * width, pos.y - normalVec.y * width);
+        ctx.fill();
+        ctx.closePath();
+    };
+    Timestamp.prototype.drawTimestampCore = function (view, canvas) {
+        var color = this.getColor();
+        var ctx = canvas.getContext('2d');
+        var pos = new Vec2_1.Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
+        var width = this.getWidth();
+        ctx.fillStyle = color.value();
+        ctx.beginPath();
+        ctx.moveTo(pos.x - width, pos.y);
+        ctx.lineTo(pos.x, pos.y - width);
+        ctx.lineTo(pos.x + width, pos.y);
+        ctx.lineTo(pos.x, pos.y + width);
+        ctx.fill();
     };
     Timestamp.prototype.getWidth = function () {
         var width = this.width + this.transform.scale.x / 5;
@@ -311,17 +320,19 @@ var BPMLine = /** @class */ (function (_super) {
     ;
     BPMLine.prototype.draw = function (view, canvas) {
         _super.prototype.draw.call(this, view, canvas);
-        if (this._outOfBounds[0])
-            return;
         if (!this.isActive)
             return;
+        if (!this._outOfBounds[0])
+            this.drawLine(view, canvas);
+        this.snapLines.forEach(function (line) { line.draw(view, canvas); });
+    };
+    BPMLine.prototype.drawLine = function (view, canvas) {
         var ctx = canvas.getContext('2d');
         ctx.strokeStyle = this.color.value();
         ctx.beginPath();
         ctx.moveTo(this.transform.position.x + view.position.x, 0);
         ctx.lineTo(this.transform.position.x + view.position.x, canvas.height);
         ctx.stroke();
-        this.snapLines.forEach(function (line) { line.draw(view, canvas); });
     };
     BPMLine.prototype.setSnapLines = function (snapValue, distanceBetweenBpmLines) {
         this.snapLines = new Array();

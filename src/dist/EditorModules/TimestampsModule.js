@@ -33,6 +33,10 @@ var TimestampsModule = /** @class */ (function () {
         this.createTimestampPrefab(new RgbaColor_1.RgbaColor(134, 13, 255));
         this.createTimestampPrefab(new RgbaColor_1.RgbaColor(255, 13, 166));
         this.createTimestampPrefab(new RgbaColor_1.RgbaColor(255, 13, 74));
+        this.createTimestampPrefab(new RgbaColor_1.RgbaColor(255, 157, 0));
+        this.createTimestampPrefab(new RgbaColor_1.RgbaColor(255, 255, 255));
+        this.createTimestampPrefab(new RgbaColor_1.RgbaColor(150, 150, 150));
+        this.createTimestampPrefab(new RgbaColor_1.RgbaColor(0, 6, 33));
         this.selectedPrefab.select();
     }
     TimestampsModule.prototype.init = function (editorCoreModules) {

@@ -196,43 +196,12 @@ export class Timestamp extends GridElement {
     draw(view: IViewportModule, canvas : HTMLCanvasElement) {
         super.draw(view, canvas)
 
-        if (this._outOfBounds[0])
-            return;
-
-        let color = this.getColor();
-        const ctx = canvas.getContext('2d');
-        const pos = new Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
-        
-        let width = this.getWidth();
-
-        ctx.fillStyle = color.value();
-        ctx.beginPath();
-        ctx.moveTo(pos.x - width, pos.y);
-        ctx.lineTo(pos.x, pos.y - width);
-        ctx.lineTo(pos.x + width, pos.y);
-        ctx.lineTo(pos.x, pos.y + width);
-        ctx.fill();
-
-        color = new RgbaColor(color.r, color.g, color.b, 0.6);
-
-        width = width/2;
+        if (!this._outOfBounds[0])
+            this.drawTimestampCore(view, canvas);
 
         this._connectedTimestamps?.forEach(element => {
-            let timestamp = element[0];
-            const elementPos = new Vec2(timestamp.transform.position.x + view.position.x,
-                timestamp.transform.position.y + view.position.y);
-            
-            const directionVec = Vec2.Substract(elementPos, pos);    
-            const normalVec = Vec2.Normal(directionVec).normalized;
-            
-            ctx.fillStyle = color.value();
-            ctx.beginPath();
-            ctx.moveTo(pos.x + normalVec.x * width, pos.y + normalVec.y * width);
-            ctx.lineTo(elementPos.x + normalVec.x*width, elementPos.y+normalVec.y*width);
-            ctx.lineTo(elementPos.x - normalVec.x*width, elementPos.y-normalVec.y*width);
-            ctx.lineTo(pos.x - normalVec.x * width, pos.y - normalVec.y * width);
-            ctx.fill();
-            ctx.closePath();
+            if (!view.isOutOfViewportBounds(element[0].transform.position)[0])
+                this.drawConncetion(view, canvas, element[0]);
         });
     }
 
@@ -257,7 +226,47 @@ export class Timestamp extends GridElement {
     
     getColor() {
         return this._isSelected ? editorColorSettings.selectedTimestampColor : this.color;
-    } 
+    }
+
+    private drawConncetion(view: IViewportModule, canvas : HTMLCanvasElement, timestamp: Timestamp) {
+        const pos = new Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
+        const ctx = canvas.getContext('2d');
+
+        let width = this.getWidth()/2;
+        let color = this.getColor();
+        color = new RgbaColor(color.r, color.g, color.b, 0.6);
+
+        const elementPos = new Vec2(timestamp.transform.position.x + view.position.x,
+            timestamp.transform.position.y + view.position.y);
+
+        const directionVec = Vec2.Substract(elementPos, pos);
+        const normalVec = Vec2.Normal(directionVec).normalized;
+
+        ctx.fillStyle = color.value();
+        ctx.beginPath();
+        ctx.moveTo(pos.x + normalVec.x * width, pos.y + normalVec.y * width);
+        ctx.lineTo(elementPos.x + normalVec.x*width, elementPos.y+normalVec.y*width);
+        ctx.lineTo(elementPos.x - normalVec.x*width, elementPos.y-normalVec.y*width);
+        ctx.lineTo(pos.x - normalVec.x * width, pos.y - normalVec.y * width);
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    private drawTimestampCore(view: IViewportModule, canvas : HTMLCanvasElement) {
+        let color = this.getColor();
+        const ctx = canvas.getContext('2d');
+        const pos = new Vec2(this.transform.position.x + view.position.x, this.transform.position.y + view.position.y);
+
+        let width = this.getWidth();
+
+        ctx.fillStyle = color.value();
+        ctx.beginPath();
+        ctx.moveTo(pos.x - width, pos.y);
+        ctx.lineTo(pos.x, pos.y - width);
+        ctx.lineTo(pos.x + width, pos.y);
+        ctx.lineTo(pos.x, pos.y + width);
+        ctx.fill();
+    }
 
     private getWidth() : number {
         let width = this.width + this.transform.scale.x/5;
@@ -348,20 +357,22 @@ export class BPMLine extends GridElement {
     draw(view : IViewportModule, canvas : HTMLCanvasElement) {
         super.draw(view, canvas)
 
-        if (this._outOfBounds[0])
-            return;
-
         if (!this.isActive)
             return;
 
+        if (!this._outOfBounds[0])
+            this.drawLine(view, canvas);
+
+        this.snapLines.forEach(line => { line.draw(view, canvas); });
+    }
+
+    private drawLine(view : IViewportModule, canvas : HTMLCanvasElement) {
         const ctx = canvas.getContext('2d');
         ctx.strokeStyle = this.color.value();
         ctx.beginPath();
         ctx.moveTo(this.transform.position.x+view.position.x, 0);
         ctx.lineTo(this.transform.position.x+view.position.x, canvas.height);
         ctx.stroke();
-
-        this.snapLines.forEach(line => { line.draw(view, canvas); });
     }
 
     setSnapLines(snapValue: number, distanceBetweenBpmLines) : void {

@@ -199,16 +199,31 @@
         }
 
         #prefabs-container {
+          max-height: 120px;
           display: flex;
-          //column-gap: 5px;
-          //row-gap: 5px;
-          border-radius: $block-border-radius;
           justify-items: center;
           flex: 2;
-          background-color: $background-second-color;
           flex-wrap: wrap;
+          overflow: auto;
+          border-radius: $block-border-radius;
+          background-color: $background-second-color;
+
+          &::-webkit-scrollbar {
+            width: 10px;
+          }
+
+          &::-webkit-scrollbar-thumb {
+            background: $accent-color;
+            border-radius: 5px;
+          }
+
+          &::-webkit-scrollbar-thumb:hover {
+            background: $accent-color-dark;
+            border-radius: 5px;
+          }
 
           div {
+            flex: 0 0 auto;
             margin: 5px;
           }
         }
