@@ -134,6 +134,7 @@
 
       .first-row {
         display: flex;
+        //max-height: 105px;
         flex: 1;
         gap: 10px;
 
@@ -148,6 +149,7 @@
             flex: 6;
             display: flex;
             flex-direction: column;
+            flex-wrap: nowrap;
 
             .slider-top {
               display: flex;
@@ -199,7 +201,8 @@
         }
 
         #prefabs-container {
-          max-height: 120px;
+          max-height: 105px;
+          //height: 100%;
           display: flex;
           justify-items: center;
           flex: 2;
@@ -237,7 +240,6 @@
     
           .drop-zone {
             flex: 1;
-            height: 100%;
           }
     
           .imports {
@@ -257,6 +259,7 @@
         display: flex;
         flex: 1;
         gap: 10px;
+        //max-height: 130px;
 
         .settings-container {
           flex: 6;
@@ -311,6 +314,7 @@
             flex: 1;
             display: flex;
             flex-wrap: wrap;
+            overflow: auto;
           }
   
           label {
@@ -397,15 +401,15 @@
   }
 
   #drop-zone {
+    box-sizing: border-box;
     border: 5px dashed $hovered-button;
-    width:  100px;
-    height: 100px;
-    padding: 0;
+    margin: 5px;
 
     button {
       width: 100%;
       height: 100%;
       margin: 0;
+      padding: 0;
       background-color: $default-button;
     }
   }

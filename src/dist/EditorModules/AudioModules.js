@@ -41,6 +41,8 @@ var AudioPlayerView = /** @class */ (function () {
         this.songTimeSlider.value = currentTime * 100;
     };
     AudioPlayerView.prototype.onPlayClick = function (playBtn) {
+        if (!this.audioController.isAudioLoaded())
+            return;
         playBtn.classList.add('paused');
         if (this.audioController.isPlaying() == true) {
             playBtn.classList.remove('paused');
@@ -92,13 +94,16 @@ var AudioModule = /** @class */ (function () {
             this.findClapTimingsPosition();
     };
     AudioModule.prototype.findClapTimingsPosition = function () {
-        var seek = this.seek();
-        this.clapTimingId = Utils_1.Utils.binaryNearestSearchNumber(this.clappingTimings, seek);
+        var seek = this.seek() - this.editorCore.editorData.offset.value / 1000;
+        this.clapTimingId = Utils_1.Utils.binaryNearestSearchNumber(this.clappingTimings, seek, Utils_1.Func.Ceil);
+        if (this.clappingTimings[this.clapTimingId] < seek)
+            this.clapTimingId++;
     };
     AudioModule.prototype.checkForClaps = function () {
-        if (this.songSource == null || this.clappingTimings.length < 1 || !this.editorCore.editorData.useClaps.value)
+        if (this.songSource == null || this.clappingTimings.length < 1
+            || !this.editorCore.editorData.useClaps.value || this.clapTimingId > this.clappingTimings.length - 1)
             return;
-        var seek = this.songSource.seek();
+        var seek = this.songSource.seek() - this.editorCore.editorData.offset.value / 1000;
         if (this.clappingTimings[this.clapTimingId] < seek) {
             this.clapTimingId++;
             this.playClapSound();
@@ -120,6 +125,7 @@ var AudioModule = /** @class */ (function () {
         });
         this.songSource.on('seek', function (id) {
             _this.onSeek.invoke(id);
+            _this.setupData();
             if (_this.editorCore.editorData.useClaps.value)
                 _this.findClapTimingsPosition();
         });
@@ -140,6 +146,7 @@ var AudioModule = /** @class */ (function () {
         });
         this.view.onVolumeSliderChange.addListener(function (value) { _this.setVolume(value); });
         this.editorCore.editorData.playbackRate.onValueChange.addListener(function (value) { _this.setPlaybackRate(value); });
+        this.editorCore.editorData.useClaps.onValueChange.addListener(function (value) { return _this.findClapTimingsPosition(); });
     };
     AudioModule.prototype.updateModule = function () {
         if (this.songSource == null || this.songSource == undefined)

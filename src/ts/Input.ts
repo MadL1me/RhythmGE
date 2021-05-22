@@ -100,11 +100,16 @@ export abstract class Input {
             event.preventDefault();
         }
 
-        console.log('Key pressed' + event.code);
+        console.log('Key pressed ' + event.code);
 
         this.keysPressed[event.code] = true;
         this.onKeyDown.invoke(event.code);
         this.checkForKeyBindings();
+
+        if (this.keysPressed["KeyZ"] && this.keysPressed["ControlLeft"]) {
+            event.preventDefault();
+            console.log("Prevent default ABCABACABVC");
+        }
     }
 
     private static onCanvasKeyUp(event) {

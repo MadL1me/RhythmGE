@@ -102,19 +102,15 @@ export class ElementSelectorModule implements IEditorModule {
     }
 
     selectElement(element: GridElement) {
-        //console.log("element selected");        
         this.selectedElements.push(element);
         this.selectedElements.sort((a, b) => a.transform.position.x - b.transform.position.x);
         element.select();
     }
 
     deselectElement(element: GridElement) {
-        console.log("element deselected");
         const index = Utils.binaryNearestSearch(this.selectedElements, element.transform.position.x);
-        console.log(this.selectedElements);
         this.selectedElements.splice(index, 1);
         this.selectedElements.sort((a, b) => a.transform.position.x - b.transform.position.x);
-        console.log(this.selectedElements);
         element.deselect();
     }
 
@@ -134,32 +130,27 @@ export class ElementSelectorModule implements IEditorModule {
     }
 
     private selectElementsCommand(elements: GridElement[]) {
-        console.log("NO WAY");
         let selectCommand = new SelectElementsCommand(elements, this);
         CommandsController.executeCommand(selectCommand);
     }
     
     private checkForKeyDownActions(event: JQuery.KeyDownEvent) {
         if (Input.keysPressed["Delete"]) {
-            console.log("DELETE COMMAND");
             let deleteCommand = new DeleteElementsCommand(this.selectedElements, this);
             CommandsController.executeCommand(deleteCommand);
         }
         if (Input.keysPressed["KeyF"]) {
-            console.log("Connect command") 
             this.connectTimestamps();
         }
     }
 
     private connectTimestamps() {
         if (this.selectedElements.length != 2) {
-            console.log("NOT VALID LEGTH");
             return;
         }
 
         let [firstTimestamp, secondTimestmap] = this.selectedElements as Timestamp[];
         if (!(firstTimestamp instanceof Timestamp || secondTimestmap !instanceof Timestamp)) {
-            console.log("NOT INSTANCES OF!!!");
             return;
         }
         
@@ -181,7 +172,6 @@ export class ElementSelectorModule implements IEditorModule {
 
     private onAreaSelect(pointA: Vec2, pointB: Vec2) {
         if (Vec2.Distance(pointA, pointB) < 30) {
-            console.log("area is too smol");
             return;
         }
 
@@ -204,14 +194,15 @@ export class ElementSelectorModule implements IEditorModule {
         
         if (selectedTimestamps != null)
             this.selectElementsCommand(selectedTimestamps);
-
-        console.log(`selected timestamps count: ${selectedTimestamps?.length}`);
-        console.log(`selected lines count: ${selectedLines?.length}`);
     }
 
     private deleteClosestTimestampAtClick(event: JQuery.MouseUpEvent) {
         let worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2(event.offsetX, event.offsetY));
-        let deleteCommand = new DeleteElementsCommand([this.getClosestGridElement(worldClickPos)], this);
+        let closestElement = this.getClosestGridElement(worldClickPos);
+        if (closestElement == null)
+            return;
+
+        let deleteCommand = new DeleteElementsCommand([closestElement], this);
         CommandsController.executeCommand(deleteCommand);
         return;
     }
@@ -224,7 +215,6 @@ export class ElementSelectorModule implements IEditorModule {
             if (this.selectedElements.length > 0) {
                 Input.onMouseClickCanvas.preventFiringEventOnce();
             }
-            console.log("DESELECTING ALL CLICK");
             let deselectAllCommnad = new DeselectAllElementsCommand([...this.selectedElements], this);
             CommandsController.executeCommand(deselectAllCommnad);
             return;
@@ -237,7 +227,6 @@ export class ElementSelectorModule implements IEditorModule {
     private onMouseDownCanvas(event: JQuery.MouseDownEvent) {
         if (event.button == 0) {
             this.elementMovingStartHandle(event);
-            console.log("its ok!!!");
         }
     }
 
@@ -250,8 +239,6 @@ export class ElementSelectorModule implements IEditorModule {
         
         if (!closestElement.isSelected || Vec2.Distance(worldClickPos, closestElement.transform.position) > 20)
             return;
-
-        console.log("MOSUE DOWN 2");
 
         this.movingElement = closestElement;
         this.selectArea.isActive = false;
@@ -301,7 +288,6 @@ export class ElementSelectorModule implements IEditorModule {
         }
         else if (event.button == 2) {
             this.deleteClosestTimestampAtClick(event);
-            console.log("FUCK YEAH");
         }
     }
 
@@ -354,7 +340,6 @@ export class ElementSelectorModule implements IEditorModule {
 
         if (closestLine != null) {
             var lineDist = Vec2.Distance(new Vec2(closestLine.transform.position.x, this.canvas.height - 5), worldPos);
-            console.log(`Ditstance to closest line: ${lineDist}`);
 
             if (lineDist < 10)
                 clickedElemenet = closestLine;
@@ -362,7 +347,6 @@ export class ElementSelectorModule implements IEditorModule {
 
         if (closestTimestamp != null) {
             var timestampDist = Vec2.Distance(closestTimestamp.transform.position, worldPos);
-            console.log(`Ditstance to closest timestamp: ${timestampDist}`);
 
             if (timestampDist < 20)
                 clickedElemenet = closestTimestamp;
@@ -393,8 +377,5 @@ export class ElementSelectorModule implements IEditorModule {
 
         else
             this.selectElementsCommand([element]);
-
-        console.log("Selected elements: ");
-        console.log(this.selectedElements.length);
     }
 }

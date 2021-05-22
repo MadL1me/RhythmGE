@@ -70,10 +70,14 @@ var Input = /** @class */ (function () {
             console.log("prevent default");
             event.preventDefault();
         }
-        console.log('Key pressed' + event.code);
+        console.log('Key pressed ' + event.code);
         this.keysPressed[event.code] = true;
         this.onKeyDown.invoke(event.code);
         this.checkForKeyBindings();
+        if (this.keysPressed["KeyZ"] && this.keysPressed["ControlLeft"]) {
+            event.preventDefault();
+            console.log("Prevent default ABCABACABVC");
+        }
     };
     Input.onCanvasKeyUp = function (event) {
         delete this.keysPressed[event.code];

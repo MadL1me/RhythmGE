@@ -129,9 +129,8 @@ export class EditorGrid implements IEditorModule {
     }
 
     private setOffsetValue(value: number) {
-        //var offset = parseInt(event);
         const offset = value;
-        this.transform.localPosition = new Vec2(offset / 10, this.transform.localPosition.y);
+        this.transform.localPosition = new Vec2(offset / 1000, this.transform.localPosition.y);
     }
 
     getGridSize(): Vec2 {

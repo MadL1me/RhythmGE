@@ -1,14 +1,11 @@
-import { Slider, Event, Action, EmptyAction, Utils } from "../Utils/Utils";
-import { Editor, IEditorModule, IEditorCore, EditorData} from "../Editor";
-import { Vec2 } from "../Utils/Vec2";
-import { editorColorSettings } from "../Utils/AppSettings";
-import { IDrawable } from "../GridElements";
+import {Event, Func, Slider, Utils} from "../Utils/Utils";
+import {IEditorCore, IEditorModule} from "../Editor";
+import {Vec2} from "../Utils/Vec2";
+import {editorColorSettings} from "../Utils/AppSettings";
 
-import $, { data } from 'jquery';
-import { ViewportModule } from "./ViewportModule";
-import { Transform } from "../Transform";
-import { throws } from "node:assert";
-import { Input } from "../Input";
+import $ from 'jquery';
+import {Transform} from "../Transform";
+import {Input} from "../Input";
 
 const { Howl, Howler } = require('howler');
 
@@ -54,6 +51,9 @@ class AudioPlayerView {
     }
 
     private onPlayClick(playBtn) {
+        if (!this.audioController.isAudioLoaded())
+            return;
+
         playBtn.classList.add('paused');
 
         if (this.audioController.isPlaying() == true) {
@@ -121,7 +121,7 @@ export class AudioModule implements IAudioModule {
     private view = new AudioPlayerView(this);
     private editorCore: IEditorCore;
     private audioLoaded: boolean;
-    
+
     private clappingTimings= new Array<number>();
     private clapTimingId = 0;
 
@@ -146,15 +146,18 @@ export class AudioModule implements IAudioModule {
     }
 
     findClapTimingsPosition() {
-        let seek = this.seek();
-        this.clapTimingId = Utils.binaryNearestSearchNumber(this.clappingTimings, seek)
+        let seek = this.seek() - this.editorCore.editorData.offset.value/1000;
+        this.clapTimingId = Utils.binaryNearestSearchNumber(this.clappingTimings, seek, Func.Ceil);
+        if (this.clappingTimings[this.clapTimingId] < seek)
+            this.clapTimingId++;
     }
 
     checkForClaps() {
-        if (this.songSource == null || this.clappingTimings.length < 1 || !this.editorCore.editorData.useClaps.value)
+        if (this.songSource == null || this.clappingTimings.length < 1
+            || !this.editorCore.editorData.useClaps.value || this.clapTimingId > this.clappingTimings.length-1)
             return;
     
-        let seek = this.songSource.seek();
+        let seek = this.songSource.seek() - this.editorCore.editorData.offset.value/1000;
         if (this.clappingTimings[this.clapTimingId] < seek) {
             this.clapTimingId++;
             this.playClapSound();
@@ -180,6 +183,7 @@ export class AudioModule implements IAudioModule {
 
         this.songSource.on('seek', (id) => {
             this.onSeek.invoke(id);
+            this.setupData();
             if (this.editorCore.editorData.useClaps.value)
                 this.findClapTimingsPosition();
         });
@@ -198,6 +202,7 @@ export class AudioModule implements IAudioModule {
         this.editorCore.editorData.audioFile.onValueChange.addListener(([s1, s2]) => {this.loadAudio(s1, s2);})
         this.view.onVolumeSliderChange.addListener((value) => {this.setVolume(value);});
         this.editorCore.editorData.playbackRate.onValueChange.addListener((value) => {this.setPlaybackRate(value);});
+        this.editorCore.editorData.useClaps.onValueChange.addListener(value => this.findClapTimingsPosition());
     }
 
     updateModule() {

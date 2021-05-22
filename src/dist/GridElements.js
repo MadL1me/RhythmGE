@@ -338,8 +338,41 @@ var BPMLine = /** @class */ (function (_super) {
         this.snapLines = new Array();
         var distance = distanceBetweenBpmLines / snapValue;
         for (var i = 0; i < snapValue - 1; i++) {
-            this.snapLines.push(new BPMLine((i + 1) * distance, this.transform, AppSettings_1.editorColorSettings.snapBpmLineColor));
+            var color = this.getSnapLineColor(snapValue, i);
+            this.snapLines.push(new BPMLine((i + 1) * distance, this.transform, color));
         }
+    };
+    BPMLine.prototype.getSnapLineColor = function (snapValue, lineId) {
+        // с-з-с
+        // с-з-с-к-с-з-с
+        // с-з-с-к-с-з-с-ж-с-з-с-к-с-з-с
+        switch (snapValue) {
+            case 2: {
+                return AppSettings_1.editorColorSettings.snapBpmLineColor;
+            }
+            case 4: {
+                if (lineId % 2 == 1)
+                    return AppSettings_1.editorColorSettings.snapBpmLineColor;
+                return AppSettings_1.editorColorSettings.oneFourthLineColor;
+            }
+            case 8: {
+                if (lineId % 4 == 3)
+                    return AppSettings_1.editorColorSettings.snapBpmLineColor;
+                else if (lineId % 2 == 1)
+                    return AppSettings_1.editorColorSettings.oneFourthLineColor;
+                return AppSettings_1.editorColorSettings.oneEighthLineColor;
+            }
+            case 16: {
+                if (lineId % 8 == 7)
+                    return AppSettings_1.editorColorSettings.snapBpmLineColor;
+                else if (lineId % 4 == 3)
+                    return AppSettings_1.editorColorSettings.oneFourthLineColor;
+                else if (lineId % 2 == 1)
+                    return AppSettings_1.editorColorSettings.oneEighthLineColor;
+                return AppSettings_1.editorColorSettings.oneSixteenLineColor;
+            }
+        }
+        return AppSettings_1.editorColorSettings.snapBpmLineColor;
     };
     return BPMLine;
 }(GridElement));

@@ -45,7 +45,7 @@ export class ViewportModule implements IViewportModule {
         if (this.transform.localPosition.x > this.maxDeviation.x)
             this.transform.localPosition = new Vec2(this.maxDeviation.x, this.position.y);
     
-        console.log(this.transform.localPosition);
+        //console.log(this.transform.localPosition);
     }
 
     get position() : Vec2 {

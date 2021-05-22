@@ -85,18 +85,14 @@ var ElementSelectorModule = /** @class */ (function () {
         this.selectArea.draw(this.editor.viewport, this.canvas);
     };
     ElementSelectorModule.prototype.selectElement = function (element) {
-        //console.log("element selected");        
         this.selectedElements.push(element);
         this.selectedElements.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
         element.select();
     };
     ElementSelectorModule.prototype.deselectElement = function (element) {
-        console.log("element deselected");
         var index = Utils_1.Utils.binaryNearestSearch(this.selectedElements, element.transform.position.x);
-        console.log(this.selectedElements);
         this.selectedElements.splice(index, 1);
         this.selectedElements.sort(function (a, b) { return a.transform.position.x - b.transform.position.x; });
-        console.log(this.selectedElements);
         element.deselect();
     };
     ElementSelectorModule.prototype.setSelectedElements = function (array) {
@@ -112,30 +108,25 @@ var ElementSelectorModule = /** @class */ (function () {
         this.selectedElements = [];
     };
     ElementSelectorModule.prototype.selectElementsCommand = function (elements) {
-        console.log("NO WAY");
         var selectCommand = new Command_1.SelectElementsCommand(elements, this);
         Command_1.CommandsController.executeCommand(selectCommand);
     };
     ElementSelectorModule.prototype.checkForKeyDownActions = function (event) {
         if (Input_1.Input.keysPressed["Delete"]) {
-            console.log("DELETE COMMAND");
             var deleteCommand = new Command_1.DeleteElementsCommand(this.selectedElements, this);
             Command_1.CommandsController.executeCommand(deleteCommand);
         }
         if (Input_1.Input.keysPressed["KeyF"]) {
-            console.log("Connect command");
             this.connectTimestamps();
         }
     };
     ElementSelectorModule.prototype.connectTimestamps = function () {
         var _a;
         if (this.selectedElements.length != 2) {
-            console.log("NOT VALID LEGTH");
             return;
         }
         var _b = this.selectedElements, firstTimestamp = _b[0], secondTimestmap = _b[1];
         if (!(firstTimestamp instanceof GridElements_1.Timestamp || secondTimestmap instanceof GridElements_1.Timestamp)) {
-            console.log("NOT INSTANCES OF!!!");
             return;
         }
         if (firstTimestamp.transform.position.x == secondTimestmap.transform.position.x)
@@ -153,7 +144,6 @@ var ElementSelectorModule = /** @class */ (function () {
     };
     ElementSelectorModule.prototype.onAreaSelect = function (pointA, pointB) {
         if (Vec2_1.Vec2.Distance(pointA, pointB) < 30) {
-            console.log("area is too smol");
             return;
         }
         if (Utils_1.Utils.isOutOfCanvasBounds(pointB, this.canvas))
@@ -170,12 +160,13 @@ var ElementSelectorModule = /** @class */ (function () {
             this.selectElementsCommand(selectedLines);
         if (selectedTimestamps != null)
             this.selectElementsCommand(selectedTimestamps);
-        console.log("selected timestamps count: " + (selectedTimestamps === null || selectedTimestamps === void 0 ? void 0 : selectedTimestamps.length));
-        console.log("selected lines count: " + (selectedLines === null || selectedLines === void 0 ? void 0 : selectedLines.length));
     };
     ElementSelectorModule.prototype.deleteClosestTimestampAtClick = function (event) {
         var worldClickPos = this.editor.viewport.transform.canvasToWorld(new Vec2_1.Vec2(event.offsetX, event.offsetY));
-        var deleteCommand = new Command_1.DeleteElementsCommand([this.getClosestGridElement(worldClickPos)], this);
+        var closestElement = this.getClosestGridElement(worldClickPos);
+        if (closestElement == null)
+            return;
+        var deleteCommand = new Command_1.DeleteElementsCommand([closestElement], this);
         Command_1.CommandsController.executeCommand(deleteCommand);
         return;
     };
@@ -187,7 +178,6 @@ var ElementSelectorModule = /** @class */ (function () {
             if (this.selectedElements.length > 0) {
                 Input_1.Input.onMouseClickCanvas.preventFiringEventOnce();
             }
-            console.log("DESELECTING ALL CLICK");
             var deselectAllCommnad = new Command_1.DeselectAllElementsCommand(__spreadArray([], this.selectedElements), this);
             Command_1.CommandsController.executeCommand(deselectAllCommnad);
             return;
@@ -198,7 +188,6 @@ var ElementSelectorModule = /** @class */ (function () {
     ElementSelectorModule.prototype.onMouseDownCanvas = function (event) {
         if (event.button == 0) {
             this.elementMovingStartHandle(event);
-            console.log("its ok!!!");
         }
     };
     ElementSelectorModule.prototype.elementMovingStartHandle = function (event) {
@@ -208,7 +197,6 @@ var ElementSelectorModule = /** @class */ (function () {
         var closestElement = this.selectedElements[0];
         if (!closestElement.isSelected || Vec2_1.Vec2.Distance(worldClickPos, closestElement.transform.position) > 20)
             return;
-        console.log("MOSUE DOWN 2");
         this.movingElement = closestElement;
         this.selectArea.isActive = false;
         this.isMoving = true;
@@ -248,7 +236,6 @@ var ElementSelectorModule = /** @class */ (function () {
         }
         else if (event.button == 2) {
             this.deleteClosestTimestampAtClick(event);
-            console.log("FUCK YEAH");
         }
     };
     ElementSelectorModule.prototype.elementMovingEndHandle = function (event) {
@@ -291,13 +278,11 @@ var ElementSelectorModule = /** @class */ (function () {
         var closestTimestamp = this.timestamps.getClosestTimestamp(worldPos);
         if (closestLine != null) {
             var lineDist = Vec2_1.Vec2.Distance(new Vec2_1.Vec2(closestLine.transform.position.x, this.canvas.height - 5), worldPos);
-            console.log("Ditstance to closest line: " + lineDist);
             if (lineDist < 10)
                 clickedElemenet = closestLine;
         }
         if (closestTimestamp != null) {
             var timestampDist = Vec2_1.Vec2.Distance(closestTimestamp.transform.position, worldPos);
-            console.log("Ditstance to closest timestamp: " + timestampDist);
             if (timestampDist < 20)
                 clickedElemenet = closestTimestamp;
         }
@@ -321,8 +306,6 @@ var ElementSelectorModule = /** @class */ (function () {
             this.deselectElement(element);
         else
             this.selectElementsCommand([element]);
-        console.log("Selected elements: ");
-        console.log(this.selectedElements.length);
     };
     return ElementSelectorModule;
 }());

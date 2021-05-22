@@ -104,9 +104,8 @@ var EditorGrid = /** @class */ (function () {
         this.initGrid();
     };
     EditorGrid.prototype.setOffsetValue = function (value) {
-        //var offset = parseInt(event);
         var offset = value;
-        this.transform.localPosition = new Vec2_1.Vec2(offset / 10, this.transform.localPosition.y);
+        this.transform.localPosition = new Vec2_1.Vec2(offset / 1000, this.transform.localPosition.y);
     };
     EditorGrid.prototype.getGridSize = function () {
         return new Vec2_1.Vec2(this.editorCore.editorData.bpmValue.value, this.editorCore.editorData.beatLinesCount.value);

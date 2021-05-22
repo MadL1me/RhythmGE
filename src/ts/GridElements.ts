@@ -377,12 +377,45 @@ export class BPMLine extends GridElement {
 
     setSnapLines(snapValue: number, distanceBetweenBpmLines) : void {
         this.snapLines = new Array<BPMLine>();
-        
         const distance = distanceBetweenBpmLines/snapValue;
 
-        for (var i = 0; i<snapValue-1; i++) {
-            this.snapLines.push(new BPMLine((i+1)*distance, this.transform, editorColorSettings.snapBpmLineColor));
+        for (let i = 0; i<snapValue-1; i++) {
+            let color = this.getSnapLineColor(snapValue, i);
+            this.snapLines.push(new BPMLine((i+1)*distance, this.transform, color));
         }
+    }
+
+    private getSnapLineColor(snapValue: number, lineId: number) : RgbaColor {
+        // с-з-с
+        // с-з-с-к-с-з-с
+        // с-з-с-к-с-з-с-ж-с-з-с-к-с-з-с
+        switch (snapValue) {
+            case 2: {
+                return editorColorSettings.snapBpmLineColor;
+            }
+            case 4: {
+                if (lineId % 2 == 1)
+                    return editorColorSettings.snapBpmLineColor;
+                return editorColorSettings.oneFourthLineColor;
+            }
+            case 8: {
+                if (lineId % 4 == 3)
+                    return editorColorSettings.snapBpmLineColor;
+                else if (lineId % 2 == 1)
+                    return editorColorSettings.oneFourthLineColor;
+                return editorColorSettings.oneEighthLineColor;
+            }
+            case 16: {
+                if (lineId % 8 == 7)
+                    return editorColorSettings.snapBpmLineColor;
+                else if (lineId % 4 == 3)
+                    return editorColorSettings.oneFourthLineColor;
+                else if (lineId % 2 == 1)
+                    return editorColorSettings.oneEighthLineColor;
+                return editorColorSettings.oneSixteenLineColor;
+            }
+        }
+        return editorColorSettings.snapBpmLineColor;
     }
 }
 

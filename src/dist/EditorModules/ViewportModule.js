@@ -31,7 +31,7 @@ var ViewportModule = /** @class */ (function () {
         this.transform.localPosition = new Vec2_1.Vec2(this.transform.localPosition.x + resultedDelta, this.position.y);
         if (this.transform.localPosition.x > this.maxDeviation.x)
             this.transform.localPosition = new Vec2_1.Vec2(this.maxDeviation.x, this.position.y);
-        console.log(this.transform.localPosition);
+        //console.log(this.transform.localPosition);
     };
     Object.defineProperty(ViewportModule.prototype, "position", {
         get: function () {
